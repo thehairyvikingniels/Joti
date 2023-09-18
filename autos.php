@@ -34,39 +34,12 @@ if (mysqli_num_rows($result) > 0) {
 }
 
 if (isset($_POST['carid'])) {
-  $sql = "SELECT id, bijrijders FROM Autos WHERE bijrijders LIKE '%".$_SESSION['id']."%'";
-  $result = mysqli_query($conn, $sql);
-
-  if (mysqli_num_rows($result) > 0) {
-    // output data of each row
-    while($row = mysqli_fetch_assoc($result)) {
-      $bijrijders = json_decode($row['bijrijders'],true);
-      unset($bijrijders[$_SESSION['id']]);
-      $sql = "UPDATE Autos SET bijrijders='".json_encode($bijrijders,true)."' WHERE id='".$row['id']."'";
-
-      if (mysqli_query($conn, $sql)) {
-          echo "Record updated successfully";
-      }
-    }
+  if ($_POST['carid'] == "geen") {
+    $sql = "DELETE FROM Auto_Bijrijders WHERE gebruiker_id = '".$_SESSION['id']."'";
+  } else {
+    $sql = "INSERT INTO Auto_Bijrijders (auto, gebruiker_id) VALUES ('".addslashes($_POST['carid'])."','".$_SESSION['id']."') ON DUPLICATE KEY UPDATE auto = '".addslashes($_POST['carid'])."'";
   }
-  
-  
-  $sql = "SELECT * FROM Autos WHERE id='".$_POST['carid']."'";
   $result = mysqli_query($conn, $sql);
-
-  if (mysqli_num_rows($result) > 0) {
-    // output data of each row
-    while($row = mysqli_fetch_assoc($result)) {
-      $bijrijders = json_decode($row['bijrijders'],true);
-      unset($bijrijders[$_SESSION['id']]);
-      $bijrijders[$_SESSION['id']] = $vn;
-      $sql = "UPDATE Autos SET bijrijders='".json_encode($bijrijders,true)."' WHERE id='".$_POST['carid']."'";
-
-      if (mysqli_query($conn, $sql)) {
-          echo "Record updated successfully";
-      }
-    }
-  }
 }
 ?>
 <!DOCTYPE html>
@@ -184,38 +157,47 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
           <hr>
           <table class="w3-table-all" style="width:100%">
             <tr class="w3-hide-small w3-hide-medium">
-              <th>nr</th>
               <th>Kenteken</th>
               <th>Inzittenden</th>
               <th>Eigenaar</th>
               <th></th>
             </tr>
             <?php
-            // $sql = "SELECT a.kenteken, a.bijrijders, a.eigenaar, b.voornaam, a.id as carid FROM Autos as a INNER JOIN Gebruikers as b ON a.eigenaar = b.id;";
-            // $result = mysqli_query($conn, $sql);
+            $sql = "
+            SELECT 
+              CONCAT(UPPER(SUBSTRING(ge.voornaam,1,1)),LOWER(SUBSTRING(ge.voornaam,2))) as eigenaar,
+              ge.id as id,
+              a.kenteken as kenteken,
+              GROUP_CONCAT(CONCAT(UPPER(SUBSTRING(gb.voornaam,1,1)),LOWER(SUBSTRING(gb.voornaam,2))) SEPARATOR ', ') as inzittenden
+            FROM Auto a
+            INNER JOIN Auto_Bijrijders ab
+              on a.kenteken = ab.auto
+            INNER JOIN Gebruikers gb
+              on gb.id = ab.gebruiker_id
+            INNER JOIN Gebruikers ge
+              on ge.id = a.eigenaar
+            GROUP BY a.kenteken
+            ";
+            $result = mysqli_query($conn, $sql);
 
-            // if (mysqli_num_rows($result) > 0) {
-            //   // output data of each row
-            //   while($row = mysqli_fetch_assoc($result)) {
-            //     $riders = implode(", ",json_decode($row['bijrijders'],true));
-
-
-            //     echo "<tr>";
-            //     echo "  <td>".$row['carid']."</td>";
-            //     echo "  <td>".strtoupper($row['kenteken'])."</td>";
-            //     echo "  <td class='w3-hide-small w3-hide-medium'>".$riders."</td>";
-            //     echo "  <td>".$row['voornaam']."</td>";
-            //     if ($_SESSION['id'] == $row['eigenaar']){
-            //       echo " <td class='w3-right'><a href='autos?delauto=".$row['carid']."'><i class=\"fas fa-trash\"></i></a></td>";
-            //     } else {
-            //       echo "<td></td>";
-            //     }
-            //     echo "</tr>";
-            //     echo "<tr class='w3-hide-large'>";
-            //     echo "  <td colspan='4'>".$riders."</td>";
-            //     echo "</tr>";
-            //   }
-            // }
+            if (mysqli_num_rows($result) > 0) {
+              // output data of each row
+              while($row = mysqli_fetch_assoc($result)) {
+                echo "<tr>";
+                echo "  <td>".strtoupper($row['kenteken'])."</td>";
+                echo "  <td class='w3-hide-small w3-hide-medium'>".$row['inzittenden']."</td>";
+                echo "  <td>".$row['eigenaar']."</td>";
+                if ($_SESSION['id'] == $row['id']){
+                  echo " <td class='w3-right'><a href='autos?delauto=".$row['kenteken']."'><i class=\"fas fa-trash\"></i></a></td>";
+                } else {
+                  echo "<td></td>";
+                }
+                echo "</tr>";
+                echo "<tr class='w3-hide-large'>";
+                echo "  <td colspan='4'>".$row['inzittenden']."</td>";
+                echo "</tr>";
+              }
+            }
             
             ?>
           </table>
@@ -223,22 +205,19 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
       </div>
       <div class="w3-col l6 m6 s12 w3-padding">
         <div class="w3-card-4 w3-white w3-padding">
-          <h5>Stap in!</h5>
+          <h5>Stap in / uit</h5>
           <form method="POST">
             <select class="w3-select" name="carid">
-              <option value="0"  selected>Geen</option>
+              <option value="geen"  selected>Geen</option>
               <?php
-              // $sql = "SELECT a.kenteken, a.eigenaar, a.id as carid, b.voornaam FROM Autos as a INNER JOIN Gebruikers as b ON a.eigenaar = b.id;";
-              // $result = mysqli_query($conn, $sql);
-
-              // if (mysqli_num_rows($result) > 0) {
-              //   // output data of each row
-              //   while($row = mysqli_fetch_assoc($result)) {
-              //     $bijrijders = json_decode($row['bijrijders'],true);
-
-              //     echo "<option value=\"".$row['carid']."\">Auto ".$row['carid']." - <b>".ucfirst($row['voornaam'])."</b></option>";
-              //   }
-              // }
+              $sql = "SELECT a.kenteken, a.eigenaar, b.voornaam FROM Auto as a INNER JOIN Gebruikers as b ON a.eigenaar = b.id;";
+              $result = mysqli_query($conn, $sql);
+              if (mysqli_num_rows($result) > 0) {
+                while($row = mysqli_fetch_assoc($result)) {
+                  $bijrijders = json_decode($row['bijrijders'],true);
+                  echo "<option value=\"".$row['kenteken']."\">Auto ".$row['kenteken']." ".ucfirst($row['voornaam'])."</option>";
+                }
+              }
             ?>
             </select>  
             <center><button type="submit" class="w3-button w3-green w3-margin">Vroem!</button></center>
