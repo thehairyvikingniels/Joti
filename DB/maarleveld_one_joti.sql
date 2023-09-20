@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: maarleveld.one.mysql.service.one.com:3306
--- Generation Time: Sep 18, 2023 at 09:26 AM
+-- Generation Time: Sep 18, 2023 at 05:05 PM
 -- Server version: 10.6.14-MariaDB-1:10.6.14+maria~ubu2204
 -- PHP Version: 8.1.2-1ubuntu2.14
 
@@ -24,17 +24,39 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Autos`
+-- Table structure for table `Auto`
 --
 
-CREATE TABLE `Autos` (
-  `id` int(11) NOT NULL,
-  `kenteken` varchar(8) NOT NULL,
+CREATE TABLE `Auto` (
+  `kenteken` char(8) NOT NULL,
   `eigenaar` int(11) NOT NULL,
-  `bijrijders` varchar(500) NOT NULL DEFAULT '[]',
-  `lat` float NOT NULL,
-  `lon` float NOT NULL,
-  `geotijd` datetime NOT NULL
+  `aangemaakt_op` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Auto_Bijrijders`
+--
+
+CREATE TABLE `Auto_Bijrijders` (
+  `auto` char(8) NOT NULL,
+  `gebruiker_id` int(11) NOT NULL,
+  `instaptijd` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Auto_Positie`
+--
+
+CREATE TABLE `Auto_Positie` (
+  `auto` char(8) NOT NULL,
+  `gebruiker_id` int(11) NOT NULL,
+  `datumtijd` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `lat` float(8,6) NOT NULL,
+  `lon` float(9,6) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -165,10 +187,25 @@ CREATE TABLE `Voslog` (
 --
 
 --
--- Indexes for table `Autos`
+-- Indexes for table `Auto`
 --
-ALTER TABLE `Autos`
-  ADD PRIMARY KEY (`id`);
+ALTER TABLE `Auto`
+  ADD PRIMARY KEY (`kenteken`),
+  ADD KEY `eigenaar` (`eigenaar`);
+
+--
+-- Indexes for table `Auto_Bijrijders`
+--
+ALTER TABLE `Auto_Bijrijders`
+  ADD PRIMARY KEY (`auto`,`gebruiker_id`),
+  ADD KEY `gebruiker_id` (`gebruiker_id`);
+
+--
+-- Indexes for table `Auto_Positie`
+--
+ALTER TABLE `Auto_Positie`
+  ADD PRIMARY KEY (`auto`,`datumtijd`),
+  ADD KEY `gebruiker_id` (`gebruiker_id`);
 
 --
 -- Indexes for table `Gebruikers`
@@ -211,12 +248,6 @@ ALTER TABLE `Voslog`
 --
 
 --
--- AUTO_INCREMENT for table `Autos`
---
-ALTER TABLE `Autos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `Gebruikers`
 --
 ALTER TABLE `Gebruikers`
@@ -227,6 +258,30 @@ ALTER TABLE `Gebruikers`
 --
 ALTER TABLE `Voslog`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `Auto`
+--
+ALTER TABLE `Auto`
+  ADD CONSTRAINT `Auto_ibfk_1` FOREIGN KEY (`eigenaar`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `Auto_Bijrijders`
+--
+ALTER TABLE `Auto_Bijrijders`
+  ADD CONSTRAINT `Auto_Bijrijders_ibfk_2` FOREIGN KEY (`gebruiker_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `Auto_Bijrijders_ibfk_3` FOREIGN KEY (`auto`) REFERENCES `Auto` (`kenteken`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `Auto_Positie`
+--
+ALTER TABLE `Auto_Positie`
+  ADD CONSTRAINT `Auto_Positie_ibfk_2` FOREIGN KEY (`gebruiker_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `Auto_Positie_ibfk_3` FOREIGN KEY (`auto`) REFERENCES `Auto` (`kenteken`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

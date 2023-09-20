@@ -6,7 +6,7 @@ if (!isset($_SESSION['id'])){
 require("dblogin.php");
 
 if (isset($_GET['delauto'])){
-  $sql = "DELETE FROM Autos WHERE id='".$_GET['delauto']."'";
+  $sql = "DELETE FROM Auto WHERE kenteken='".addslashes($_GET['delauto'])."'";
   if (mysqli_query($conn, $sql)) {
     header("Location: autos");
   } else {
@@ -15,9 +15,8 @@ if (isset($_GET['delauto'])){
 }
 
 if (isset($_POST['kenteken'])){
-  $sql = "INSERT INTO Autos (eigenaar, kenteken) VALUES ('".$_SESSION['id']."', '".addslashes($_POST['kenteken'])."')";
+  $sql = "INSERT INTO Auto (eigenaar, kenteken) VALUES ('".$_SESSION['id']."', '".addslashes($_POST['kenteken'])."') ON DUPLICATE KEY UPDATE eigenaar = eigenaar";
   if (mysqli_query($conn, $sql)) {
-
   } else {
     echo "Error: " . $sql . "<br>" . mysqli_error($conn);
   }
@@ -35,39 +34,12 @@ if (mysqli_num_rows($result) > 0) {
 }
 
 if (isset($_POST['carid'])) {
-  $sql = "SELECT id, bijrijders FROM Autos WHERE bijrijders LIKE '%".$_SESSION['id']."%'";
-  $result = mysqli_query($conn, $sql);
-
-  if (mysqli_num_rows($result) > 0) {
-    // output data of each row
-    while($row = mysqli_fetch_assoc($result)) {
-      $bijrijders = json_decode($row['bijrijders'],true);
-      unset($bijrijders[$_SESSION['id']]);
-      $sql = "UPDATE Autos SET bijrijders='".json_encode($bijrijders,true)."' WHERE id='".$row['id']."'";
-
-      if (mysqli_query($conn, $sql)) {
-          echo "Record updated successfully";
-      }
-    }
+  if ($_POST['carid'] == "geen") {
+    $sql = "DELETE FROM Auto_Bijrijders WHERE gebruiker_id = '".$_SESSION['id']."'";
+  } else {
+    $sql = "INSERT INTO Auto_Bijrijders (auto, gebruiker_id) VALUES ('".addslashes($_POST['carid'])."','".$_SESSION['id']."') ON DUPLICATE KEY UPDATE auto = '".addslashes($_POST['carid'])."'";
   }
-  
-  
-  $sql = "SELECT * FROM Autos WHERE id='".$_POST['carid']."'";
   $result = mysqli_query($conn, $sql);
-
-  if (mysqli_num_rows($result) > 0) {
-    // output data of each row
-    while($row = mysqli_fetch_assoc($result)) {
-      $bijrijders = json_decode($row['bijrijders'],true);
-      unset($bijrijders[$_SESSION['id']]);
-      $bijrijders[$_SESSION['id']] = $vn;
-      $sql = "UPDATE Autos SET bijrijders='".json_encode($bijrijders,true)."' WHERE id='".$_POST['carid']."'";
-
-      if (mysqli_query($conn, $sql)) {
-          echo "Record updated successfully";
-      }
-    }
-  }
 }
 ?>
 <!DOCTYPE html>
@@ -80,6 +52,8 @@ if (isset($_POST['carid'])) {
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
+
+<link rel="stylesheet" href="includes/numberPlate.css">
 <style>
 html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 </style>
@@ -138,67 +112,109 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <div class="w3-row">
       <div class="w3-col l6 m12 s12 w3-padding">
         <div class="w3-card-4 w3-white w3-padding">
-          <h5>Auto's beheren</h5>
-          <form method="POST">
-            <input class="w3-input" name="kenteken" type="text" style="width:100%" placeholder="AB-12-CD"><br>
-            <center><button class="w3-button w3-green w3-margin">Maak aan</button></center>
+          <h5>Auto aanmaken</h5>
+          <form method="POST">    
+            <center>
+              <div class="form-control">
+                <div class="car-license">
+                  <abbr title="Netherlands" class="car-license__country-code">
+                    <svg class="svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20" height="20"
+                          aria-labelledby="euSymbol" role="img">
+                            <title id="euSymbol">EU symbol</title>
+                      <g id="s" transform="translate(150,30)" fill="#fc0">
+                        <g id="c">
+                          <path id="t" d="M 0,-20 V 0 H 10" transform="rotate(18 0,-20)"/>
+                          <use xlink:href="#t" transform="scale(-1,1)"/>
+                        </g>
+                        <use xlink:href="#c" transform="rotate(72)"/>
+                        <use xlink:href="#c" transform="rotate(144)"/>
+                        <use xlink:href="#c" transform="rotate(216)"/>
+                        <use xlink:href="#c" transform="rotate(288)"/>a
+                      </g>
+                      <use xlink:href="#s" transform="rotate(30 150,150) rotate(330 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(60 150,150) rotate(300 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(90 150,150) rotate(270 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(120 150,150) rotate(240 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(150 150,150) rotate(210 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(180 150,150) rotate(180 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(210 150,150) rotate(150 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(240 150,150) rotate(120 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(270 150,150) rotate(90 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(300 150,150) rotate(60 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(330 150,150) rotate(30 150,30)"/>
+                    </svg>
+                    <span>NL</span>
+                  </abbr>
+                    <div class="car-license__form-control">
+                      <input type="text" class="car-license__input" id="input-kenteken" maxlength="8" autocomplete="off" name="kenteken" default="GE-LU-KT">  
+                      <span class="valid-message"></span>
+                    </div>
+                </div>
+              </div>
+            </center>
+            <center><button id="kentekenKnop" class="w3-button w3-disabled w3-ripple w3-margin w3-green" disabled>Aanmaken</button></center>
           </form>
           <hr>
           <table class="w3-table-all" style="width:100%">
             <tr class="w3-hide-small w3-hide-medium">
-              <th>nr</th>
               <th>Kenteken</th>
               <th>Inzittenden</th>
               <th>Eigenaar</th>
               <th></th>
             </tr>
             <?php
-            $sql = "SELECT a.kenteken, a.bijrijders, a.eigenaar, b.voornaam, a.id as carid FROM Autos as a INNER JOIN Gebruikers as b ON a.eigenaar = b.id;";
+            $sql = "
+            SELECT 
+              CONCAT(UPPER(SUBSTRING(ge.voornaam,1,1)),LOWER(SUBSTRING(ge.voornaam,2))) as eigenaar,
+              ge.id as id,
+              a.kenteken as kenteken,
+              GROUP_CONCAT(CONCAT(UPPER(SUBSTRING(gb.voornaam,1,1)),LOWER(SUBSTRING(gb.voornaam,2))) SEPARATOR ', ') as inzittenden
+            FROM Auto a
+            LEFT JOIN Auto_Bijrijders ab
+              on a.kenteken = ab.auto
+            LEFT JOIN Gebruikers gb
+              on gb.id = ab.gebruiker_id
+            LEFT JOIN Gebruikers ge
+              on ge.id = a.eigenaar
+            GROUP BY a.kenteken
+            ";
             $result = mysqli_query($conn, $sql);
 
             if (mysqli_num_rows($result) > 0) {
               // output data of each row
               while($row = mysqli_fetch_assoc($result)) {
-                $riders = implode(", ",json_decode($row['bijrijders'],true));
-
-
                 echo "<tr>";
-                echo "  <td>".$row['carid']."</td>";
                 echo "  <td>".strtoupper($row['kenteken'])."</td>";
-                echo "  <td class='w3-hide-small w3-hide-medium'>".$riders."</td>";
-                echo "  <td>".$row['voornaam']."</td>";
-                if ($_SESSION['id'] == $row['eigenaar']){
-                  echo " <td class='w3-right'><a href='autos?delauto=".$row['carid']."'><i class=\"fas fa-trash\"></i></a></td>";
+                echo "  <td class='w3-hide-small w3-hide-medium'>".$row['inzittenden']."</td>";
+                echo "  <td>".$row['eigenaar']."</td>";
+                if ($_SESSION['id'] == $row['id']){
+                  echo " <td class='w3-right'><a href='autos?delauto=".$row['kenteken']."'><i class=\"fas fa-trash\"></i></a></td>";
                 } else {
                   echo "<td></td>";
                 }
                 echo "</tr>";
                 echo "<tr class='w3-hide-large'>";
-                echo "  <td colspan='4'>".$riders."</td>";
+                echo "  <td colspan='4'>".$row['inzittenden']."</td>";
                 echo "</tr>";
               }
             }
-            
             ?>
           </table>
         </div>
       </div>
       <div class="w3-col l6 m6 s12 w3-padding">
         <div class="w3-card-4 w3-white w3-padding">
-          <h5>Stap in!</h5>
+          <h5>Stap in / uit</h5>
           <form method="POST">
             <select class="w3-select" name="carid">
-              <option value="0"  selected>Geen</option>
+              <option value="geen"  selected>Geen</option>
               <?php
-              $sql = "SELECT a.kenteken, a.eigenaar, a.id as carid, b.voornaam FROM Autos as a INNER JOIN Gebruikers as b ON a.eigenaar = b.id;";
+              $sql = "SELECT a.kenteken, a.eigenaar, b.voornaam FROM Auto as a INNER JOIN Gebruikers as b ON a.eigenaar = b.id;";
               $result = mysqli_query($conn, $sql);
-
               if (mysqli_num_rows($result) > 0) {
-                // output data of each row
                 while($row = mysqli_fetch_assoc($result)) {
                   $bijrijders = json_decode($row['bijrijders'],true);
-
-                  echo "<option value=\"".$row['carid']."\">Auto ".$row['carid']." - <b>".ucfirst($row['voornaam'])."</b></option>";
+                  echo "<option value=\"".$row['kenteken']."\">Auto ".$row['kenteken']." ".ucfirst($row['voornaam'])."</option>";
                 }
               }
             ?>
@@ -217,6 +233,9 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
   <!-- End page content -->
 </div>
+
+<!-- Number plate validation -->
+<script type="text/javascript" src="includes/numberPlate.js"></script>
 
 <script>
 // Get the Sidebar
