@@ -6,7 +6,7 @@ if (!isset($_SESSION['id'])){
 require("dblogin.php");
 
 if (isset($_GET['delauto'])){
-  $sql = "DELETE FROM Autos WHERE id='".$_GET['delauto']."'";
+  $sql = "DELETE FROM Auto WHERE kenteken='".addslashes($_GET['delauto'])."'";
   if (mysqli_query($conn, $sql)) {
     header("Location: autos");
   } else {
@@ -115,8 +115,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
           <h5>Auto aanmaken</h5>
           <form method="POST">    
             <center>
-            <div class="form-control">
-              <div class="car-license">
+              <div class="form-control">
+                <div class="car-license">
                   <abbr title="Netherlands" class="car-license__country-code">
                     <svg class="svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20" height="20"
                           aria-labelledby="euSymbol" role="img">
@@ -145,13 +145,13 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                     </svg>
                     <span>NL</span>
                   </abbr>
-                      <div class="car-license__form-control">
-                        <input type="text" class="car-license__input" id="input-kenteken" maxlength="8" autocomplete="off" name="kenteken" default="GE-LU-KT">  
-                        <span class="valid-message"></span>
-                      </div>
+                    <div class="car-license__form-control">
+                      <input type="text" class="car-license__input" id="input-kenteken" maxlength="8" autocomplete="off" name="kenteken" default="GE-LU-KT">  
+                      <span class="valid-message"></span>
+                    </div>
                 </div>
-            </div>
-</center>
+              </div>
+            </center>
             <center><button id="kentekenKnop" class="w3-button w3-disabled w3-ripple w3-margin w3-green" disabled>Aanmaken</button></center>
           </form>
           <hr>
@@ -170,11 +170,11 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
               a.kenteken as kenteken,
               GROUP_CONCAT(CONCAT(UPPER(SUBSTRING(gb.voornaam,1,1)),LOWER(SUBSTRING(gb.voornaam,2))) SEPARATOR ', ') as inzittenden
             FROM Auto a
-            INNER JOIN Auto_Bijrijders ab
+            LEFT JOIN Auto_Bijrijders ab
               on a.kenteken = ab.auto
-            INNER JOIN Gebruikers gb
+            LEFT JOIN Gebruikers gb
               on gb.id = ab.gebruiker_id
-            INNER JOIN Gebruikers ge
+            LEFT JOIN Gebruikers ge
               on ge.id = a.eigenaar
             GROUP BY a.kenteken
             ";
@@ -198,7 +198,6 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 echo "</tr>";
               }
             }
-            
             ?>
           </table>
         </div>

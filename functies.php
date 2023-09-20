@@ -19,13 +19,13 @@ if (isset($_GET['gpstoggle'])){
 // elke x seconden gps locatie ophalen
 if (isset($_GET['lat']) AND isset($_GET['lon'])){
   $time = date("Y-m-d H:i:s");
-  $sql = "SELECT id FROM Autos WHERE bijrijders LIKE '%".$_SESSION['id']."%'";
+  $sql = "SELECT auto FROM Auto_Bijrijders WHERE gebruiker_id = '".$_SESSION['id']."'";
   $result = mysqli_query($conn, $sql);
 
   if (mysqli_num_rows($result) > 0) {
     // output data of each row
     while($row = mysqli_fetch_assoc($result)) {
-      $sql = "UPDATE Autos SET lat='".$_GET['lat']."', lon='".$_GET['lon']."', geotijd='".$time."' WHERE id='".$row['id']."'";
+      $sql = "INSERT INTO Auto_Positie (auto, gebruiker_id, datumtijd, lat, lon) VALUES ('".$row['auto']."', '".$_SESSION['id']."', '".$time."', '".$_GET['lat']."', '".$_GET['lon']."')";
 
       if (mysqli_query($conn, $sql)) {
           echo "Record updated successfully";
