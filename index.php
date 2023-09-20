@@ -32,7 +32,7 @@ session_destroy();
               <h1 class="w3-center">Login</h1>
             </header>
             <div class="w3-container w3-theme-l4">
-              <center><img src="https://creazilla-store.fra1.digitaloceanspaces.com/cliparts/78043/pirate-ship-clipart-xl.png" style="width:60%"></center>
+              <center><img class="w3-margin" src="media/jotihunt2023.png" style="width:60%"></center>
               
               <?php
               if (isset($_GET['error'])){
