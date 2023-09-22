@@ -100,14 +100,28 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
       while($row = mysqli_fetch_assoc($result)) {
         if (ucfirst($row['deelgebied']) == "Alpha"){$color = "#9829FF";} elseif (ucfirst($row['deelgebied']) == "Bravo"){$color = "#2F9CEB";} elseif (ucfirst($row['deelgebied']) == "Charlie"){$color = "#2DFF69";} elseif (ucfirst($row['deelgebied']) == "Delta"){$color = "#F5F02C";} elseif (ucfirst($row['deelgebied']) == "Echo"){$color = "#FFA12E";} elseif (ucfirst($row['deelgebied']) == "Foxtrot"){$color = "#F52E2B";} else {$color = "#000000";}
         echo '
-        <li class="w3-padding-16" id="nieuws-'.$row['id'].'">
+        <li class="w3-padding-16">
           <div class="w3-bar w3-blue-gray w3-padding w3-round">
             <span class="w3-large w3-tag w3-text-black w3-round" style="background-color:'.$color.'">'.$row['deelgebied'].'</span>
-            <span class="w3-large" style="float:right">'.$row['naam'].'</span>
+            <span class="w3-large w3-hide-large w3-hide-medium" style="float:right">'.$row['naam'].'</span>
+            <span class="w3-xlarge w3-hide-small w3-margin-left">'.$row['naam'].'</span>
           </div>
-          <div class="w3-padding">
-            <p>'.ucfirst($row['straat']).' '.$row['huisnummer'].', '.ucfirst($row['plaats']).'
-            <a class="w3-right" href="http://www.google.com/maps/search/?api=1&query='.$row['lat'].','.$row['lon'].'"  target="_blank">Maps</a></p>
+          <div style="display: flex; justify-content: space-between; gap: 10px 20px; flex-wrap: wrap; align-items: center;">
+            <div class="" style="width:75px">
+              <img src="'.$row['url'].'" style="width:100%">
+            </div>
+            <div class="w3-hide-small w3-hide-medium" style="width:100px">
+
+            </div>
+            <div style="width: 250px; flex-grow: 2">
+              <p><i class="fas fa-map-pin fa-fw"></i> '.$row['lat'].', '.$row['lon'].'</p>
+              <p><i class="fas fa-map-marked fa-fw"></i> '.ucfirst($row['straat']).' '.$row['huisnummer'].', '.ucfirst($row['plaats']).'</p>
+            </div>
+            <div style="min-width: 200px; flex-grow: 1; display: flex; justify-content: space-around; align-items: center">
+              <a href=""><div class="w3-button w3-blue-gray w3-round">Tegenhunt</div></a>
+              <a href="http://www.google.com/maps/dir/?api=1&destination='.urlencode($row['straat'].' '.$row['huisnummer'].', '.$row['plaats']).'&travelmode=driving" target="_blank"><div class="w3-button w3-blue-gray w3-round">Navigeer</div></a>
+              <a href="http://www.google.com/maps/search/?api=1&query='.$row['lat'].','.$row['lon'].'" target="_blank"><div class="w3-button w3-blue-gray w3-round">Maps</div></a>
+            </div>
           </div>
         </li>
         ';
@@ -115,7 +129,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     echo "</ul>";
       echo "</div>";
   } else {
-      echo "0 results";
+      echo "Geen resultaten...";
   } 
   ?>
   </div>
