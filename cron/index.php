@@ -142,4 +142,33 @@ foreach($data["data"] as $key => $value){
   }
   $a ++;
 }
+
+define("JOTI_URL", "https://jotihunt.net");
+$data = file_get_contents(JOTI_URL."/subscriptions");
+$data = substr($data, strpos($data, '<tbody class="divide-y divide-gray-200 bg-white">')+50);
+$data = explode("</tr>",$data);
+$groups = array();
+foreach($data as $key => $row) {
+  $row = str_replace("<tr>","",$row);
+  $column = explode("td>", $row);
+  // get icon URL
+  $groups[$key]["url"] = substr($column[0], strpos($column[0], 'src="')+5);
+  $groups[$key]["url"] = substr($groups[$key]["url"], 0, strpos($groups[$key]["url"], '"'));
+  // get group name
+  $groups[$key]["name"] = substr($column[2], strpos($column[2], '">')+2);
+  $groups[$key]["name"] = substr($groups[$key]["name"], 0, strpos($groups[$key]["name"], '<'));
+  // get group coordinates
+  $groups[$key]["coord"] = substr($column[4], strpos($column[4], '>')+1);
+  $groups[$key]["coord"] = substr($groups[$key]["coord"], 0, strpos($groups[$key]["coord"], '<'));
+  
+  // insert new data into database
+  $sql = "UPDATE Groepen SET url = '".$groups[$key]["url"]."' WHERE CONCAT(LEFT(lat, 8), ', ', LEFT(lon,7)) = '".$groups[$key]["coord"]."'";
+  if (mysqli_query($conn, $sql)) {
+    
+  }
+
+}
+
+
 echo "-GROEPEN<br>";
+
