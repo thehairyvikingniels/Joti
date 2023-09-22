@@ -91,21 +91,23 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
   <div class="w3-row-padding w3-margin-bottom">
   <?php
-  $sql = "SELECT * FROM Groepen ORDER BY deelgebied ASC";
+  $sql = "SELECT * FROM Groepen ORDER BY naam ASC";
   $result = mysqli_query($conn, $sql);
   
   if (mysqli_num_rows($result) > 0) {
       echo '<div class="w3-container">';
       echo '<ul class="w3-ul w3-card-4 w3-white">';
       while($row = mysqli_fetch_assoc($result)) {
+        if (ucfirst($row['deelgebied']) == "Alpha"){$color = "#9829FF";} elseif (ucfirst($row['deelgebied']) == "Bravo"){$color = "#2F9CEB";} elseif (ucfirst($row['deelgebied']) == "Charlie"){$color = "#2DFF69";} elseif (ucfirst($row['deelgebied']) == "Delta"){$color = "#F5F02C";} elseif (ucfirst($row['deelgebied']) == "Echo"){$color = "#FFA12E";} elseif (ucfirst($row['deelgebied']) == "Foxtrot"){$color = "#F52E2B";} else {$color = "#000000";}
         echo '
         <li class="w3-padding-16" id="nieuws-'.$row['id'].'">
-          <div class="w3-bar w3-blue-gray w3-padding w3-round-xlarge">
-            <span class="w3-xlarge">'.$row['naam'].'</span><span style="float: right;">'.$row['deelgebied'].'</span>
+          <div class="w3-bar w3-blue-gray w3-padding w3-round">
+            <span class="w3-large w3-tag w3-text-black w3-round" style="background-color:'.$color.'">'.$row['deelgebied'].'</span>
+            <span class="w3-large" style="float:right">'.$row['naam'].'</span>
           </div>
           <div class="w3-padding">
             <p>'.ucfirst($row['straat']).' '.$row['huisnummer'].', '.ucfirst($row['plaats']).'
-            <a class="w3-right" href="http://www.google.com/maps?q='.$row['lat'].','.$row['lon'].'"  target="_blank">Maps</a></p>
+            <a class="w3-right" href="http://www.google.com/maps/search/?api=1&query='.$row['lat'].','.$row['lon'].'"  target="_blank">Maps</a></p>
           </div>
         </li>
         ';
@@ -126,6 +128,29 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 </div>
 
 <script>
+  // seaarch function for groups
+function tableSearch() {
+  var input, filter, table, tr, td, i, txtValue;
+  input = document.getElementById("tableSearchInput");
+  filter = input.value.toUpperCase();
+  table = document.getElementById("tableSearchTable");
+  tr = table.getElementsByTagName("tr");
+
+  // Loop through all table rows, and hide those who don't match the search query
+  for (i = 0; i < tr.length; i++) {
+    td = tr[i].getElementsByTagName("td")[0];
+    if (td) {
+      txtValue = td.textContent || td.innerText;
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        tr[i].style.display = "";
+      } else {
+        tr[i].style.display = "none";
+      }
+    }
+  }
+}
+
+
 // Get the Sidebar
 var mySidebar = document.getElementById("mySidebar");
 
