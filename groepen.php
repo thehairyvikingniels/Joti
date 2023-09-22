@@ -13,6 +13,8 @@ if (mysqli_num_rows($result) > 0) {
     while($row = mysqli_fetch_assoc($result)) {
       $vn = $row['voornaam'];
       $priv = $row['priv'];
+      $usr_lat = $row['lat'];
+      $usr_lon = $row['lon'];
     }
 } else {
     echo "0 results";
@@ -89,18 +91,32 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <h5><b><i class="fas fa-home fa-fw"></i> Deelnemende Scoutinggroepen</b></h5>
   </header>
 
-  <div class="w3-row-padding w3-margin-bottom">
+  <div class="w3-margin-bottom">
+    <div class="w3-container" style="position: sticky; top: 43px">
+      <div class="w3-card-4 w3-white w3-padding" style="display: flex; justify-content: space-between; gap:10px">
+        <input id="tableSearchInput" oninput="tableSearch()" class="w3-input w3-border w3-round" style="width:50%; flex-grow: 1" type="text" placeholder="Zoek">
+        <div class="w3-large">
+          <p><i class="fas fa-ruler fa-fw"></i><i class="fas fa-sort"></i></p>
+        </div>
+        <div class="w3-large">
+          <p><i class="fas fa-font fa-fw"></i><i class="fas fa-sort"></i></p>
+        </div>
+        <div class="w3-large">
+          <p><i class="fas fa-draw-polygon fa-fw"></i><i class="fas fa-sort"></i></p>
+        </div>
+      </div>
+    </div>
   <?php
   $sql = "SELECT * FROM Groepen ORDER BY naam ASC";
   $result = mysqli_query($conn, $sql);
   
   if (mysqli_num_rows($result) > 0) {
-      echo '<div class="w3-container">';
-      echo '<ul class="w3-ul w3-card-4 w3-white">';
+      echo '<div class="w3-container w3-margin-top">';
+      echo '<ul id="tableSearchTable" class="w3-ul w3-card-4 w3-white">';
       while($row = mysqli_fetch_assoc($result)) {
         if (ucfirst($row['deelgebied']) == "Alpha"){$color = "#9829FF";} elseif (ucfirst($row['deelgebied']) == "Bravo"){$color = "#2F9CEB";} elseif (ucfirst($row['deelgebied']) == "Charlie"){$color = "#2DFF69";} elseif (ucfirst($row['deelgebied']) == "Delta"){$color = "#F5F02C";} elseif (ucfirst($row['deelgebied']) == "Echo"){$color = "#FFA12E";} elseif (ucfirst($row['deelgebied']) == "Foxtrot"){$color = "#F52E2B";} else {$color = "#000000";}
         echo '
-        <li class="w3-padding-16">
+        <li class="w3-padding-16" meta-name="'.$row['naam'].'" meta-subarea="'.$row['deelgebied'].'" meta-distance="'.latlon_dist($row['lat'], $row['lon'], $usr_lat, $usr_lon).'">
           <div class="w3-bar w3-blue-gray w3-padding w3-round">
             <span class="w3-large w3-tag w3-text-black w3-round" style="background-color:'.$color.'">'.$row['deelgebied'].'</span>
             <span class="w3-large w3-hide-large w3-hide-medium" style="float:right">'.$row['naam'].'</span>
@@ -114,8 +130,10 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
             </div>
             <div style="width: 250px; flex-grow: 2">
-              <p><i class="fas fa-map-pin fa-fw"></i> '.$row['lat'].', '.$row['lon'].'</p>
-              <p><i class="fas fa-map-marked fa-fw"></i> '.ucfirst($row['straat']).' '.$row['huisnummer'].', '.ucfirst($row['plaats']).'</p>
+              <p><i class="fas fa-map-pin fa-fw"></i> '.$row['lat'].', '.$row['lon'].' </br>
+              <i class="fas fa-map-marked fa-fw"></i> '.ucfirst($row['straat']).' '.$row['huisnummer'].', '.ucfirst($row['plaats']).' </br>
+              <i class="fas fa-ruler fa-fw"></i> '.round(latlon_dist($row['lat'], $row['lon'], $usr_lat, $usr_lon)/1000, 1).'km
+              </p>
             </div>
             <div style="min-width: 200px; flex-grow: 1; display: flex; justify-content: space-around; align-items: center">
               <a href=""><div class="w3-button w3-blue-gray w3-round">Tegenhunt</div></a>
@@ -144,22 +162,19 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 <script>
   // seaarch function for groups
 function tableSearch() {
-  var input, filter, table, tr, td, i, txtValue;
+  var input, ul, items, metaName;
   input = document.getElementById("tableSearchInput");
-  filter = input.value.toUpperCase();
-  table = document.getElementById("tableSearchTable");
-  tr = table.getElementsByTagName("tr");
+  ul = document.getElementById("tableSearchTable");
+  items = ul.getElementsByTagName("li");
 
-  // Loop through all table rows, and hide those who don't match the search query
-  for (i = 0; i < tr.length; i++) {
-    td = tr[i].getElementsByTagName("td")[0];
-    if (td) {
-      txtValue = td.textContent || td.innerText;
-      if (txtValue.toUpperCase().indexOf(filter) > -1) {
-        tr[i].style.display = "";
-      } else {
-        tr[i].style.display = "none";
-      }
+  // Loop through all LI's, and hide those who don't match the search query
+  for (i = 0; i < items.length; i++) {
+    metaName = items[i].getAttribute("meta-name").toUpperCase();
+
+    if (metaName.includes(input.value.toUpperCase())) {
+      items[i].style.display = "";
+    } else {
+      items[i].style.display = "none";
     }
   }
 }
