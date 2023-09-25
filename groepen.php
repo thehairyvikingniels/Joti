@@ -13,8 +13,14 @@ if (mysqli_num_rows($result) > 0) {
     while($row = mysqli_fetch_assoc($result)) {
       $vn = $row['voornaam'];
       $priv = $row['priv'];
-      $usr_lat = $row['lat'];
-      $usr_lon = $row['lon'];
+      if ($row['lat']) {
+        $usr_lat = $row['lat'];
+        $usr_lon = $row['lon'];
+      } else {
+        // LAT LON van RB bij geen persoonlijke latlon
+        $usr_lat = 51.98769228691746;
+        $usr_lon = 5.876286397679744;
+      }
     }
 } else {
     echo "0 results";
@@ -54,7 +60,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <div class="w3-col s8 w3-bar">
       <span>Welkom, <strong><?php echo ucfirst($vn); ?></strong></span><br>
       <a href="index" class="w3-bar-item w3-button"><i class="fas fa-sign-out-alt"></i></a>
-      <a href="functies?gpstoggle=true&return=nieuws" class="w3-bar-item w3-button <?php if ($_SESSION['gps'] == "true"){echo "w3-green";}else{echo "w3-red";} ?>"><i class="fas fa-location-arrow"></i></a>
+      <a href="functies?gpstoggle=true&return=groepen" class="w3-bar-item w3-button <?php if ($_SESSION['gps'] == "true"){echo "w3-green";}else{echo "w3-red";} ?>"><i class="fas fa-location-arrow"></i></a>
     </div>
   </div>
   <hr>
@@ -95,19 +101,19 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <div class="w3-container" style="position: sticky; top: 43px">
       <div class="w3-card-4 w3-white w3-padding" style="display: flex; justify-content: space-between; gap:10px">
         <input id="tableSearchInput" oninput="tableSearch()" class="w3-input w3-border w3-round" style="width:50%; flex-grow: 1" type="text" placeholder="Zoek">
-        <div class="w3-large">
-          <p><i class="fas fa-ruler fa-fw"></i><i class="fas fa-sort"></i></p>
+        <div id="meta-distance-sorter" class="w3-large" onclick="sortTable('meta-distance')">
+          <p><i class="fas fa-ruler fa-fw"></i></p>
         </div>
-        <div class="w3-large">
-          <p><i class="fas fa-font fa-fw"></i><i class="fas fa-sort"></i></p>
+        <div id="meta-name-sorter" class="w3-large" onclick="sortTable('meta-name')">
+          <p><i class="fas fa-font fa-fw"></i></p>
         </div>
-        <div class="w3-large">
-          <p><i class="fas fa-draw-polygon fa-fw"></i><i class="fas fa-sort"></i></p>
+        <div id="meta-subarea-sorter" class="w3-large" onclick="sortTable('meta-subarea')">
+          <p><i class="fas fa-draw-polygon fa-fw"></i></p>
         </div>
       </div>
     </div>
   <?php
-  $sql = "SELECT * FROM Groepen ORDER BY naam ASC";
+  $sql = "SELECT * FROM Groepen ORDER BY naam DESC";
   $result = mysqli_query($conn, $sql);
   
   if (mysqli_num_rows($result) > 0) {
@@ -130,9 +136,10 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
             </div>
             <div style="width: 250px; flex-grow: 2">
-              <p><i class="fas fa-map-pin fa-fw"></i> '.$row['lat'].', '.$row['lon'].' </br>
-              <i class="fas fa-map-marked fa-fw"></i> '.ucfirst($row['straat']).' '.$row['huisnummer'].', '.ucfirst($row['plaats']).' </br>
-              <i class="fas fa-ruler fa-fw"></i> '.round(latlon_dist($row['lat'], $row['lon'], $usr_lat, $usr_lon)/1000, 1).'km
+              <p>
+                <i class="fas fa-map-pin fa-fw"></i> <span>'.$row['lat'].', '.$row['lon'].'</span></br>
+                <i class="fas fa-map-marked fa-fw"></i> <span>'.ucfirst($row['straat']).' '.$row['huisnummer'].', '.ucfirst($row['plaats']).'</span></br>
+                <i class="fas fa-ruler fa-fw"></i> <span>'.round(latlon_dist($row['lat'], $row['lon'], $usr_lat, $usr_lon)/1000, 1).'km</span>
               </p>
             </div>
             <div style="min-width: 200px; flex-grow: 1; display: flex; justify-content: space-around; align-items: center">
@@ -178,6 +185,49 @@ function tableSearch() {
     }
   }
 }
+
+function sortTable(metaType) {
+  var table, rows, switching, i, x, y, shouldSwitch;
+  table = document.getElementById("tableSearchTable");
+  icon = document.getElementById(metaType+"-icon");
+  switching = true;
+  /*Make a loop that will continue until
+  no switching has been done:*/
+  while (switching) {
+    //start by saying: no switching is done:
+    switching = false;
+    rows = table.getElementsByTagName("li");
+    /*Loop through all table rows:*/
+    for (i = 0; i < (rows.length - 1); i++) {
+      //start by saying there should be no switching:
+      shouldSwitch = false;
+      /*Get the two elements you want to compare,
+      one from current row and one from the next:*/
+      x = rows[i].getAttribute(metaType);
+      y = rows[i + 1].getAttribute(metaType);
+      //check if the two rows should switch place:
+      if (metaType == "meta-distance") {
+        if (parseFloat(x) > parseFloat(y)) {
+          //if so, mark as a switch and break the loop:
+          shouldSwitch = true;
+          break;
+        }
+      } else {
+        if (x.toLowerCase() > y.toLowerCase()) {
+          //if so, mark as a switch and break the loop:
+          shouldSwitch = true;
+          break;
+        }
+      }
+    }
+    if (shouldSwitch) {
+      /*If a switch has been marked, make the switch
+      and mark that a switch has been done:*/
+      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+      switching = true;
+    }
+  }
+}0
 
 
 // Get the Sidebar
