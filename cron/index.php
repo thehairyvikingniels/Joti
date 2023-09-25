@@ -143,7 +143,7 @@ foreach($data["data"] as $key => $value){
   $a ++;
 }
 
-define("JOTI_URL", "https://jotihunt.net");
+define("JOTI_URL", "https://jotihunt.nl");
 $data = file_get_contents(JOTI_URL."/subscriptions");
 $data = substr($data, strpos($data, '<tbody class="divide-y divide-gray-200 bg-white">')+50);
 $data = explode("</tr>",$data);
