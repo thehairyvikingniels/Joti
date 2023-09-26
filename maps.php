@@ -147,11 +147,16 @@ if (isset($_GET['personen'])){
         $date3 = DateTime::createFromFormat('Y-m-d H:i:s', $sunset);
         if ($date1 > $date2 && $date1 < $date3) {
           echo "
-          const marker_p_".$i." = new mapboxgl.Marker({
-            color: \"#3F3F3F\"
-          })
+          const person_".$i." = document.createElement('div');
+          person_".$i.".className = 'marker';
+          person_".$i.".style.backgroundImage = `url(media/icons/pin_user.png)`;
+          person_".$i.".style.width = `40px`;
+          person_".$i.".style.height = `32px`;
+          person_".$i.".style.backgroundSize = '100%';
+
+          const marker_".$i." = new mapboxgl.Marker(person_".$i.")
               .setLngLat([".$row['lon'].",".$row['lat']."])
-              .setPopup(new mapboxgl.Popup().setHTML(\"".ucfirst(str_replace("'"," ",$row['gebruikersnaam']))." is hier.\"))
+              .setPopup(new mapboxgl.Popup().setHTML(\"".ucfirst(str_replace("'"," ",$row['gebruikersnaam']))." was hier ".time2str($row['geotijd'])."\"))
               .addTo(map)
           ";
           goto next;
@@ -161,14 +166,19 @@ if (isset($_GET['personen'])){
         $date2 = DateTime::createFromFormat('Y-m-d H:i:s', $sunrise);
         $date3 = DateTime::createFromFormat('Y-m-d H:i:s', $sunset);
       if ($date1 > $date2 && $date1 < $date3) {
-          echo "
-          const marker_p_".$i." = new mapboxgl.Marker({
-            color: \"#F3F3F3\"
-          })
-              .setLngLat([".$row['lon'].",".$row['lat']."])
-              .setPopup(new mapboxgl.Popup().setHTML(\"".ucfirst(str_replace("'"," ",$row['gebruikersnaam']))." was hier ".time2str($row['geotijd'])."\"))
-              .addTo(map)
-          ";
+        echo "
+        const person_".$i." = document.createElement('div');
+        person_".$i.".className = 'marker';
+        person_".$i.".style.backgroundImage = `url(media/icons/pin_user.png)`;
+        person_".$i.".style.width = `40px`;
+        person_".$i.".style.height = `32px`;
+        person_".$i.".style.backgroundSize = '100%';
+
+        const marker_p_".$i." = new mapboxgl.Marker(person_".$i.")
+            .setLngLat([".$row['lon'].",".$row['lat']."])
+            .setPopup(new mapboxgl.Popup().setHTML(\"".ucfirst(str_replace("'"," ",$row['gebruikersnaam']))." was hier ".time2str($row['geotijd'])."\"))
+            .addTo(map)
+        ";
         }
       next:
       $i++;
