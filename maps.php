@@ -50,18 +50,19 @@ if (isset($_GET['groepen'])){
       // output data of each row
       $i=0;
       while($row = mysqli_fetch_assoc($result)) {
-        if (ucfirst($row['deelgebied']) == "Alpha"){$color = "#9829FF";} elseif (ucfirst($row['deelgebied']) == "Bravo"){$color = "#2F9CEB";} elseif (ucfirst($row['deelgebied']) == "Charlie"){$color = "#2DFF69";} elseif (ucfirst($row['deelgebied']) == "Delta"){$color = "#F5F02C";} elseif (ucfirst($row['deelgebied']) == "Echo"){$color = "#FFA12E";} elseif (ucfirst($row['deelgebied']) == "Foxtrot"){$color = "#F52E2B";} else {$color = "#000000";}
+        $row["deelgebied"] = lcfirst($row["deelgebied"]);
+        if ($row["deelgebied"] == null) {$row["deelgebied"] = "unknown";}
           echo "
           const img_".$i." = document.createElement('div');
           img_".$i.".className = 'marker';
-          img_".$i.".style.backgroundImage = `url(media/scoutingLogo.png)`;
-          img_".$i.".style.width = `30px`;
-          img_".$i.".style.height = `30px`;
+          img_".$i.".style.backgroundImage = `url(media/icons/pin_hut_".$row['deelgebied'].".png)`;
+          img_".$i.".style.width = `40px`;
+          img_".$i.".style.height = `32px`;
           img_".$i.".style.backgroundSize = '100%';
 
           const marker_".$i." = new mapboxgl.Marker(img_".$i.")
               .setLngLat([".$row['lon'].",".$row['lat']."])
-              .setPopup(new mapboxgl.Popup().setHTML(\"".$row['naam']."</br>Deelgebied: ".$row['deelgebied']."<br><a href='https://www.google.com/maps/dir/?api=1&origin=&destination=".urlencode($row['straat']." ".$row['huisnummer']." ".$row['plaats'])."&travelmode=driving&dir_action=navigate' target='_blank'>Navigeer</a>\"))
+              .setPopup(new mapboxgl.Popup().setHTML(\"".ucfirst(addslashes($row['naam']))."</br>Deelgebied: ".$row['deelgebied']."<br><a href='https://www.google.com/maps/dir/?api=1&origin=&destination=".urlencode($row['straat']." ".$row['huisnummer']." ".$row['plaats'])."&travelmode=driving&dir_action=navigate' target='_blank'>Navigeer</a>\"))
               .addTo(map)
           ";
         $i++;
