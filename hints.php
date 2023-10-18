@@ -98,14 +98,21 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
       echo '<div class="w3-container">';
       echo '<ul class="w3-ul w3-card-4 w3-white">';
       while($row = mysqli_fetch_assoc($result)) {
+        $content = $row['inhoud'];
+        $doc=new DOMDocument();
+        @$doc->loadHTML($content);
+        $imgNodes = $doc->getElementsByTagName('img');
+        foreach($imgNodes as $node) {
+          $node->setAttribute('width', '100%');
+          $node->removeAttribute('height');
+        }
         echo '
         <li class="w3-padding-16">
           <div class="w3-bar w3-blue-gray w3-padding w3-round-xlarge">
             <span class="w3-xlarge">'.$row['titel'].'</span>
             <span style="float: right;">'.time2str($row['datum']).'<br></span>
           </div><br>
-          <p>'.$row['inhoud'].'</p>';
-        
+          <p>'.$doc->saveHTML().'</p>'; 
 //         foreach ($vossen as $vos){
 //           if ($row["$vos"] != "null"){
 //             echo '<div class="w3-row-padding w3-margin-bottom">';
