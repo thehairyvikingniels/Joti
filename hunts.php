@@ -116,8 +116,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
           <option value="Alpha">Alpha</option>
           <option value="Bravo">Bravo</option>
           <option value="Charlie">Charlie</option>
-          <option value="Delta">Delta</option>
-          <option value="Echo">Echo</option>
+          <option value="Delta" disabled>Delta</option>
+          <option value="Echo" disabled>Echo</option>
           <option value="Foxtrot">Foxtrot</option>
         </select>
         <label>Tijd</label>
