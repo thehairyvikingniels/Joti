@@ -111,7 +111,6 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <?php if ($priv > 1){echo '<a href="admin" class="w3-bar-item w3-button w3-padding"><i class="fas fa-cogs fa-fw"></i>  Admin</a>';} ?><br><br>
   </div>
 </nav>
-</nav>
 
 
 <!-- Overlay effect when opening sidebar on small screens -->
@@ -122,7 +121,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   <!-- Header -->
   <header class="w3-container" style="padding-top:22px">
     <h5><b><i class="fas fa-trophy"></i> Punten</b></h5>
-    <div class="w3-row-padding" style="margin:0 -16px">
+    <div class="w3-row-padding" style="margin-bottom:100px;">
       <div class="w3-card-4 w3-padding w3-white w3-margin">
         <h5><span class="w3-xlarge"><?php echo $plaats;?>e</span> Plaats</h5>
         <table>
@@ -204,7 +203,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     </div>
   </header>
   <!-- Footer -->
-  <footer class="w3-container w3-padding-16 w3-dark-grey">
+  <footer class="w3-container w3-dark-grey w3-bottom">
     <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
   </footer>
 

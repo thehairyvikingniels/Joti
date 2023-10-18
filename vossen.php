@@ -87,7 +87,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   <header class="w3-container" style="padding-top:22px">
     <h5><b><i class="fas fa-bullseye"></i> Vossen</b></h5>
   </header>
-  <div>
+  <div style="margin-bottom:100px;">
     <table class="w3-table w3-blue" style="width:100%">
 
   <?php
@@ -148,7 +148,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   </div>
 
   <!-- Footer -->
-  <footer class="w3-container w3-padding-16 w3-dark-grey">
+  <footer class="w3-container w3-dark-grey w3-bottom">
     <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
   </footer>
 

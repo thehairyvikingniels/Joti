@@ -73,8 +73,6 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <?php if ($priv > 1){echo '<a href="admin" class="w3-bar-item w3-button w3-padding"><i class="fas fa-cogs fa-fw"></i>  Admin</a>';} ?><br><br>
   </div>
 </nav>
-</nav>
-
 
 <!-- Overlay effect when opening sidebar on small screens -->
 <div class="w3-overlay w3-hide-large w3-animate-opacity" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
@@ -142,7 +140,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     </div>
   </div>
   <!-- Footer -->
-  <footer class="w3-container w3-padding-16 w3-dark-grey">
+  <footer class="w3-container w3-dark-grey w3-bottom">
     <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
   </footer>
 

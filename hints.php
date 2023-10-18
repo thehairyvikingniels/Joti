@@ -89,7 +89,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <h5><b><i class="fas fa-question-circle fa-fw"></i> Hints</b></h5>
   </header>
 
-  <div class="w3-row-padding w3-margin-bottom">
+  <div class="w3-row-padding" style="margin-bottom:100px;">
   <?php
   $sql = "SELECT * FROM Hints ORDER BY datum DESC";
   $result = mysqli_query($conn, $sql);
@@ -139,7 +139,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   ?>
   </div>
   <!-- Footer -->
-  <footer class="w3-container w3-padding-16 w3-dark-grey">
+  <footer class="w3-container w3-dark-grey w3-bottom">
     <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
   </footer>
 

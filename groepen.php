@@ -97,7 +97,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <h5><b><i class="fas fa-home fa-fw"></i> Deelnemende Scoutinggroepen</b></h5>
   </header>
 
-  <div class="w3-margin-bottom">
+  <div style="margin-bottom:100px;">
     <div class="w3-container" style="position: sticky; top: 43px">
       <div class="w3-card-4 w3-white w3-padding" style="display: flex; justify-content: space-between; gap:10px">
         <input id="tableSearchInput" oninput="tableSearch()" class="w3-input w3-border w3-round" style="width:50%; flex-grow: 1" type="text" placeholder="Zoek">
@@ -159,7 +159,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   ?>
   </div>
   <!-- Footer -->
-  <footer class="w3-container w3-padding-16 w3-dark-grey">
+  <footer class="w3-container w3-dark-grey w3-bottom">
     <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
   </footer>
 
