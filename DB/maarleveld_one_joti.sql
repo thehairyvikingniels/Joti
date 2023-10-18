@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: maarleveld.one.mysql.service.one.com:3306
--- Generation Time: Sep 18, 2023 at 05:05 PM
+-- Generation Time: Oct 18, 2023 at 12:32 PM
 -- Server version: 10.6.14-MariaDB-1:10.6.14+maria~ubu2204
 -- PHP Version: 8.1.2-1ubuntu2.14
 
@@ -75,9 +75,9 @@ CREATE TABLE `Gebruikers` (
   `telefoon` varchar(12) NOT NULL,
   `api` varchar(16) NOT NULL,
   `priv` int(1) NOT NULL,
-  `lat` decimal(8,6) NOT NULL,
-  `lon` decimal(9,6) NOT NULL,
-  `geotijd` datetime NOT NULL
+  `lat` decimal(8,6) DEFAULT NULL,
+  `lon` decimal(9,6) DEFAULT NULL,
+  `geotijd` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -159,10 +159,14 @@ CREATE TABLE `Punten` (
 
 CREATE TABLE `Voslocaties` (
   `id` int(11) NOT NULL,
-  `ingestuurd_op` datetime NOT NULL,
+  `ingestuurd_op` datetime DEFAULT NULL,
   `type` varchar(16) NOT NULL,
   `deelgebied` varchar(8) NOT NULL,
-  `ingeleverd` tinyint(4) NOT NULL
+  `ingeleverd` tinyint(4) NOT NULL DEFAULT 0,
+  `ingeleverd_door` int(11) DEFAULT NULL,
+  `coordinaat_x` decimal(8,6) NOT NULL,
+  `coordinaat_y` decimal(9,6) NOT NULL,
+  `code` varchar(8) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -197,8 +201,8 @@ ALTER TABLE `Auto`
 -- Indexes for table `Auto_Bijrijders`
 --
 ALTER TABLE `Auto_Bijrijders`
-  ADD PRIMARY KEY (`auto`,`gebruiker_id`),
-  ADD KEY `gebruiker_id` (`gebruiker_id`);
+  ADD PRIMARY KEY (`gebruiker_id`),
+  ADD KEY `Auto_Bijrijders_ibfk_3` (`auto`);
 
 --
 -- Indexes for table `Auto_Positie`
@@ -238,6 +242,13 @@ ALTER TABLE `Opdrachten`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `Voslocaties`
+--
+ALTER TABLE `Voslocaties`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `ingeleverd_door` (`ingeleverd_door`);
+
+--
 -- Indexes for table `Voslog`
 --
 ALTER TABLE `Voslog`
@@ -251,6 +262,12 @@ ALTER TABLE `Voslog`
 -- AUTO_INCREMENT for table `Gebruikers`
 --
 ALTER TABLE `Gebruikers`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `Voslocaties`
+--
+ALTER TABLE `Voslocaties`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -282,6 +299,12 @@ ALTER TABLE `Auto_Bijrijders`
 ALTER TABLE `Auto_Positie`
   ADD CONSTRAINT `Auto_Positie_ibfk_2` FOREIGN KEY (`gebruiker_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `Auto_Positie_ibfk_3` FOREIGN KEY (`auto`) REFERENCES `Auto` (`kenteken`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `Voslocaties`
+--
+ALTER TABLE `Voslocaties`
+  ADD CONSTRAINT `Voslocaties_ibfk_1` FOREIGN KEY (`ingeleverd_door`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
