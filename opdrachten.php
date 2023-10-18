@@ -103,15 +103,23 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
         } else {
           $status = "Niet afgelopen";
         }
+        $content = $row['inhoud'];
+        $doc=new DOMDocument();
+        @$doc->loadHTML($content);
+        $imgNodes = $doc->getElementsByTagName('img');
+        foreach($imgNodes as $node) {
+          $node->setAttribute('width', '100%');
+          $node->removeAttribute('height');
+        }
         echo '
         <li class="w3-padding-16">
           <div class="w3-bar w3-blue-gray w3-padding w3-round-xlarge">
             <span class="w3-xlarge">'.$row['titel'].'</span>
             <span style="float: right;">'.time2str($row['datum']).'<br>'.$status.'</span>
           </div><br>
-          <p>'.$row['inhoud'].'</p>
+          <p>'.$doc->saveHTML().'</p>
           <div class="w3-container w3-light-grey w3-padding w3-round-xlarge">
-            <span class="w3-blue w3-padding w3-round-xlarge" style="float: left;" onclick="window.location.href = \'https://jotihunt.net/article/'.$row['id'].'\';">Lever in!</span>
+            <span class="w3-blue w3-padding w3-round-xlarge" style="float: left;" onclick="window.location.href = \'https://jotihunt.nl/article/'.$row['id'].'\';">Lever in!</span>
             <div style="float:right">
               <span style="float: right;">Max punten: '.$row['maxpunten'].'</span><br>
               <span style="float: right;">Eind tijd: '.time2str($row['eindtijd']).'</span>              
