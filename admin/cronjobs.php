@@ -40,6 +40,13 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
 <style>
 html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
+@media only screen and (max-width: 600px) {
+  .mobile100 {
+    width:100%!important;
+    flex-basis:100%!important
+  }
+}
+
 </style>
 <body class="w3-light-grey">
 
@@ -98,19 +105,84 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <h5><b><i class="fas fa-cogs"></i> Admin</b></h5>
   </header>
   <div class="w3-row" style="margin-bottom:100px;">
-    <div class="w3-col l7 m12 s12 w3-padding">
+    <div class="w3-col l12 m12 s12 w3-padding">
       <div class="w3-card-4 w3-white">
         <div class="w3-blue-gray w3-padding" style="width:100%">
-          <h5>Cronjobs</h5>
+          <h5>Cronjobs [WIP]</h5>
         </div>
-        
+        <ul class="w3-ul">
+        <?php
+$sql = "SELECT cj.name, cj.enabled, cj.URL, cj.description, cj.interval, cl.exec_time, cl.exec_length, cl.exec_stat, cl.exec_output
+        FROM Cronjobs cj LEFT JOIN Cronlogs cl ON cj.name = cl.name
+        WHERE cl.exec_time IS NULL
+            OR cl.exec_time = (
+                SELECT MAX(cl2.exec_time)
+                FROM Cronlogs cl2
+                WHERE cl2.name = cj.name
+            )";
+$result = mysqli_query($conn, $sql);
+
+if (mysqli_num_rows($result) > 0) {
+    // output data of each row
+    while($row = mysqli_fetch_assoc($result)) {
+      $name = ucfirst($row['name']);
+      $interval = round($row['interval'] / 60, 1)." min";
+      $exec_time = date("D H:i:s",strtotime($row['exec_time']));
+      $exec_length = round($row['exec_length'] / 1000, 1)." sec";
+      $exec_status = $row['exec_stat'];
+      $exec_output = $row['exec_output'];
+
+      if ($row['enabled'] === "1") {
+        $enabled = '<i class="fas fa-toggle-on fa-fw"></i>';
+      } else {
+        $enabled = '<i class="fas fa-toggle-off fa-fw"></i>';
+      }
+
+
+      switch ($exec_status) {
+        case 200: // succes
+          $stat_color = "w3-text-green";
+          break;
+        case 429: // too many requests
+          $stat_color = "w3-text-yellow";
+          break;
+        case 500: // script error
+          $stat_color = "w3-text-red";
+          break;
+        default:
+          $stat_color = "w3-text-red";
+          break;
+      }
+
+
+
+      echo "<li style='display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between'>
+              <div class='mobile100' style='flex-basis: 250px'>
+                <h3>
+                  ".$enabled."
+                  <span class='".$stat_color."' title='HTML ".$exec_status." code'><i class='fas fa-circle'></i></span>
+                  ".$name."
+                </h3>
+              </div>
+              <div><i class='fas fa-calendar-alt'></i> <b>Interval:</b><br>".$interval."</div>
+              <div><i class='far fa-clock'></i> <b>Next exec.:</b><br>32 sec</div>
+              <div><i class='fas fa-history'></i> <b>Last exec.:</b><br>".$exec_time."</div>
+              <div><i class='fas fa-hourglass-half'></i> <b>Prev. Dur.:</b><br>".$exec_length."</div>
+              <div><h4><i class='fas fa-sync-alt fa-spin'></i></h4><div>
+              <div><h4><i class='fas fa-play'></i></h4><div>
+              <div><h4><i class='fas fa-edit'></h4></i><div>
+            </li>";
+    }
+}       
+        ?>
+        </ul>
       </div>
     </div>
 
   </div>
   <!-- Footer -->
   <footer class="w3-container w3-padding-16 w3-dark-grey w3-bottom">
-    <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
+    <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p></center>
   </footer>
 
   <!-- End page content -->
