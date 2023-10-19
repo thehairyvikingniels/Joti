@@ -132,6 +132,7 @@ if (mysqli_num_rows($result) > 0) {
       $exec_length = number_format($row['exec_length'] / 1000, 2, ',')." sec";
       $exec_status = $row['exec_stat'];
       $exec_output = $row['exec_output'];
+      $exec_next = ($row['interval'] + strtotime($row['exec_time']) - time())." sec";
 
       if ($row['enabled'] === "1") {
         $enabled = '<i class="fas fa-toggle-on fa-fw"></i>';
@@ -157,21 +158,19 @@ if (mysqli_num_rows($result) > 0) {
 
 
 
-      echo "<li style='display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between'>
+      echo "<li class='cronTimer' style='display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between'>
               <div class='mobile100' style='flex-basis: 250px'>
                 <h3>
-                  <span id='cron_enabled_".$i."'>".$enabled."</span>
+                  <span id='cron_enabled_".$i."' onclick='toggleCron(\"".strtolower($name)."\")'>".$enabled."</span>
                   <span id='cron_status_".$i."' class='".$stat_color."' title='HTML ".$exec_status." code'><i class='fas fa-circle'></i></span>
                   <span id='cron_name_".$i."'>".$name."</span>
                 </h3>
               </div>
               <div><i class='fas fa-calendar-alt'></i> <b>Interval:</b><br><span id='cron_interval_".$i."'>".$interval."</span></div>
-              <div><i class='far fa-clock'></i> <b>Next exec.:</b><br><span id='cron_exec_next_".$i."'>32</span> sec</div>
+              <div><i class='far fa-clock'></i> <b>Next exec.:</b><br><span id='cron_exec_next_".$i."'>".$exec_next."</span></div>
               <div><i class='fas fa-history'></i> <b>Last exec.:</b><br><span id='cron_exec_time_".$i."'>".$exec_time."</span></div>
               <div><i class='fas fa-hourglass-half'></i> <b>Prev. Dur.:</b><br><span id='cron_exec_length_".$i."'>".$exec_length."</span></div>
-              <div><h4><i class='fas fa-sync-alt fa-spin'></i></h4><div>
-              <div><h4><i class='fas fa-play'></i></h4><div>
-              <div><h4><i class='fas fa-edit'></h4></i><div>
+              <div><h4><i id='cron_start_".$i."' class='fas fa-play'></i></h4><div>
             </li>";
       $i++;
     }
@@ -221,17 +220,38 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
     GPSrefresh();
   }, 5555);
 }
-
-  setInterval(function() {
-    CronRefresh();
-  }, 3555);
-
   setInterval(function() {
     TimerRefresh();
   }, 1000);
-  
-  function CronRefresh() {
+  var countAmont = document.getElementsByClassName('cronTimer').length;
 
+  setInterval(function() {
+    CronRefresh();
+  }, 6000);
+
+  function toggleCron(name) {
+    console.log(name);
+  }
+
+  function TimerRefresh() {
+    for (let i = 0; i < countAmont; i++) {
+      var timer = document.getElementById("cron_exec_next_" + i);
+      var cron_start = document.getElementById("cron_start_" + i);
+      timer.innerHTML.replace(" sec", "");
+      if (timer.innerHTML != "executing...") {
+        timer.innerHTML = (parseInt(timer.innerHTML) - 1);
+        cron_start.className = "fas fa-play";
+        if (timer.innerHTML <= 0) {
+          timer.innerHTML = "executing...";
+          cron_start.className = "fas fa-sync-alt fa-spin";
+        } else {
+          timer.innerHTML += " sec";
+        }        
+      }
+    }
+  }
+
+  function CronRefresh() {
     if (window.XMLHttpRequest) {
         // code for IE7+, Firefox, Chrome, Opera, Safari
         xmlhttp = new XMLHttpRequest();
@@ -243,6 +263,7 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
         if (this.readyState == 4 && this.status == 200) {
           console.log(this.responseText);
           json = JSON.parse(this.responseText);
+          countAmont = json.length;
           for(var i = 0; i < json.length; i++){
             var cron_enabled = document.getElementById("cron_enabled_" + i);
             var cron_status = document.getElementById("cron_status_" + i);
@@ -250,6 +271,8 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
             var cron_interval = document.getElementById("cron_interval_" + i);
             var cron_exec_time = document.getElementById("cron_exec_time_" + i);
             var cron_exec_length = document.getElementById("cron_exec_length_" + i);
+            var cron_exec_next = document.getElementById("cron_exec_next_" + i);
+            var cron_start = document.getElementById("cron_start_" + i);
 
             cron_enabled.innerHTML = json[i]['enabled'];
             cron_status.className = json[i]['stat_color'];
@@ -257,8 +280,15 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
             cron_name.innerHTML = json[i]['name'];
             cron_name.title = json[i]['description'];
             cron_interval.innerHTML = json[i]['interval'];
-            cron_exec_time.interHTML = json[i]['exec_time'];
-            cron_exec_length.interHTML = json[i]['exec_length'];
+            cron_exec_time.innerHTML = json[i]['exec_time'];
+            cron_exec_length.innerHTML = json[i]['exec_length'];
+            cron_exec_next.innerHTML = json[i]['exec_next'];
+            if (json[i]['exec_next'] <= 0) {
+              cron_start.classname = 'fas fa-sync-alt fa-spin';
+            } else {
+              cron_start.classname = 'fas fa-play';
+            }
+            
           }
         }
     };

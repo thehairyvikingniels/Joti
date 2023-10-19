@@ -59,6 +59,12 @@ if (isset($_GET['cronjobs'])) {
             $return[$i]['exec_time'] = $exec_time;
             $return[$i]['exec_length'] = $exec_length;
             $return[$i]['exec_status'] = $exec_status;
+            $return[$i]['exec_next'] = $row['interval'] + strtotime($row['exec_time']) - time();
+            if ($return[$i]['exec_next'] <= 0) {
+                $return[$i]['exec_next'] = "executing...";
+            } else {
+                $return[$i]['exec_next'] .= " sec";
+            }
             $i++;
         }
     }

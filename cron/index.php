@@ -36,7 +36,7 @@ WHERE
 GROUP BY
 cj.name
 HAVING
-(UNIX_TIMESTAMP(now()) + 3600 + 3600) >= nextcron
+(UNIX_TIMESTAMP(now()) + 3600 + 3600) >= nextcron - 12 # added 2x 3600s for timezone correction. added 12 seconds overlap through execution
   ";
 $result = $conn->query($sql);
 
