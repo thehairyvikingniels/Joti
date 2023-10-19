@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: maarleveld.one.mysql.service.one.com:3306
--- Generation Time: Oct 19, 2023 at 01:48 PM
+-- Generation Time: Oct 19, 2023 at 07:04 PM
 -- Server version: 10.6.14-MariaDB-1:10.6.14+maria~ubu2204
 -- PHP Version: 8.1.2-1ubuntu2.14
 
@@ -84,7 +84,7 @@ CREATE TABLE `Cronlogs` (
   `exec_time` datetime NOT NULL,
   `exec_length` int(11) NOT NULL,
   `exec_stat` int(11) NOT NULL,
-  `exec_output` varchar(2048) NOT NULL
+  `exec_output` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -249,7 +249,8 @@ ALTER TABLE `Cronjobs`
 -- Indexes for table `Cronlogs`
 --
 ALTER TABLE `Cronlogs`
-  ADD KEY `name` (`name`);
+  ADD PRIMARY KEY (`name`,`exec_time`),
+  ADD UNIQUE KEY `name` (`name`,`exec_time`);
 
 --
 -- Indexes for table `Gebruikers`

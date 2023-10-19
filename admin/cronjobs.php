@@ -123,12 +123,13 @@ $sql = "SELECT cj.name, cj.enabled, cj.URL, cj.description, cj.interval, cl.exec
 $result = mysqli_query($conn, $sql);
 
 if (mysqli_num_rows($result) > 0) {
+  $i = 0;
     // output data of each row
     while($row = mysqli_fetch_assoc($result)) {
       $name = ucfirst($row['name']);
-      $interval = round($row['interval'] / 60, 1)." min";
-      $exec_time = date("D H:i:s",strtotime($row['exec_time']));
-      $exec_length = round($row['exec_length'] / 1000, 1)." sec";
+      $interval = number_format($row['interval'] / 60, 1, ',')." min";
+      $exec_time = date("d/m H:i:s",strtotime($row['exec_time']));
+      $exec_length = number_format($row['exec_length'] / 1000, 2, ',')." sec";
       $exec_status = $row['exec_stat'];
       $exec_output = $row['exec_output'];
 
@@ -159,19 +160,20 @@ if (mysqli_num_rows($result) > 0) {
       echo "<li style='display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between'>
               <div class='mobile100' style='flex-basis: 250px'>
                 <h3>
-                  ".$enabled."
-                  <span class='".$stat_color."' title='HTML ".$exec_status." code'><i class='fas fa-circle'></i></span>
-                  ".$name."
+                  <span id='cron_enabled_".$i."'>".$enabled."</span>
+                  <span id='cron_status_".$i."' class='".$stat_color."' title='HTML ".$exec_status." code'><i class='fas fa-circle'></i></span>
+                  <span id='cron_name_".$i."'>".$name."</span>
                 </h3>
               </div>
-              <div><i class='fas fa-calendar-alt'></i> <b>Interval:</b><br>".$interval."</div>
-              <div><i class='far fa-clock'></i> <b>Next exec.:</b><br>32 sec</div>
-              <div><i class='fas fa-history'></i> <b>Last exec.:</b><br>".$exec_time."</div>
-              <div><i class='fas fa-hourglass-half'></i> <b>Prev. Dur.:</b><br>".$exec_length."</div>
+              <div><i class='fas fa-calendar-alt'></i> <b>Interval:</b><br><span id='cron_interval_".$i."'>".$interval."</span></div>
+              <div><i class='far fa-clock'></i> <b>Next exec.:</b><br><span id='cron_exec_next_".$i."'>32</span> sec</div>
+              <div><i class='fas fa-history'></i> <b>Last exec.:</b><br><span id='cron_exec_time_".$i."'>".$exec_time."</span></div>
+              <div><i class='fas fa-hourglass-half'></i> <b>Prev. Dur.:</b><br><span id='cron_exec_length_".$i."'>".$exec_length."</span></div>
               <div><h4><i class='fas fa-sync-alt fa-spin'></i></h4><div>
               <div><h4><i class='fas fa-play'></i></h4><div>
               <div><h4><i class='fas fa-edit'></h4></i><div>
             </li>";
+      $i++;
     }
 }       
         ?>
@@ -219,7 +221,50 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
     GPSrefresh();
   }, 5555);
 }
+
+  setInterval(function() {
+    CronRefresh();
+  }, 3555);
+
+  setInterval(function() {
+    TimerRefresh();
+  }, 1000);
   
+  function CronRefresh() {
+
+    if (window.XMLHttpRequest) {
+        // code for IE7+, Firefox, Chrome, Opera, Safari
+        xmlhttp = new XMLHttpRequest();
+    } else {
+        // code for IE6, IE5
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          console.log(this.responseText);
+          json = JSON.parse(this.responseText);
+          for(var i = 0; i < json.length; i++){
+            var cron_enabled = document.getElementById("cron_enabled_" + i);
+            var cron_status = document.getElementById("cron_status_" + i);
+            var cron_name = document.getElementById("cron_name_" + i);
+            var cron_interval = document.getElementById("cron_interval_" + i);
+            var cron_exec_time = document.getElementById("cron_exec_time_" + i);
+            var cron_exec_length = document.getElementById("cron_exec_length_" + i);
+
+            cron_enabled.innerHTML = json[i]['enabled'];
+            cron_status.className = json[i]['stat_color'];
+            cron_status.title = "HTML " + json[i]['exec_status'] + " code.";
+            cron_name.innerHTML = json[i]['name'];
+            cron_name.title = json[i]['description'];
+            cron_interval.innerHTML = json[i]['interval'];
+            cron_exec_time.interHTML = json[i]['exec_time'];
+            cron_exec_length.interHTML = json[i]['exec_length'];
+          }
+        }
+    };
+    xmlhttp.open("GET","cronjobs_helper.php?cronjobs",true);
+    xmlhttp.send();
+  }
  
  function GPSrefresh() {
     if (navigator.geolocation) {
@@ -232,19 +277,19 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
       "<br>Longitude: " + position.coords.longitude);
       
       
-      if (window.XMLHttpRequest) {
-            // code for IE7+, Firefox, Chrome, Opera, Safari
-            xmlhttp = new XMLHttpRequest();
-        } else {
-            // code for IE6, IE5
-            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-        xmlhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-            }
-        };
-        xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-        xmlhttp.send();
+    if (window.XMLHttpRequest) {
+          // code for IE7+, Firefox, Chrome, Opera, Safari
+          xmlhttp = new XMLHttpRequest();
+      } else {
+          // code for IE6, IE5
+          xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+      }
+      xmlhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+          }
+      };
+      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
+      xmlhttp.send();
     }
    
    
