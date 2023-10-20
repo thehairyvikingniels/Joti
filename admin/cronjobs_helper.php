@@ -60,14 +60,39 @@ if (isset($_GET['cronjobs'])) {
             $return[$i]['exec_length'] = $exec_length;
             $return[$i]['exec_status'] = $exec_status;
             $return[$i]['exec_next'] = $row['interval'] + strtotime($row['exec_time']) - time();
-            if ($return[$i]['exec_next'] <= 0) {
-                $return[$i]['exec_next'] = "executing...";
+            if ($row['enabled'] == 1) {
+                if ($return[$i]['exec_next'] <= 0) {
+                    $return[$i]['exec_next'] = "executing...";
+                } else {
+                    $return[$i]['exec_next'] .= " sec";
+                }
             } else {
-                $return[$i]['exec_next'] .= " sec";
+                $return[$i]['exec_next'] = " - disabled - ";
             }
             $i++;
         }
     }
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($return, true);     
+}
+
+if (isset($_GET['toggleCron'])) {
+    $sql = "SELECT enabled, name FROM Cronjobs WHERE name = '".$_GET['toggleCron']."'";
+    $result = $conn->query($sql);
+
+    if ($result->num_rows > 0) {
+        // output data of each row
+        while($row = $result->fetch_assoc()) {
+            if ($row['enabled'] == "1") {
+                $enabled = 0;
+            } else {
+                $enabled = 1;
+            }
+        }
+        $sql = "UPDATE Cronjobs SET enabled='".$enabled."' WHERE name='".$_GET['toggleCron']."'";
+
+        if ($conn->query($sql) === TRUE) {
+        echo "Record updated successfully";
+        }
+    }
 }

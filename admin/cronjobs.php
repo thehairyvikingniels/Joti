@@ -230,23 +230,42 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
   }, 6000);
 
   function toggleCron(name) {
-    console.log(name);
+    if (window.XMLHttpRequest) {
+          // code for IE7+, Firefox, Chrome, Opera, Safari
+          xmlhttp = new XMLHttpRequest();
+      } else {
+          // code for IE6, IE5
+          xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+      }
+      xmlhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            CronRefresh();
+          }
+      };
+      xmlhttp.open("GET","cronjobs_helper.php?toggleCron="+name,true);
+      xmlhttp.send();
   }
 
   function TimerRefresh() {
     for (let i = 0; i < countAmont; i++) {
       var timer = document.getElementById("cron_exec_next_" + i);
       var cron_start = document.getElementById("cron_start_" + i);
-      timer.innerHTML.replace(" sec", "");
-      if (timer.innerHTML != "executing...") {
-        timer.innerHTML = (parseInt(timer.innerHTML) - 1);
-        cron_start.className = "fas fa-play";
-        if (timer.innerHTML <= 0) {
-          timer.innerHTML = "executing...";
-          cron_start.className = "fas fa-sync-alt fa-spin";
-        } else {
-          timer.innerHTML += " sec";
-        }        
+      var cron_enabled = document.getElementById("cron_enabled_" + i);
+
+      if (cron_enabled.innerHTML.includes("off")) {
+        timer.innerHTML = " - disabled - ";
+      } else {
+        timer.innerHTML.replace(" sec", "");
+        if (timer.innerHTML != "executing...") {
+          timer.innerHTML = (parseInt(timer.innerHTML) - 1);
+          cron_start.className = "fas fa-play";
+          if (timer.innerHTML <= 0) {
+            timer.innerHTML = "executing...";
+            cron_start.className = "fas fa-sync-alt fa-spin";
+          } else {
+            timer.innerHTML += " sec";
+          }        
+        }
       }
     }
   }
