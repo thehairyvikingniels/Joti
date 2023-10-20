@@ -122,7 +122,8 @@ INNER JOIN
 	Gebruikers
     ON AB.gebruiker_id = Gebruikers.id
 GROUP BY
-	AB.auto) as bijrijders
+	AB.auto
+LIMIT 1) as bijrijders
 FROM 
   Auto 
 INNER JOIN 
