@@ -20,7 +20,7 @@ if (mysqli_num_rows($result) > 0) {
     }
 }
 
-$sql = "SELECT id, count(*) as NUM FROM Voslocaties WHERE type='Hint' GROUP BY ingestuurd_op";
+$sql = "SELECT id, count(*) as NUM FROM Voslocaties GROUP BY ingestuurd_op";
 $result = mysqli_query($conn, $sql);
 
 if (mysqli_num_rows($result) > 0) {
