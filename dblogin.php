@@ -9,6 +9,8 @@ $username = "maarleveld_one_joti";
 $password = "jVfxEi8VxemB7mTF";
 $dbname = "maarleveld_one_joti";
 
+date_default_timezone_set('Europe/Amsterdam');
+
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 // Check connection

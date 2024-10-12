@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: maarleveld.one.mysql.service.one.com:3306
--- Generation Time: Oct 18, 2023 at 12:32 PM
+-- Generation Time: Oct 19, 2023 at 07:04 PM
 -- Server version: 10.6.14-MariaDB-1:10.6.14+maria~ubu2204
 -- PHP Version: 8.1.2-1ubuntu2.14
 
@@ -57,6 +57,34 @@ CREATE TABLE `Auto_Positie` (
   `datumtijd` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `lat` float(8,6) NOT NULL,
   `lon` float(9,6) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Cronjobs`
+--
+
+CREATE TABLE `Cronjobs` (
+  `name` varchar(16) NOT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `URL` varchar(1024) NOT NULL,
+  `description` varchar(2048) NOT NULL,
+  `interval` int(4) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `Cronlogs`
+--
+
+CREATE TABLE `Cronlogs` (
+  `name` varchar(16) NOT NULL,
+  `exec_time` datetime NOT NULL,
+  `exec_length` int(11) NOT NULL,
+  `exec_stat` int(11) NOT NULL,
+  `exec_output` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -212,6 +240,19 @@ ALTER TABLE `Auto_Positie`
   ADD KEY `gebruiker_id` (`gebruiker_id`);
 
 --
+-- Indexes for table `Cronjobs`
+--
+ALTER TABLE `Cronjobs`
+  ADD PRIMARY KEY (`name`);
+
+--
+-- Indexes for table `Cronlogs`
+--
+ALTER TABLE `Cronlogs`
+  ADD PRIMARY KEY (`name`,`exec_time`),
+  ADD UNIQUE KEY `name` (`name`,`exec_time`);
+
+--
 -- Indexes for table `Gebruikers`
 --
 ALTER TABLE `Gebruikers`
@@ -299,6 +340,12 @@ ALTER TABLE `Auto_Bijrijders`
 ALTER TABLE `Auto_Positie`
   ADD CONSTRAINT `Auto_Positie_ibfk_2` FOREIGN KEY (`gebruiker_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `Auto_Positie_ibfk_3` FOREIGN KEY (`auto`) REFERENCES `Auto` (`kenteken`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `Cronlogs`
+--
+ALTER TABLE `Cronlogs`
+  ADD CONSTRAINT `Cronlogs_ibfk_1` FOREIGN KEY (`name`) REFERENCES `Cronjobs` (`name`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `Voslocaties`
