@@ -1,339 +1,307 @@
 <?php
 session_start();
-if (empty($_SESSION['id'])){
-  header("Location: index.php");
+if (!isset($_SESSION['id'])){
+  header("Location: index");
 }
-
 require("dblogin.php");
 
-if (isset($_GET['gpstoggle'])){
-  if ($_SESSION['gps'] == "true"){
-    $_SESSION['gps'] = "false";
-  } else {
-    $_SESSION['gps'] = "true";
-  }
-  header("Location: ".$_GET['return']."");
-  
-}
-  
-// elke x seconden gps locatie ophalen
-if (isset($_GET['lat']) AND isset($_GET['lon'])){
-  $time = date("Y-m-d H:i:s");
-  $sql = "SELECT auto FROM Auto_Bijrijders WHERE gebruiker_id = '".$_SESSION['id']."'";
-  $result = mysqli_query($conn, $sql);
-
-  if (mysqli_num_rows($result) > 0) {
-    // output data of each row
-    while($row = mysqli_fetch_assoc($result)) {
-      $sql = "INSERT INTO Auto_Positie (auto, gebruiker_id, datumtijd, lat, lon) VALUES ('".$row['auto']."', '".$_SESSION['id']."', '".$time."', '".$_GET['lat']."', '".$_GET['lon']."')";
-
-      if (mysqli_query($conn, $sql)) {
-          echo "Record updated successfully";
-      } else {
-          echo "Error updating record: " . mysqli_error($conn);
-      }
-    }
-  }
-  $sql = "UPDATE Gebruikers SET lat='".$_GET['lat']."', lon='".$_GET['lon']."', geotijd='".$time."' WHERE id='".$_SESSION['id']."'";
+if (isset($_GET['delauto'])){
+  $sql = "DELETE FROM Auto WHERE kenteken='".addslashes($_GET['delauto'])."'";
   if (mysqli_query($conn, $sql)) {
-      echo "Record updated successfully";
-  } else {
-      echo "Error updating record: " . mysqli_error($conn);
-  }
-}
-
-// Invulgegevens voor homebase
-if (isset($_GET['hunthintgedaan'])){
-  $sql = "UPDATE Voslocaties SET ingeleverd='1', ingeleverd_door='".$_SESSION['id']."' WHERE id=".$_GET['hunthintgedaan'];
-  
-  if (mysqli_query($conn, $sql)) {
-    header("Location: home");
-    die();
+    header("Location: autos");
   } else {
     echo "Error updating record: " . mysqli_error($conn);
   }
 }
 
-// Invulgegevens voor homebase
-if (isset($_GET['invulgegevens'])){
-  $sql = "SELECT * FROM Voslocaties WHERE ingeleverd='0' ORDER BY ingestuurd_op DESC";
-  $result = mysqli_query($conn, $sql);
-
-  if (mysqli_num_rows($result) > 0) {
-      echo "<table style='width:100%'>";
-      echo "<tr>";
-      echo "  <th>Code</th>";
-      echo "  <th>Type</th>";
-      echo "  <th>Tijd</th>";
-      echo "  <th></th>";
-      echo "</tr>";
-      while($row = mysqli_fetch_assoc($result)) {
-        echo "<tr>";
-        echo "  <td>".$row['code']."</td>";
-        echo "  <td>".$row['type']."</td>";
-        echo "  <td>".date("H:i",strtotime($row['ingestuurd_op']))."</td>";
-        echo "  <td><i class=\"fas fa-trash-alt\" onclick=\"document.getElementById('modal01').style.display='block';document.getElementById('opgestuurdurl').href='functies?hunthintgedaan=".$row['id']."';\"></i></td>";
-        echo "</tr>"; 
-      }
+if (isset($_POST['kenteken'])){
+  $sql = "INSERT INTO Auto (eigenaar, kenteken) VALUES ('".$_SESSION['id']."', '".addslashes($_POST['kenteken'])."') ON DUPLICATE KEY UPDATE eigenaar = eigenaar";
+  if (mysqli_query($conn, $sql)) {
   } else {
-    echo "<p>Hier verschijnen hunts die ingeleverd moeten worden bij de officiële jotihunt website</p>";
+    echo "Error: " . $sql . "<br>" . mysqli_error($conn);
   }
 }
 
-// autosonderweg ophalen
-if (isset($_GET['autos'])){
-  // rb
-  $locatie["lat"] = 51.98761;
-  $locatie["lon"] = 5.87620;
-  
-  $sql = "		  SELECT 
-  Gebruikers.voornaam as voornaam,
-  Auto.*,
-  (SELECT
-      lat
-  FROM 
-      Auto_Positie
-  WHERE
-      Auto = Auto.kenteken
-  ORDER BY
-      datumtijd DESC
-  LIMIT 1) as lat,
-  (SELECT
-      lon
-  FROM 
-      Auto_Positie
-  WHERE
-      Auto = Auto.kenteken
-  ORDER BY
-      datumtijd DESC
-  LIMIT 1) as lon,
-(SELECT
-      datumtijd
-  FROM 
-      Auto_Positie
-  WHERE
-      Auto = Auto.kenteken
-  ORDER BY
-      datumtijd DESC
-  LIMIT 1) as geotijd,
-  (SELECT GROUP_CONCAT(Gebruikers.voornaam)
-FROM Auto_Bijrijders AB
-INNER JOIN
-	Gebruikers
-    ON AB.gebruiker_id = Gebruikers.id
-GROUP BY
-	AB.auto
-LIMIT 1) as bijrijders
-FROM 
-  Auto 
-INNER JOIN 
-  Gebruikers
-    ON Auto.eigenaar = Gebruikers.id";
-  $result = mysqli_query($conn, $sql);
-  
-  if (mysqli_num_rows($result) > 0) {
-    echo "<table style='width:100%' class='w3-table-all'>";
+$sql = "SELECT * FROM Gebruikers WHERE id='".$_SESSION['id']."'";
+$result = mysqli_query($conn, $sql);
+
+if (mysqli_num_rows($result) > 0) {
     // output data of each row
     while($row = mysqli_fetch_assoc($result)) {
-      if(sqrt(pow(($locatie["lat"] - $row["lat"]),2) + pow(($locatie["lon"] - $row["lon"]),2)) >= 0.001){
-        $sunrise = date('Y-m-d H:i:s', strtotime('-900 seconds'));
-        $sunset = date('Y-m-d H:i:s', strtotime('+10 seconds'));
-        $date1 = DateTime::createFromFormat('Y-m-d H:i:s', $row['geotijd']);
-        $date2 = DateTime::createFromFormat('Y-m-d H:i:s', $sunrise);
-        $date3 = DateTime::createFromFormat('Y-m-d H:i:s', $sunset);
-        if ($date1 > $date2 && $date1 < $date3) {
-          $cars = "true";
-          echo '<tr>';
-          echo '  <td><i class="fas fa-car-side"></i> '.$row['kenteken'].'</td>';
-          echo '  <td><i class="fas fa-users"></i></i> '.$row['bijrijders'].'</td>';
-          echo '  <td><i class="fas fa-map-marker-alt"></i> <i>'.time2str($row['geotijd']).'</i></td>';
-          echo '</tr>';
+      $vn = $row['voornaam'];
+      $priv = $row['priv'];
+    }
+}
+
+if (isset($_POST['carid'])) {
+  if ($_POST['carid'] == "geen") {
+    $sql = "DELETE FROM Auto_Bijrijders WHERE gebruiker_id = '".$_SESSION['id']."'";
+  } else {
+    $sql = "INSERT INTO Auto_Bijrijders (auto, gebruiker_id) VALUES ('".addslashes($_POST['carid'])."','".$_SESSION['id']."') ON DUPLICATE KEY UPDATE auto = '".addslashes($_POST['carid'])."'";
+  }
+  $result = mysqli_query($conn, $sql);
+}
+?>
+<!DOCTYPE html>
+<html>
+<title>Jotihunt - De Geuzen</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
+
+<link rel="stylesheet" href="includes/numberPlate.css">
+<style>
+html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
+</style>
+<body class="w3-light-grey">
+
+<!-- Top container -->
+<div class="w3-bar w3-top w3-black w3-large" style="z-index:4">
+  <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey" onclick="w3_open();"><i class="fa fa-bars"></i>  Menu</button>
+  <span class="w3-bar-item w3-right">De Geuzen Arnhem</span>
+</div>
+
+<!-- Sidebar/menu -->
+<nav class="w3-sidebar w3-collapse w3-white w3-animate-left" style="z-index:3;width:200px;" id="mySidebar"><br>
+  <div class="w3-container w3-row">
+    <div class="w3-col s4">
+      <img src="media/geusje.png" class="w3-margin-right" style="width:46px">
+    </div>
+    <div class="w3-col s8 w3-bar">
+      <span>Welkom, <strong><?php echo ucfirst($vn); ?></strong></span><br>
+      <a href="index" class="w3-bar-item w3-button"><i class="fas fa-sign-out-alt"></i></a>
+      <a href="functies?gpstoggle=true&return=nieuws" class="w3-bar-item w3-button <?php if ($_SESSION['gps'] == "true"){echo "w3-green";}else{echo "w3-red";} ?>"><i class="fas fa-location-arrow"></i></a>
+    </div>
+  </div>
+  <hr>
+  <div class="w3-container">
+    <h5>Dashboard</h5>
+  </div>
+  <div class="w3-bar-block">
+    <a href="#" class="w3-bar-item w3-button w3-padding-16 w3-hide-large w3-dark-grey w3-hover-black" onclick="w3_close()" title="close menu"><i class="fa fa-remove fa-fw"></i>  Sluit Menu</a>
+    <a href="home" class="w3-bar-item w3-button w3-padding"><i class="fa fa-users fa-fw"></i>  Overzicht</a>
+    <?php if ($priv > 0){echo '<a href="kaarten" class="w3-bar-item w3-button w3-padding"><i class="fas fa-map-marked-alt fa-fw"></i>  Kaarten</a>';}?>
+    <?php if ($priv > 0){echo '<a href="hunts" class="w3-bar-item w3-button w3-padding"><i class="fas fa-map-marker-alt fa-fw"></i>  Hunt!</a>';}?>
+    <?php if ($priv > 0){echo '<a href="vossen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-bullseye fa-fw"></i>  Vossen</a>';}?>
+    <a href="nieuws" class="w3-bar-item w3-button w3-padding"><i class="far fa-newspaper fa-fw"></i>  Nieuws</a>
+    <a href="opdrachten" class="w3-bar-item w3-button w3-padding"><i class="far fa-bell fa-fw"></i>  Opdrachten</a>
+    <a href="hints" class="w3-bar-item w3-button w3-padding"><i class="fas fa-question-circle fa-fw"></i>  Hints</a>
+    <?php if ($priv > 0){echo '<a href="punten" class="w3-bar-item w3-button w3-padding"><i class="fas fa-trophy fa-fw"></i>  Punten</a>';}?>
+    <a href="groepen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-home fa-fw"></i>  Groepen</a>
+    <a href="instellingen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-cog fa-fw"></i>  Instellingen</a>
+    <?php if ($priv > 0){echo '<a href="autos" class="w3-bar-item w3-button w3-padding w3-blue"><i class="fas fa-car fa-fw"></i>  Auto\'s</a>';}?>
+    <?php if ($priv > 1){echo '<a href="admin" class="w3-bar-item w3-button w3-padding"><i class="fas fa-cogs fa-fw"></i>  Admin</a>';} ?><br><br>
+  </div>
+</nav>
+</nav>
+
+
+<!-- Overlay effect when opening sidebar on small screens -->
+<div class="w3-overlay w3-hide-large w3-animate-opacity" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
+
+<!-- !PAGE CONTENT! -->
+<div class="w3-main" style="margin-left:200px;margin-top:43px;">
+
+  <!-- Header -->
+  <header class="w3-container" style="padding-top:22px">
+    <h5><b><i class="fas fa-car fa-fw"></i>Auto's</b></h5>
+    <div class="w3-row">
+      <div class="w3-col l6 m12 s12 w3-padding">
+        <div class="w3-card-4 w3-white w3-padding">
+          <h5>Auto aanmaken</h5>
+          <form method="POST">    
+            <center>
+              <div class="form-control">
+                <div class="car-license">
+                  <abbr title="Netherlands" class="car-license__country-code">
+                    <svg class="svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20" height="20"
+                          aria-labelledby="euSymbol" role="img">
+                            <title id="euSymbol">EU symbol</title>
+                      <g id="s" transform="translate(150,30)" fill="#fc0">
+                        <g id="c">
+                          <path id="t" d="M 0,-20 V 0 H 10" transform="rotate(18 0,-20)"/>
+                          <use xlink:href="#t" transform="scale(-1,1)"/>
+                        </g>
+                        <use xlink:href="#c" transform="rotate(72)"/>
+                        <use xlink:href="#c" transform="rotate(144)"/>
+                        <use xlink:href="#c" transform="rotate(216)"/>
+                        <use xlink:href="#c" transform="rotate(288)"/>a
+                      </g>
+                      <use xlink:href="#s" transform="rotate(30 150,150) rotate(330 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(60 150,150) rotate(300 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(90 150,150) rotate(270 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(120 150,150) rotate(240 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(150 150,150) rotate(210 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(180 150,150) rotate(180 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(210 150,150) rotate(150 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(240 150,150) rotate(120 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(270 150,150) rotate(90 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(300 150,150) rotate(60 150,30)"/>
+                      <use xlink:href="#s" transform="rotate(330 150,150) rotate(30 150,30)"/>
+                    </svg>
+                    <span>NL</span>
+                  </abbr>
+                    <div class="car-license__form-control">
+                      <input type="text" class="car-license__input" id="input-kenteken" maxlength="8" autocomplete="off" name="kenteken" default="GE-LU-KT">  
+                      <span class="valid-message"></span>
+                    </div>
+                </div>
+              </div>
+            </center>
+            <center><button id="kentekenKnop" class="w3-button w3-disabled w3-ripple w3-margin w3-green" disabled>Aanmaken</button></center>
+          </form>
+          <hr>
+          <table class="w3-table-all" style="width:100%">
+            <tr class="w3-hide-small w3-hide-medium">
+              <th>Kenteken</th>
+              <th>Inzittenden</th>
+              <th>Eigenaar</th>
+              <th></th>
+            </tr>
+            <?php
+            $sql = "
+            SELECT 
+              CONCAT(UPPER(SUBSTRING(ge.voornaam,1,1)),LOWER(SUBSTRING(ge.voornaam,2))) as eigenaar,
+              ge.id as id,
+              a.kenteken as kenteken,
+              GROUP_CONCAT(CONCAT(UPPER(SUBSTRING(gb.voornaam,1,1)),LOWER(SUBSTRING(gb.voornaam,2))) SEPARATOR ', ') as inzittenden
+            FROM Auto a
+            LEFT JOIN Auto_Bijrijders ab
+              on a.kenteken = ab.auto
+            LEFT JOIN Gebruikers gb
+              on gb.id = ab.gebruiker_id
+            LEFT JOIN Gebruikers ge
+              on ge.id = a.eigenaar
+            GROUP BY a.kenteken
+            ";
+            $result = mysqli_query($conn, $sql);
+
+            if (mysqli_num_rows($result) > 0) {
+              // output data of each row
+              while($row = mysqli_fetch_assoc($result)) {
+                echo "<tr>";
+                echo "  <td>".strtoupper($row['kenteken'])."</td>";
+                echo "  <td class='w3-hide-small w3-hide-medium'>".$row['inzittenden']."</td>";
+                echo "  <td>".$row['eigenaar']."</td>";
+                if ($_SESSION['id'] == $row['id']){
+                  echo " <td class='w3-right'><a href='autos?delauto=".$row['kenteken']."'><i class=\"fas fa-trash\"></i></a></td>";
+                } else {
+                  echo "<td></td>";
+                }
+                echo "</tr>";
+                echo "<tr class='w3-hide-large'>";
+                echo "  <td colspan='4'>".$row['inzittenden']."</td>";
+                echo "</tr>";
+              }
+            }
+            ?>
+          </table>
+        </div>
+      </div>
+      <div class="w3-col l6 m6 s12 w3-padding">
+        <div class="w3-card-4 w3-white w3-padding">
+          <h5>Stap in / uit</h5>
+          <form method="POST">
+            <select class="w3-select" name="carid">
+              <option value="geen"  selected>Geen</option>
+              <?php
+              $sql = "SELECT a.kenteken, a.eigenaar, b.voornaam FROM Auto as a INNER JOIN Gebruikers as b ON a.eigenaar = b.id;";
+              $result = mysqli_query($conn, $sql);
+              if (mysqli_num_rows($result) > 0) {
+                while($row = mysqli_fetch_assoc($result)) {
+                  $bijrijders = json_decode($row['bijrijders'],true);
+                  echo "<option value=\"".$row['kenteken']."\">Auto ".$row['kenteken']." ".ucfirst($row['voornaam'])."</option>";
+                }
+              }
+            ?>
+            </select>  
+            <center><button type="submit" class="w3-button w3-green w3-margin">Vroem!</button></center>
+          </form>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Footer -->
+  <footer class="w3-container w3-padding-16 w3-dark-grey">
+    <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
+  </footer>
+
+  <!-- End page content -->
+</div>
+
+<!-- Number plate validation -->
+<script type="text/javascript" src="includes/numberPlate.js"></script>
+
+<script>
+// Get the Sidebar
+var mySidebar = document.getElementById("mySidebar");
+
+// Get the DIV with overlay effect
+var overlayBg = document.getElementById("myOverlay");
+
+// Toggle between showing and hiding the sidebar, and add overlay effect
+function w3_open() {
+    if (mySidebar.style.display === 'block') {
+        mySidebar.style.display = 'none';
+        overlayBg.style.display = "none";
+    } else {
+        mySidebar.style.display = 'block';
+        overlayBg.style.display = "block";
+    }
+}
+
+// Close the sidebar with the close button
+function w3_close() {
+    mySidebar.style.display = "none";
+    overlayBg.style.display = "none";
+}
+  </script>
+  <script>
+
+if ("<?php echo $_SESSION['gps']?>" == "true"){
+  setInterval(function() {
+    GPSrefresh();
+  }, 5555);
+}
+  
+ 
+ function GPSrefresh() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(showPosition);
+    } else {
+        console.log("Geolocation is not supported by this browser.");
+    }
+    function showPosition(position) {
+     console.log("Latitude: " + position.coords.latitude + 
+      "<br>Longitude: " + position.coords.longitude);
+      
+      
+      if (window.XMLHttpRequest) {
+            // code for IE7+, Firefox, Chrome, Opera, Safari
+            xmlhttp = new XMLHttpRequest();
+        } else {
+            // code for IE6, IE5
+            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
         }
-      }
+        xmlhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+            }
+        };
+        xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
+        xmlhttp.send();
     }
-    echo "</table>";
-  }
-  if (!isset($cars)){
-    echo "<p>Er zijn nu geen autos onderweg...</p>";
-  }
-}
+   
+   
 
-
-// gebeurtenissen ophalen
-if (isset($_GET['gebeurtenissen'])){
-  $a = 0;
-  $sql = "SELECT * FROM Opdrachten";
-  $result = mysqli_query($conn, $sql);
+ } 
   
-  if (mysqli_num_rows($result) > 0) {
-      // output data of each row
-      while($row = mysqli_fetch_assoc($result)) {
-        $data["$a"]["type"] = "Opdracht";
-        $data["$a"]["titel"] = $row['titel'];
-        $data["$a"]["datum"] = strtotime($row['datum']);
-        $a = count($data)+1;
-      }
-  }
-  $sql = "SELECT * FROM Hints";
-  $result = mysqli_query($conn, $sql);
   
-  if (mysqli_num_rows($result) > 0) {
-      // output data of each row
-      while($row = mysqli_fetch_assoc($result)) {
-        $data["$a"]["type"] = "Hint";
-        $data["$a"]["titel"] = $row['titel'];
-        $data["$a"]["datum"] = strtotime($row['datum']);
-        $a = count($data)+1;
-      }
-  }
-  
-  $sql = "SELECT * FROM Nieuws";
-  $result = mysqli_query($conn, $sql);
-  if (mysqli_num_rows($result) > 0) {
-      // output data of each row
-      while($row = mysqli_fetch_assoc($result)) {
-        $data["$a"]["type"] = "Nieuws";
-        $data["$a"]["titel"] = $row['titel'];
-        $data["$a"]["datum"] = strtotime($row['datum']);
-        $a = count($data)+1;
-      }
-  }
-  
-  $sql = "SELECT * FROM Voslocaties";
-  $result = mysqli_query($conn, $sql);
-  if (mysqli_num_rows($result) > 0) {
-      // output data of each row
-      while($row = mysqli_fetch_assoc($result)) {
-        $data["$a"]["type"] = $row['type'];
-        $data["$a"]["titel"] = ucfirst($row['deelgebied']);
-        $data["$a"]["datum"] = strtotime($row['ingestuurd_op']);
-        $a = count($data)+1;
-      }
-  }
-  
-  // sorteren van array
-  usort($data, function($a, $b) {
-      return $b['datum'] <=> $a['datum'];
-  });
-  $num = $_GET['gebeurtenissen'];
-  $data = array_slice($data, 0, $num);
-  echo '<table class="w3-table w3-striped w3-white" id="gebeurtenissentabel">';
-  // in tabel zetten
-  $z = 0;
-  foreach($data as $element){
-    $z++;
-    switch ($element["type"]) {
-        case "Opdracht":
-            $fa = "fa fa-bell w3-text-teal";
-            $url="opdrachten";
-            break;
-        case "Hint":
-            $fa = "fas fa-question-circle w3-text-blue";
-            $url="hints";
-            break;
-        case "Nieuws":
-            $fa = "far fa-newspaper w3-text-black";
-            $url="nieuws";
-            break;
-        case "Hunt":
-            $fa = "fas fa-bullseye w3-text-red";
-            $url="kaarten";
-            break;
-    }
-    echo '<tr id="tr_'.$z.'" class="" onclick="location.href=\''.$url.'\'">';
-    echo '<td><i class="'.$fa.' w3-large"></i> '.$element['type'].'</td>';
-    echo '<td>'.$element['titel'].'</td>';
-    echo '<td><i>'.time2str($element['datum']).'</i></td>';
-    echo '</tr>';
-  }
-  echo "</table>";
-  echo "<center><span id='meerknop' class='w3-button w3-green w3-round-xlarge' onclick='gebeurtenissen(". ($num+5) .")'>Meer resultaten</span></center>";
-}
+</script>
 
-if (isset($_GET['gebeurtenissenheadless'])){
-  $a = 0;
-  $sql = "SELECT * FROM Opdrachten";
-  $result = mysqli_query($conn, $sql);
-  
-  if (mysqli_num_rows($result) > 0) {
-      // output data of each row
-      while($row = mysqli_fetch_assoc($result)) {
-        $data["$a"]["type"] = "Opdracht";
-        $data["$a"]["titel"] = $row['titel'];
-        $data["$a"]["datum"] = strtotime($row['datum']);
-        $a = count($data)+1;
-      }
-  }
-  $sql = "SELECT * FROM Hints";
-  $result = mysqli_query($conn, $sql);
-  
-  if (mysqli_num_rows($result) > 0) {
-      // output data of each row
-      while($row = mysqli_fetch_assoc($result)) {
-        $data["$a"]["type"] = "Hint";
-        $data["$a"]["titel"] = $row['titel'];
-        $data["$a"]["datum"] = strtotime($row['datum']);
-        $a = count($data)+1;
-      }
-  }
-  
-  $sql = "SELECT * FROM Nieuws";
-  $result = mysqli_query($conn, $sql);
-  if (mysqli_num_rows($result) > 0) {
-      // output data of each row
-      while($row = mysqli_fetch_assoc($result)) {
-        $data["$a"]["type"] = "Nieuws";
-        $data["$a"]["titel"] = $row['titel'];
-        $data["$a"]["datum"] = strtotime($row['datum']);
-        $a = count($data)+1;
-      }
-  }
-  
-  $sql = "SELECT * FROM Voslocaties";
-  $result = mysqli_query($conn, $sql);
-  if (mysqli_num_rows($result) > 0) {
-      // output data of each row
-      while($row = mysqli_fetch_assoc($result)) {
-        $data["$a"]["type"] = $row['type'];
-        $data["$a"]["titel"] = $row['deelgebied'];
-        $data["$a"]["datum"] = strtotime($row['ingestuurd_op']);
-        $a = count($data)+1;
-      }
-  }
-  
-  // sorteren van array
-  usort($data, function($a, $b) {
-      return $b['datum'] <=> $a['datum'];
-  });
-  $data = array_slice($data, 0, 1);
-  foreach($data as $element){
-    echo "type: ".$element['type']." titel:".$element['titel']." datumtijd:".$element['datum'];
-  }
-}
-
-
-
-
-
-function gpslookup($lat, $lon){
-  $sql = "SELECT lat,lon,naam FROM Groepen";
-  $result = mysqli_query($conn, $sql);
-
-  if (mysqli_num_rows($result) > 0) {
-    // output data of each row
-    while($row = mysqli_fetch_assoc($result)) {
-      $locaties[$row['naam']]["lat"] = $row['lat'];
-      $locaties[$row['naam']]["lon"] = $row['lon'];
-    }
-  }
-  
-  foreach($locaties as $naam => $locatie) {
-    if(sqrt(pow(($locatie["lat"] - $lat),2) + pow(($locatie["lon"] - $lon),2)) <= 0.001){
-      return $naam;
-      break 1;
-    }
-  }
-}
-
-
-
+</body>
+</html>
