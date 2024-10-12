@@ -1,4 +1,7 @@
 <?php
+$sleep = intval(@$_GET['sleep']);
+sleep($sleep);
+
 define("NAME", "main");
 define("JOTI_URL", "https://jotihunt.nl");
 define("START_TIME", microtime(true));
