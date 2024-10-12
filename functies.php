@@ -56,7 +56,7 @@ if (isset($_GET['hunthintgedaan'])){
 
 // Invulgegevens voor homebase
 if (isset($_GET['invulgegevens'])){
-  $sql = "SELECT * FROM Voslocaties WHERE ingeleverd='0' AND type='Hunt' ORDER BY ingestuurd_op DESC";
+  $sql = "SELECT * FROM Voslocaties WHERE ingeleverd='0' ORDER BY ingestuurd_op DESC";
   $result = mysqli_query($conn, $sql);
 
   if (mysqli_num_rows($result) > 0) {
@@ -122,7 +122,8 @@ INNER JOIN
 	Gebruikers
     ON AB.gebruiker_id = Gebruikers.id
 GROUP BY
-	AB.auto) as bijrijders
+	AB.auto
+LIMIT 1) as bijrijders
 FROM 
   Auto 
 INNER JOIN 
