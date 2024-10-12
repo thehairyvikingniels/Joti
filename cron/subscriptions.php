@@ -34,7 +34,7 @@ $data = json_decode(file_get_contents(JOTI_URL."/api/2.0/subscriptions"),true);
 $a = 1;
 foreach($data["data"] as $key => $value){
   $sql = "INSERT INTO Groepen (id, naam, gebruikersnaam, straat, huisnummer, postcode, plaats, lat, lon, url, deelgebied) 
-          VALUES ('".($key + 1)."', '".addslashes($value['name'])."', 'null', '".addslashes($value['street'])."', '".strtoupper($value['housenumber'].$value['housenumber_addition'])."', '".strtoupper(str_replace(" ","",$value['postcode']))."', '".addslashes($value['city'])."', '".$value['lat']."', '".$value['long']."', 'null', '".$value['area']."')ON DUPLICATE KEY UPDATE deelgebied = '".$value['area']."'";
+          VALUES ('".($key + 1)."', '".addslashes($value['name'])."', 'null', '".addslashes($value['street'])."', '".strtoupper($value['housenumber'].$value['housenumber_addition'])."', '".strtoupper(str_replace(" ","",$value['postcode']))."', '".addslashes($value['city'])."', '".$value['lat']."', '".$value['long']."', 'null', '".@$value['area']."')ON DUPLICATE KEY UPDATE deelgebied = '".@$value['area']."'";
   if (mysqli_query($conn, $sql)) {
     log2DB($a." - ".$value['name']."<br>");
   } else {
@@ -43,28 +43,28 @@ foreach($data["data"] as $key => $value){
   $a ++;
 }
 $data = file_get_contents(JOTI_URL."/subscriptions");
-// $data = substr($data, strpos($data, '<tbody class="divide-y divide-gray-200 bg-white">')+50);
-// $data = explode("</tr>",$data);
-// $groups = array();
-// foreach($data as $key => $row) {
-//   $row = str_replace("<tr>","",$row);
-//   $column = explode("td>", $row);
-//   // get icon URL
-//   $groups[$key]["url"] = substr($column[0], strpos($column[0], 'src="')+5);
-//   $groups[$key]["url"] = substr($groups[$key]["url"], 0, strpos($groups[$key]["url"], '"'));
-//   // get group name
-//   $groups[$key]["name"] = substr($column[2], strpos($column[2], '">')+2);
-//   $groups[$key]["name"] = substr($groups[$key]["name"], 0, strpos($groups[$key]["name"], '<'));
-//   // get group coordinates
-//   $groups[$key]["coord"] = substr($column[4], strpos($column[4], '>')+1);
-//   $groups[$key]["coord"] = substr($groups[$key]["coord"], 0, strpos($groups[$key]["coord"], '<'));
+$data = substr($data, strpos($data, '<tbody class="divide-y divide-gray-200 bg-white">')+50);
+$data = explode("</tr>",$data);
+$groups = array();
+foreach($data as $key => $row) {
+  $row = str_replace("<tr>","",$row);
+  $column = explode("td>", $row);
+  // get icon URL
+  $groups[$key]["url"] = substr($column[0], strpos($column[0], 'src="')+5);
+  $groups[$key]["url"] = substr($groups[$key]["url"], 0, strpos($groups[$key]["url"], '"'));
+  // get group name
+  $groups[$key]["name"] = substr($column[2], strpos($column[2], '">')+2);
+  $groups[$key]["name"] = substr($groups[$key]["name"], 0, strpos($groups[$key]["name"], '<'));
+  // get group coordinates
+  $groups[$key]["coord"] = substr($column[3], strpos($column[3], '>')+1);
+  $groups[$key]["coord"] = substr($groups[$key]["coord"], 0, strpos($groups[$key]["coord"], '<'));
   
-//   // insert new data into database
-//   $sql = "UPDATE Groepen SET url = '".$groups[$key]["url"]."' WHERE CONCAT(LEFT(lat, 8), ', ', LEFT(lon,7)) = '".$groups[$key]["coord"]."'";
-//   if (mysqli_query($conn, $sql)) {
+  // insert new data into database
+  $sql = "UPDATE Groepen SET url = '".$groups[$key]["url"]."' WHERE CONCAT(LEFT(lat, 8), ', ', LEFT(lon,7)) = '".$groups[$key]["coord"]."'";
+  if (mysqli_query($conn, $sql)) {
     
-//   }
-// }
+  }
+}
 log2DB("-GROEPEN<br>");
 
 
