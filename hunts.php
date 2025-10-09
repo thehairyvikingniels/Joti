@@ -244,6 +244,10 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
           <option value="Foxtrot">Foxtrot</option>
 
+          <option value="Golf">Golf</option>
+
+          <option value="Hotel">Hotel</option>
+
         </select>
 
         <label>Tijd</label>

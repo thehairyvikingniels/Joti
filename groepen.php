@@ -245,8 +245,35 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
       echo '<ul id="tableSearchTable" class="w3-ul w3-card-4 w3-white">';
 
       while($row = mysqli_fetch_assoc($result)) {
-
-        if (ucfirst($row['deelgebied']) == "Alpha"){$color = "#9829FF";} elseif (ucfirst($row['deelgebied']) == "Bravo"){$color = "#2F9CEB";} elseif (ucfirst($row['deelgebied']) == "Charlie"){$color = "#2DFF69";} elseif (ucfirst($row['deelgebied']) == "Delta"){$color = "#F5F02C";} elseif (ucfirst($row['deelgebied']) == "Echo"){$color = "#FFA12E";} elseif (ucfirst($row['deelgebied']) == "Foxtrot"){$color = "#F52E2B";} else {$color = "#000000";}
+        switch (ucfirst($row['deelgebied'])) {
+          case "Alpha":
+            $color = "#9829FF";
+            break;
+          case "Bravo":
+            $color = "#2F9CEB";
+            break;
+          case "Charlie":
+            $color = "#2DFF69";
+            break;
+          case "Delta":
+            $color = "#F5F02C";
+            break;
+          case "Echo":
+            $color = "#FFA12E";
+            break;
+          case "Foxtrot":
+            $color = "#F52E2B";
+            break;
+          case "Golf":
+            $color = "#FF6F6F";
+            break;
+          case "Hotel":
+            $color = "#7E2EFF";
+            break;
+          default:
+            $color = "#000000";
+            break;
+        }
 
         echo '
 

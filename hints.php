@@ -105,7 +105,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   <?php
   $sql = "SELECT * FROM Hints ORDER BY datum DESC";
   $result = mysqli_query($conn, $sql);
-  $vossen = array("alpha", "bravo", "charlie", "delta", "echo", "foxtrot");
+  $vossen = array("alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel");
   if (mysqli_num_rows($result) > 0) {
       echo '<div class="w3-container">';
       echo '<ul class="w3-ul w3-card-4 w3-white">';
@@ -125,7 +125,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
             <span style="float: right;">'.date("d/m H:i", strtotime($row['datum'])).'<br></span>
           </div><br>
           <p>'.$doc->saveHTML().'</p>';
-          $subareas = array("alpha", "bravo", "charlie", "delta", "echo", "foxtrot");
+          $subareas = $vossen;
           $colors = array("#9829FF", "#2F9CEB", "#2DFF69", "#F5F02C", "#FFA12E", "#F52E2B");
           echo '<div class="w3-bar w3-blue-gray" style="display:flex; justify-content: space-around;flex-wrap:wrap;">';
           foreach($subareas as $key => $subarea) {

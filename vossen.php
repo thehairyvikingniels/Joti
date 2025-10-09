@@ -214,7 +214,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
 
 
-  $allevossen = array("alpha","bravo","charlie","delta","echo","foxtrot");      
+  $allevossen = array("alpha","bravo","charlie","delta","echo","foxtrot","golf","hotel");      
 
   foreach($allevossen as $vosnaam){
 
