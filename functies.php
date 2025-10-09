@@ -19,13 +19,13 @@ if (isset($_GET['gpstoggle'])){
 // elke x seconden gps locatie ophalen
 if (isset($_GET['lat']) AND isset($_GET['lon'])){
   $time = date("Y-m-d H:i:s");
-  $sql = "SELECT id FROM Autos WHERE bijrijders LIKE '%".$_SESSION['id']."%'";
+  $sql = "SELECT auto FROM Auto_Bijrijders WHERE gebruiker_id = '".$_SESSION['id']."'";
   $result = mysqli_query($conn, $sql);
 
   if (mysqli_num_rows($result) > 0) {
     // output data of each row
     while($row = mysqli_fetch_assoc($result)) {
-      $sql = "UPDATE Autos SET lat='".$_GET['lat']."', lon='".$_GET['lon']."', geotijd='".$time."' WHERE id='".$row['id']."'";
+      $sql = "INSERT INTO Auto_Positie (auto, gebruiker_id, datumtijd, lat, lon) VALUES ('".$row['auto']."', '".$_SESSION['id']."', '".$time."', '".$_GET['lat']."', '".$_GET['lon']."')";
 
       if (mysqli_query($conn, $sql)) {
           echo "Record updated successfully";
@@ -56,7 +56,7 @@ if (isset($_GET['hunthintgedaan'])){
 
 // Invulgegevens voor homebase
 if (isset($_GET['invulgegevens'])){
-  $sql = "SELECT * FROM Voslocaties WHERE ingeleverd='0' AND type='Hunt' ORDER BY ingestuurd_op DESC";
+  $sql = "SELECT * FROM Voslocaties WHERE ingeleverd='0' ORDER BY ingestuurd_op DESC";
   $result = mysqli_query($conn, $sql);
 
   if (mysqli_num_rows($result) > 0) {
@@ -71,7 +71,7 @@ if (isset($_GET['invulgegevens'])){
         echo "<tr>";
         echo "  <td>".$row['code']."</td>";
         echo "  <td>".$row['type']."</td>";
-        echo "  <td>".time2str($row['ingestuurd_op'])."</td>";
+        echo "  <td>".date("H:i",strtotime($row['ingestuurd_op']))."</td>";
         echo "  <td><i class=\"fas fa-trash-alt\" onclick=\"document.getElementById('modal01').style.display='block';document.getElementById('opgestuurdurl').href='functies?hunthintgedaan=".$row['id']."';\"></i></td>";
         echo "</tr>"; 
       }
@@ -86,7 +86,49 @@ if (isset($_GET['autos'])){
   $locatie["lat"] = 51.98761;
   $locatie["lon"] = 5.87620;
   
-  $sql = "SELECT Gebruikers.voornaam as voornaam, Autos.* FROM Autos INNER JOIN Gebruikers ON Autos.eigenaar = Gebruikers.id";
+  $sql = "		  SELECT 
+  Gebruikers.voornaam as voornaam,
+  Auto.*,
+  (SELECT
+      lat
+  FROM 
+      Auto_Positie
+  WHERE
+      Auto = Auto.kenteken
+  ORDER BY
+      datumtijd DESC
+  LIMIT 1) as lat,
+  (SELECT
+      lon
+  FROM 
+      Auto_Positie
+  WHERE
+      Auto = Auto.kenteken
+  ORDER BY
+      datumtijd DESC
+  LIMIT 1) as lon,
+(SELECT
+      datumtijd
+  FROM 
+      Auto_Positie
+  WHERE
+      Auto = Auto.kenteken
+  ORDER BY
+      datumtijd DESC
+  LIMIT 1) as geotijd,
+  (SELECT GROUP_CONCAT(Gebruikers.voornaam)
+FROM Auto_Bijrijders AB
+INNER JOIN
+	Gebruikers
+    ON AB.gebruiker_id = Gebruikers.id
+GROUP BY
+	AB.auto
+LIMIT 1) as bijrijders
+FROM 
+  Auto 
+INNER JOIN 
+  Gebruikers
+    ON Auto.eigenaar = Gebruikers.id";
   $result = mysqli_query($conn, $sql);
   
   if (mysqli_num_rows($result) > 0) {
@@ -101,12 +143,10 @@ if (isset($_GET['autos'])){
         $date3 = DateTime::createFromFormat('Y-m-d H:i:s', $sunset);
         if ($date1 > $date2 && $date1 < $date3) {
           $cars = "true";
-          $bijrijders[] = $row['voornaam'];
-          $bijrijders = array_merge($bijrijders,json_decode($row['bijrijders'],true));
           echo '<tr>';
-          echo '  <td>Auto '.$row['id'].'</td>';
-          echo '  <td>'.implode(", ",array_unique($bijrijders)).'</td>';
-          echo '  <td><i>'.time2str($row['geotijd']).'</i></td>';
+          echo '  <td><i class="fas fa-car-side"></i> '.$row['kenteken'].'</td>';
+          echo '  <td><i class="fas fa-users"></i></i> '.$row['bijrijders'].'</td>';
+          echo '  <td><i class="fas fa-map-marker-alt"></i> <i>'.time2str($row['geotijd']).'</i></td>';
           echo '</tr>';
         }
       }

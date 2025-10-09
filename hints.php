@@ -19,6 +19,16 @@ if (mysqli_num_rows($result) > 0) {
 }
 
 
+if (isset($_POST['subarea']) && isset($_POST['rdX']) && isset($_POST['rdY'])) {
+  $latlon = rdtowgs($_POST['rdX'], $_POST['rdY']);
+
+  $sql = "INSERT INTO Voslocaties (ingestuurd_op, type, deelgebied, ingeleverd, coordinaat_x, coordinaat_y, code)
+  VALUES ('".date("Y-m-d H:i:s")."','Hint',  '".addslashes($_POST['subarea'])."', '0', '".$latlon["lat"]."', '".$latlon["lon"]."', '".$_POST['subarea']." ".$_POST['rdX']." ".$_POST['rdY']."')";
+
+  if ($conn->query($sql) === TRUE) {
+    echo "New record created successfully";
+  }
+}
 
 
 ?>
@@ -72,7 +82,9 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <a href="groepen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-home fa-fw"></i>  Groepen</a>
     <a href="instellingen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-cog fa-fw"></i>  Instellingen</a>
     <?php if ($priv > 0){echo '<a href="autos" class="w3-bar-item w3-button w3-padding"><i class="fas fa-car fa-fw"></i>  Auto\'s</a>';}?>
-    <?php if ($priv > 1){echo '<a href="admin" class="w3-bar-item w3-button w3-padding"><i class="fas fa-cogs fa-fw"></i>  Admin</a>';} ?><br><br>
+    <?php if ($priv > 1){echo '<a href="admin/users" class="w3-bar-item w3-button w3-padding"><i class="fas fa-user-cog fa-fw"></i>  [Admin] Users</a>';} ?>
+    <?php if ($priv > 1){echo '<a href="admin/cronjobs" class="w3-bar-item w3-button w3-padding"><i class="fas fa-stopwatch fa-fw"></i>  [Admin] Cronjobs</a>';} ?>
+    <?php if ($priv > 1){echo '<a href="admin/database" class="w3-bar-item w3-button w3-padding"><i class="fas fa-database fa-fw"></i>  [Admin] Database</a>';} ?><br><br>
   </div>
 </nav>
 </nav>
@@ -89,38 +101,48 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <h5><b><i class="fas fa-question-circle fa-fw"></i> Hints</b></h5>
   </header>
 
-  <div class="w3-row-padding w3-margin-bottom">
+  <div class="w3-row-padding" style="margin-bottom:100px;">
   <?php
   $sql = "SELECT * FROM Hints ORDER BY datum DESC";
   $result = mysqli_query($conn, $sql);
-  $vossen = array("alpha", "bravo", "charlie", "delta", "echo", "foxtrot");
+  $vossen = array("alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel");
   if (mysqli_num_rows($result) > 0) {
       echo '<div class="w3-container">';
       echo '<ul class="w3-ul w3-card-4 w3-white">';
       while($row = mysqli_fetch_assoc($result)) {
+        $content = $row['inhoud'];
+        $doc=new DOMDocument();
+        @$doc->loadHTML($content);
+        $imgNodes = $doc->getElementsByTagName('img');
+        foreach($imgNodes as $node) {
+          $node->setAttribute('width', '100%');
+          $node->removeAttribute('height');
+        }
         echo '
         <li class="w3-padding-16">
-          <div class="w3-bar w3-blue-gray w3-padding w3-round-xlarge">
+          <div class="w3-bar w3-blue-gray w3-padding w3-round-large">
             <span class="w3-xlarge">'.$row['titel'].'</span>
-            <span style="float: right;">'.time2str($row['datum']).'<br></span>
+            <span style="float: right;">'.date("d/m H:i", strtotime($row['datum'])).'<br></span>
           </div><br>
-          <p>'.$row['inhoud'].'</p>';
-        
-//         foreach ($vossen as $vos){
-//           if ($row["$vos"] != "null"){
-//             echo '<div class="w3-row-padding w3-margin-bottom">';
-//             echo "<h6>".$vos."</h6>";
-//             $z = count(json_decode($row["$vos"],true));
-//             $z = 100/$z;
-//             foreach (json_decode($row["$vos"],true) as $vosfoto){
-//               echo '<img style="width:'.$z.'%" src="'.$vosfoto.'" alt="Foto">';
-//             }
-//             echo '</div>';
-//           }
-
-//         }
-        
+          <p>'.$doc->saveHTML().'</p>';
+          $subareas = $vossen;
+          $colors = array("#9829FF", "#2F9CEB", "#2DFF69", "#F5F02C", "#FFA12E", "#F52E2B");
+          echo '<div class="w3-bar w3-blue-gray" style="display:flex; justify-content: space-around;flex-wrap:wrap;">';
+          foreach($subareas as $key => $subarea) {
+            echo '
+          <form action="hints.php" method="POST">
+          <div class="w3-card w3-white w3-padding-small w3-display-container w3-margin-small" style="flex-grow: 1; display:flex; align-items: center; justify-content: space-between;">
+            <span style="width:80px; background-color:'.$colors[$key].'" class="w3-center">'.ucfirst($subarea).'</span>
+            <div style="flex-shrink :1; max-width:75px"><input type="number" style="width:100%" id="rdX" name="rdX"></div>
+            <div style="flex-shrink :1; max-width:75px"><input type="number" style="width:100%" id="rdY" name="rdY"></div>
+            <input type="hidden" id="subarea" name="subarea" value="'.$subarea.'"> 
+            <div class="w3-button w3-teal">Probeer</div>
+            <button class="w3-button w3-green" type="submit">Opslaan</button>
+          </div>
+          </form>';
+          }
         echo '
+          </div>
         </li>
         ';
       }
@@ -132,7 +154,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   ?>
   </div>
   <!-- Footer -->
-  <footer class="w3-container w3-padding-16 w3-dark-grey">
+  <footer class="w3-container w3-dark-grey w3-bottom">
     <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
   </footer>
 
