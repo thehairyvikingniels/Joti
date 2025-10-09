@@ -62,8 +62,8 @@ foreach($data["data"] as $value){
 }
 if ($statusChanged) {
 
-  $sql = "INSERT INTO Voslog (datumtijd, alpha, bravo, charlie, delta, echo, foxtrot)
-  VALUES ('".date("Y-m-d H:i:s", $updatedAt)."','".$alpha_status."','".$bravo_status."','".$charlie_status."','".$delta_status."','".$echo_status."','".$foxtrot_status."')";
+  $sql = "INSERT INTO Voslog (datumtijd, alpha, bravo, charlie, delta, echo, foxtrot, golf, hotel)
+  VALUES ('".date("Y-m-d H:i:s", $updatedAt)."','".$alpha_status."','".$bravo_status."','".$charlie_status."','".$delta_status."','".$echo_status."','".$foxtrot_status."','".$golf_status."','".$hotel_status."')";
   
   if (!mysqli_query($conn, $sql)) {
     log2DB("Error: " . $sql . "<br>" . mysqli_error($conn));
