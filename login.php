@@ -58,6 +58,12 @@ if (isset($_POST['pswd1'])){
         $_SESSION['id'] = $row['id'];
         $_SESSION['priv'] = $row['priv'];
         $_SESSION['gps'] = "false";
+        // show welcome modal on next page load for new users (priv == 0)
+        if ($row['priv'] == 0) {
+          $_SESSION['show_welcome_modal'] = true;
+        } else {
+          unset($_SESSION['show_welcome_modal']);
+        }
         header("Location: home");        
       }
   } else {

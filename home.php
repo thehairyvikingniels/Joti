@@ -556,6 +556,120 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
 </div>
 
+<!-- Welcome modal (lorem ipsum title/content) -->
+<?php
+// show welcome modal once after login for priv 0
+if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] === true && isset($_SESSION['priv']) && $_SESSION['priv'] == 0) {
+  // unset immediately so it won't show on refresh
+  unset($_SESSION['show_welcome_modal']);
+  ?>
+  <div id="welcomeModal" class="w3-modal">
+    <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width:600px">
+      <header class="w3-container w3-theme-d1"> 
+        <h2>Welkom bij de Jotihunt van de Geuzen Arnhem!</h2>
+      </header>
+      <div class="w3-container w3-padding">
+        <p>
+          Hoi <?php echo ucfirst($vn); ?>, als nieuwe gebruiker van dit platform willen we je graag welkom heten!
+        </p>
+        <p>
+          Dit platform is speciaal ontwikkeld voor de Jotihunt en biedt verschillende functies om je ervaring te verbeteren. Hier zijn enkele belangrijke punten om te weten:
+        </p>
+        <ul>
+          <li>Je kunt eenvoudig hints opvragen en opdrachten bekijken via het menu.</li>
+          <li>Je locatie kan worden gedeeld met de homebase. Dit kun je aan- of uitzetten met de GPS-knop linksbovenin.</li>
+          <li>Voor vragen of problemen kun je altijd contact opnemen met de organisatie.</li>
+        </ul>
+        <p>
+          <strong>Jij hebt op dit moment nog geen extra rechten, maar deze kan je aanvragen bij de volgende gebruikers:</strong>
+        </p>
+        <ul>
+          <?php
+          $sql = "SELECT voornaam, achternaam FROM Gebruikers WHERE priv > 1 ORDER BY voornaam ASC";
+          $result = mysqli_query($conn, $sql);
+          if (mysqli_num_rows($result) > 0) {
+            while($row = mysqli_fetch_assoc($result)) {
+              echo '<li>'.ucfirst($row['voornaam']).' '.ucfirst($row['achternaam']).'</li>';
+            }
+          } else {
+            echo '<li>Geen gebruikers met extra rechten gevonden...</br>Als je beheerder bent dien je dat handmatig te doen via de database door de kolomn priv van 0 of 1 naar 2 aan te passen.</li>';
+          }
+          ?>
+        </ul>
+      </div>
+      <footer class="w3-container w3-theme-d1 w3-padding">
+        <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px;">
+          <div id="closeWrap" style="position:relative; display:inline-block; min-width:160px;">
+            <!-- disabled button with countdown -->
+            <button id="welcomeClose" class="w3-button w3-green w3-round w3-disabled" disabled
+                    style="position:relative; z-index:2; opacity:0.65; min-width:160px; display:flex; align-items:center; justify-content:center; gap:8px;">
+              <span id="closeLabel">Sluiten</span>
+              <span id="closeCountdown" style="opacity:0.9;">(7s)</span>
+            </button>
+            <!-- green progress overlay that fills the button -->
+            <div id="welcomeProgress" style="position:absolute; left:0; top:0; height:100%; background:rgba(34,177,76,0.18); width:0%; border-radius:8px; z-index:1; pointer-events:none;"></div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    // auto-open welcome modal on page load and force 7s read-delay with countdown
+    (function() {
+      window.addEventListener('load', function() {
+        var modal = document.getElementById('welcomeModal');
+        if (!modal) return;
+        modal.style.display = 'block';
+
+        var closeBtn = document.getElementById('welcomeClose');
+        var progress = document.getElementById('welcomeProgress');
+        var countdownEl = document.getElementById('closeCountdown');
+        var duration = 7000; // milliseconds
+        var start = Date.now();
+
+        // update loop using requestAnimationFrame for smooth progress + 1s steps for countdown
+        var raf;
+        function tick() {
+          var elapsed = Date.now() - start;
+          var pct = Math.min(100, (elapsed / duration) * 100);
+          progress.style.width = pct + '%';
+
+          var remaining = Math.max(0, Math.ceil((duration - elapsed) / 1000));
+          // show "(Ns)" until finished
+          if (remaining > 0) {
+            countdownEl.textContent = '(' + remaining + 's)';
+          } else {
+            countdownEl.style.display = 'none';
+          }
+
+          if (elapsed < duration) {
+            raf = requestAnimationFrame(tick);
+          } else {
+            // enable button after duration
+            closeBtn.disabled = false;
+            closeBtn.classList.remove('w3-disabled');
+            closeBtn.style.opacity = '1';
+            progress.style.display = 'none';
+            cancelAnimationFrame(raf);
+          }
+        }
+        // start anim
+        tick();
+
+        // close handler (only effective after enabled)
+        closeBtn.addEventListener('click', function() {
+          if (!closeBtn.disabled) {
+            modal.style.display = 'none';
+          }
+        });
+      });
+    })();
+  </script>
+  <?php
+}
+?>
+
 <input type="hidden" id="hgtyhgty">
 
     <!-- The core Firebase JS SDK is always required and must be listed first -->
