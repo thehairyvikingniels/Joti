@@ -32,7 +32,7 @@ session_destroy();
               <h1 class="w3-center">Login</h1>
             </header>
             <div class="w3-container w3-theme-l4">
-              <center><img class="w3-margin" src="media/jotihunt2024_achtergrondloos.png" style="width:60%"></center>
+              <center><img class="w3-margin" src="media/geusje_bevosd.png" style="width:60%"></center>
               
               <?php
               if (isset($_GET['error'])){
