@@ -268,7 +268,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
             $color = "#FF6F6F";
             break;
           case "Hotel":
-            $color = "#7E2EFF";
+            $color = "#00BFA5";
             break;
           default:
             $color = "#000000";
