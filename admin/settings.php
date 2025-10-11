@@ -162,9 +162,9 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
     <?php if ($priv > 1){echo '<a href="cronjobs" class="w3-bar-item w3-button w3-padding"><i class="fas fa-stopwatch fa-fw"></i>  [Admin] Cronjobs</a>';} ?>
 
-    <?php if ($priv > 1){echo '<a href="database" class="w3-bar-item w3-button w3-padding w3-blue"><i class="fas fa-database fa-fw"></i>  [Admin] Database</a>';} ?>
+    <?php if ($priv > 1){echo '<a href="database" class="w3-bar-item w3-button w3-padding"><i class="fas fa-database fa-fw"></i>  [Admin] Database</a>';} ?>
 
-    <?php if ($priv > 1){echo '<a href="settings" class="w3-bar-item w3-button w3-padding"><i class="fas fa-toolbox fa-fw"></i>  [Admin] Settings</a>';} ?>
+    <?php if ($priv > 1){echo '<a href="settings" class="w3-bar-item w3-button w3-padding w3-blue"><i class="fas fa-toolbox fa-fw"></i>  [Admin] Settings</a>';} ?>
 
     <br><br>
 
