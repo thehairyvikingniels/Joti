@@ -25,9 +25,9 @@ For use by all members of the scout group. Other groups may fork the repo and ad
 2. Configure DB credentials:
 - Edit dblogin.php and set your DB server, user and password.
 
-3. Create an admin account:
+3. Create an superadmin account:
 - Create a user account through the portal UI.
-- In the database, set that user's `priv` = 2 to grant admin access.
+- In the database, set that user's `priv` = 3 to grant admin access.
 
 ### Notes about configuration and secrets
 - DB credentials are stored in dblogin.php. Change them to match your environment.
