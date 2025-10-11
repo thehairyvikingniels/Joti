@@ -183,9 +183,7 @@ if (mysqli_num_rows($result) > 0) {
 
   </div>
   <!-- Footer -->
-  <footer class="w3-container w3-padding-16 w3-dark-grey w3-bottom">
-    <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p></center>
-  </footer>
+  <?php require_once('../includes/footer.php') ?>
 
   <!-- End page content -->
 </div>

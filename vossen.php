@@ -413,10 +413,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     </div>
   </div>
 
-
-  <!-- Footer --><footer class="w3-container w3-padding-16 w3-dark-grey">
-    <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
-  </footer>
+  <!-- Footer -->
+  <?php require_once('includes/footer.php') ?>
 
   <!-- End page content --></div>
 

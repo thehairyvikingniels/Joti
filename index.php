@@ -56,10 +56,8 @@ session_destroy();
               </form>
             </div>
         </div>
-    <!-- Footer -->
-        <footer class="w3-container w3-theme-d5 w3-padding-16" style="width:100%;">
-      <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
-    </footer>
+        <!-- Footer -->
+        <?php require_once('includes/footer.php') ?>
       </div>
       <div id="modal01" class="w3-modal">
           <div class="w3-modal-content w3-card-4 w3-animate-top" style="max-width:400px">
