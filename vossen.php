@@ -21,15 +21,24 @@ if (mysqli_num_rows($result) > 0) {
     exit();
 }
 
-// Fetch game start and end times from settings
-$settings_sql = "SELECT Waarde FROM Site_Instellingen WHERE Instelling IN ('GAME_STARTDATE', 'GAME_ENDDATE') ORDER BY Instelling";
+// Fetch game and fox exchange times from settings
+$settings_sql = "SELECT Instelling, Waarde FROM Site_Instellingen WHERE Instelling IN ('GAME_STARTDATE', 'GAME_ENDDATE', 'FOXEXCHANGE_STARTDATE', 'FOXEXCHANGE_ENDDATE')";
 $settings_result = mysqli_query($conn, $settings_sql);
-$game_times = mysqli_fetch_all($settings_result);
-$game_start_str = $game_times[1][0] ?? '2025-10-11 10:00:00';
-$game_end_str = $game_times[0][0] ?? '2025-10-12 12:00:00';
+$settings = [];
+while($row = mysqli_fetch_assoc($settings_result)) {
+    $settings[$row['Instelling']] = $row['Waarde'];
+}
+
+$game_start_str = $settings['GAME_STARTDATE'] ?? '2025-10-11 10:00:00';
+$game_end_str = $settings['GAME_ENDDATE'] ?? '2025-10-12 12:00:00';
+$fox_exchange_start_str = $settings['FOXEXCHANGE_STARTDATE'] ?? '2025-10-11 22:45:00';
+$fox_exchange_end_str = $settings['FOXEXCHANGE_ENDDATE'] ?? '2025-10-11 23:15:00';
+
 
 $game_start_time = new DateTime($game_start_str);
 $game_end_time = new DateTime($game_end_str);
+$fox_exchange_start_time = new DateTime($fox_exchange_start_str);
+$fox_exchange_end_time = new DateTime($fox_exchange_end_str);
 $now = new DateTime();
 
 // Calculate total game duration in seconds for timeline calculation
@@ -40,7 +49,7 @@ if ($total_duration_seconds <= 0) {
 
 
 // Fetch all voslog data
-$voslog_sql = "SELECT * FROM Voslog WHERE datumtijd >= '".$game_start_time->format('Y-m-d H:i:s')."' AND datumtijd <= '".$game_end_time->format('Y-m-d H:i:s')."' ORDER BY datumtijd ASC";
+$voslog_sql = "SELECT * FROM Voslog WHERE datumtijd >= '".$game_start_time->format('Y-m-d H-i-s')."' AND datumtijd <= '".$game_end_time->format('Y-m-d H-i-s')."' ORDER BY datumtijd ASC";
 $voslog_result = mysqli_query($conn, $voslog_sql);
 
 $voslog_data = [];
@@ -55,6 +64,68 @@ $status_colors = [
     2 => 'w3-green'   // Green
 ];
 $future_color = 'w3-light-grey'; // Grey for future
+
+// --- STATS CALCULATION ---
+$stats = [];
+
+// Helper function to format seconds into HH:MM:SS
+function format_seconds($seconds) {
+    $h = floor($seconds / 3600);
+    $m = floor(($seconds % 3600) / 60);
+    $s = $seconds % 60;
+    return sprintf('%02d:%02d:%02d', $h, $m, $s);
+}
+
+foreach ($fox_teams as $team) {
+    $stats[$team] = [
+        'spelhelft1' => [0 => 0, 1 => 0, 2 => 0, 'total' => 0],
+        'spelhelft2' => [0 => 0, 1 => 0, 2 => 0, 'total' => 0],
+    ];
+
+    $last_time = clone $game_start_time;
+    $last_status = 2; // Assume start status is green
+
+    $all_events = $voslog_data;
+    $end_marker_time = ($now < $game_end_time) ? clone $now : clone $game_end_time;
+    $all_events[] = ['datumtijd' => $end_marker_time->format('Y-m-d H:i:s')];
+    
+    foreach ($all_events as $log) {
+        $event_time = new DateTime($log['datumtijd']);
+        if ($event_time <= $last_time || $last_time >= $now) continue;
+
+        $segment_end_time = ($event_time < $now) ? clone $event_time : clone $now;
+        $duration = $segment_end_time->getTimestamp() - $last_time->getTimestamp();
+
+        if ($duration > 0) {
+            // Determine which Spelhelft this segment belongs to
+            if ($last_time < $fox_exchange_end_time) {
+                $spelhelft = 'spelhelft1';
+                $spelhelft_end = $fox_exchange_end_time;
+            } else {
+                $spelhelft = 'spelhelft2';
+                $spelhelft_end = $game_end_time;
+            }
+
+            // If the segment crosses the exchange boundary, split it
+            if ($segment_end_time > $spelhelft_end && $last_time < $spelhelft_end) {
+                $duration1 = $spelhelft_end->getTimestamp() - $last_time->getTimestamp();
+                $stats[$team][$spelhelft][$last_status] += $duration1;
+
+                $spelhelft = 'spelhelft2'; // The rest is in the next half
+                $duration2 = $segment_end_time->getTimestamp() - $spelhelft_end->getTimestamp();
+                 $stats[$team][$spelhelft][$last_status] += $duration2;
+            } else {
+                $stats[$team][$spelhelft][$last_status] += $duration;
+            }
+        }
+        
+        $last_time = $event_time;
+        if (isset($log[$team])) {
+            $last_status = $log[$team];
+        }
+    }
+}
+
 
 ?>
 <!DOCTYPE html>
@@ -124,7 +195,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     bottom: 0;
     width: 3px;
     background-color: #0000ff;
-    z-index: 10;
+    z-index: 1;
     /* Responsive position calculated using a CSS variable set in PHP */
     /* Mobile-first: for s2/m2 columns (16.667%) */
     left: calc(16.66667% + (83.33333% / 100 * var(--now-percentage)));
@@ -285,6 +356,63 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
         </div>
     </div>
   </div>
+
+  <div class="w3-container w3-padding">
+    <div class="w3-card-4 w3-white">
+        <div class="w3-container w3-blue-gray">
+            <h5>Vossen Statistieken</h5>
+        </div>
+        <div class="w3-container w3-padding w3-responsive">
+            <table class="w3-table-all">
+                <thead>
+                    <tr class="w3-light-grey">
+                        <th>Vos</th>
+                        <th class="w3-center">Spelhelft</th>
+                        <th class="w3-center w3-green">Lopend</th>
+                        <th class="w3-center w3-orange">Kleine Verpl.</th>
+                        <th class="w3-center w3-red">Grote Verpl.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($fox_teams as $team): ?>
+                        <tr>
+                            <td rowspan="2" style="vertical-align: middle;"><b><?php echo ucfirst($team); ?></b></td>
+                            <td class="w3-center">Spelhelft 1</td>
+                            <td class="w3-center">
+                                <?php echo format_seconds($stats[$team]['spelhelft1'][2]); ?><br>
+                                <small>(<?php echo $stats[$team]['spelhelft1']['total'] > 0 ? round($stats[$team]['spelhelft1'][2] / $stats[$team]['spelhelft1']['total'] * 100, 1) : 0; ?>%)</small>
+                            </td>
+                            <td class="w3-center">
+                                <?php echo format_seconds($stats[$team]['spelhelft1'][1]); ?><br>
+                                <small>(<?php echo $stats[$team]['spelhelft1']['total'] > 0 ? round($stats[$team]['spelhelft1'][1] / $stats[$team]['spelhelft1']['total'] * 100, 1) : 0; ?>%)</small>
+                            </td>
+                            <td class="w3-center">
+                                <?php echo format_seconds($stats[$team]['spelhelft1'][0]); ?><br>
+                                <small>(<?php echo $stats[$team]['spelhelft1']['total'] > 0 ? round($stats[$team]['spelhelft1'][0] / $stats[$team]['spelhelft1']['total'] * 100, 1) : 0; ?>%)</small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="w3-center">Spelhelft 2</td>
+                            <td class="w3-center">
+                                <?php echo format_seconds($stats[$team]['spelhelft2'][2]); ?><br>
+                                <small>(<?php echo $stats[$team]['spelhelft2']['total'] > 0 ? round($stats[$team]['spelhelft2'][2] / $stats[$team]['spelhelft2']['total'] * 100, 1) : 0; ?>%)</small>
+                            </td>
+                            <td class="w3-center">
+                                <?php echo format_seconds($stats[$team]['spelhelft2'][1]); ?><br>
+                                <small>(<?php echo $stats[$team]['spelhelft2']['total'] > 0 ? round($stats[$team]['spelhelft2'][1] / $stats[$team]['spelhelft2']['total'] * 100, 1) : 0; ?>%)</small>
+                            </td>
+                            <td class="w3-center">
+                                <?php echo format_seconds($stats[$team]['spelhelft2'][0]); ?><br>
+                                <small>(<?php echo $stats[$team]['spelhelft2']['total'] > 0 ? round($stats[$team]['spelhelft2'][0] / $stats[$team]['spelhelft2']['total'] * 100, 1) : 0; ?>%)</small>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+  </div>
+
 
   <!-- Footer --><footer class="w3-container w3-padding-16 w3-dark-grey">
     <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
