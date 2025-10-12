@@ -1,4 +1,6 @@
 <?php
+define("PAGE_NAME", "a_cronjobs");
+
 session_start();
 if (!isset($_SESSION['id'])){
   header("Location: ../index");
@@ -17,6 +19,21 @@ if (mysqli_num_rows($result) > 0) {
 }
 if ($priv < 2){
   header("Location: ../home");
+}
+
+// Get global site settings
+$sql = "SELECT * FROM Site_Instellingen";
+$result = mysqli_query($conn, $sql);
+
+$siteSettings = array();
+
+if (mysqli_num_rows($result) > 0) {
+    while($row = mysqli_fetch_assoc($result)) {
+      $siteSettings[$row['Instelling']] = $row['Waarde'];
+    }
+} else {
+    echo "0 results";
+    exit();
 }
 
 if (isset($_POST["user"]) && isset($_POST['priv'])){
@@ -56,47 +73,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   <span class="w3-bar-item w3-right">De Geuzen Arnhem</span>
 </div>
 
-<!-- Sidebar/menu -->
-<nav class="w3-sidebar w3-collapse w3-white w3-animate-left" style="z-index:3;width:200px;" id="mySidebar"><br>
-  <div class="w3-container w3-row">
-    <div class="w3-col s4">
-      <img src="../media/geusje.png" class="w3-margin-right" style="width:46px">
-    </div>
-    <div class="w3-col s8 w3-bar">
-      <span>Welkom, <strong><?php echo ucfirst($vn); ?></strong></span><br>
-      <a href="index" class="w3-bar-item w3-button"><i class="fas fa-sign-out-alt"></i></a>
-      <a href="functies?gpstoggle=true&return=instellingen" class="w3-bar-item w3-button <?php if ($_SESSION['gps'] == "true"){echo "w3-green";}else{echo "w3-red";} ?>"><i class="fas fa-location-arrow"></i></a>
-    </div>
-  </div>
-  <hr>
-  <div class="w3-container">
-    <h5>Dashboard</h5>
-  </div>
-  <div class="w3-bar-block">
-    <a href="#" class="w3-bar-item w3-button w3-padding-16 w3-hide-large w3-dark-grey w3-hover-black" onclick="w3_close()" title="close menu"><i class="fa fa-remove fa-fw"></i>  Sluit Menu</a>
-    <a href="../home" class="w3-bar-item w3-button w3-padding"><i class="fa fa-users fa-fw"></i>  Overzicht</a>
-    <a href="../kaarten" class="w3-bar-item w3-button w3-padding"><i class="fas fa-map-marked-alt fa-fw"></i>  Kaarten</a>
-    <a href="../hunts" class="w3-bar-item w3-button w3-padding"><i class="fas fa-map-marker-alt fa-fw"></i>  Hunt!</a>
-    <a href="../vossen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-bullseye fa-fw"></i>  Vossen</a>
-    <a href="../nieuws" class="w3-bar-item w3-button w3-padding"><i class="far fa-newspaper fa-fw"></i>  Nieuws</a>
-    <a href="../opdrachten" class="w3-bar-item w3-button w3-padding"><i class="far fa-bell fa-fw"></i>  Opdrachten</a>
-    <a href="../hints" class="w3-bar-item w3-button w3-padding"><i class="fas fa-question-circle fa-fw"></i>  Hints</a>
-    <a href="../punten" class="w3-bar-item w3-button w3-padding"><i class="fas fa-trophy fa-fw"></i>  Punten</a>
-    <a href="../groepen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-home fa-fw"></i>  Groepen</a>
-    <a href="../instellingen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-cog fa-fw"></i>  Instellingen</a>
-    <?php if ($priv > 0){echo '<a href="../autos" class="w3-bar-item w3-button w3-padding"><i class="fas fa-car fa-fw"></i>  Auto\'s</a>';}?>
-    <?php if ($priv > 1){echo '<a href="users" class="w3-bar-item w3-button w3-padding"><i class="fas fa-user-cog fa-fw"></i>  [Admin] Users</a>';} ?>
-    <?php if ($priv > 1){echo '<a href="cronjobs" class="w3-bar-item w3-button w3-padding w3-blue"><i class="fas fa-stopwatch fa-fw"></i>  [Admin] Cronjobs</a>';} ?>
-    <?php if ($priv > 1){echo '<a href="database" class="w3-bar-item w3-button w3-padding"><i class="fas fa-database fa-fw"></i>  [Admin] Database</a>';} ?>
-    <?php if ($priv > 1){echo '<a href="settings" class="w3-bar-item w3-button w3-padding"><i class="fas fa-toolbox fa-fw"></i>  [Admin] Settings</a>';} ?>
-    <br><br>
-  </div>
-</nav>
-</nav>
-
-
-<!-- Overlay effect when opening sidebar on small screens -->
-<div class="w3-overlay w3-hide-large w3-animate-opacity" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
+<!-- Sidebar -->
+<?php include_once('../includes/sidebar.php') ?>
 
 <!-- !PAGE CONTENT! -->
 <div class="w3-main" style="margin-left:200px;margin-top:43px;">
