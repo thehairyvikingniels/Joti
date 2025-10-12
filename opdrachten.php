@@ -1,4 +1,5 @@
 <?php
+define("PAGE_NAME", "opdrachten");
 
 session_start();
 
@@ -36,12 +37,20 @@ if (mysqli_num_rows($result) > 0) {
 
 }
 
+// Get global site settings
+$sql = "SELECT * FROM Site_Instellingen";
+$result = mysqli_query($conn, $sql);
 
+$siteSettings = array();
 
-
-
-
-
+if (mysqli_num_rows($result) > 0) {
+    while($row = mysqli_fetch_assoc($result)) {
+      $siteSettings[$row['Instelling']] = $row['Waarde'];
+    }
+} else {
+    echo "0 results";
+    exit();
+}
 
 
 ?>
@@ -74,102 +83,13 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
 <body class="w3-light-grey">
 
+<!-- Topbar -->
+<?php include_once('includes/topbar.php') ?>
 
-
-<!-- Top container -->
-
-<div class="w3-bar w3-top w3-black w3-large" style="z-index:4">
-
-  <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey" onclick="w3_open();"><i class="fa fa-bars"></i>  Menu</button>
-
-  <span class="w3-bar-item w3-right">De Geuzen Arnhem</span>
-
-</div>
-
-
-
-<!-- Sidebar/menu -->
-
-<nav class="w3-sidebar w3-collapse w3-white w3-animate-left" style="z-index:3;width:200px;" id="mySidebar"><br>
-
-  <div class="w3-container w3-row">
-
-    <div class="w3-col s4">
-
-      <img src="media/geusje.png" class="w3-margin-right" style="width:46px">
-
-    </div>
-
-    <div class="w3-col s8 w3-bar">
-
-      <span>Welkom, <strong><?php echo ucfirst($vn); ?></strong></span><br>
-
-      <a href="index" class="w3-bar-item w3-button"><i class="fas fa-sign-out-alt"></i></a>
-
-      <a href="functies?gpstoggle=true&return=opdrachten" class="w3-bar-item w3-button <?php if ($_SESSION['gps'] == "true"){echo "w3-green";}else{echo "w3-red";} ?>"><i class="fas fa-location-arrow"></i></a>
-
-    </div>
-
-  </div>
-
-  <hr>
-
-  <div class="w3-container">
-
-    <h5>Dashboard</h5>
-
-  </div>
-
-  <div class="w3-bar-block">
-
-    <a href="#" class="w3-bar-item w3-button w3-padding-16 w3-hide-large w3-dark-grey w3-hover-black" onclick="w3_close()" title="close menu"><i class="fa fa-remove fa-fw"></i>  Sluit Menu</a>
-
-    <a href="home" class="w3-bar-item w3-button w3-padding"><i class="fa fa-users fa-fw"></i>  Overzicht</a>
-
-    <?php if ($priv > 0){echo '<a href="kaarten" class="w3-bar-item w3-button w3-padding"><i class="fas fa-map-marked-alt fa-fw"></i>  Kaarten</a>';}?>
-
-    <?php if ($priv > 0){echo '<a href="hunts" class="w3-bar-item w3-button w3-padding"><i class="fas fa-map-marker-alt fa-fw"></i>  Hunt!</a>';}?>
-
-    <?php if ($priv > 0){echo '<a href="vossen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-bullseye fa-fw"></i>  Vossen</a>';}?>    
-
-    <a href="nieuws" class="w3-bar-item w3-button w3-padding"><i class="far fa-newspaper fa-fw"></i>  Nieuws</a>
-
-    <a href="opdrachten" class="w3-bar-item w3-button w3-padding w3-blue"><i class="far fa-bell fa-fw"></i>  Opdrachten</a>
-
-    <a href="hints" class="w3-bar-item w3-button w3-padding"><i class="fas fa-question-circle fa-fw"></i>  Hints</a>
-
-    <?php if ($priv > 0){echo '<a href="punten" class="w3-bar-item w3-button w3-padding"><i class="fas fa-trophy fa-fw"></i>  Punten</a>';}?>
-
-    <a href="groepen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-home fa-fw"></i>  Groepen</a>
-
-    <a href="instellingen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-cog fa-fw"></i>  Instellingen</a>
-
-    <?php if ($priv > 0){echo '<a href="autos" class="w3-bar-item w3-button w3-padding"><i class="fas fa-car fa-fw"></i>  Auto\'s</a>';}?>
-
-    <?php if ($priv > 1){echo '<a href="admin/users" class="w3-bar-item w3-button w3-padding"><i class="fas fa-user-cog fa-fw"></i>  [Admin] Users</a>';} ?>
-
-    <?php if ($priv > 1){echo '<a href="admin/cronjobs" class="w3-bar-item w3-button w3-padding"><i class="fas fa-stopwatch fa-fw"></i>  [Admin] Cronjobs</a>';} ?>
-
-    <?php if ($priv > 1){echo '<a href="admin/database" class="w3-bar-item w3-button w3-padding"><i class="fas fa-database fa-fw"></i>  [Admin] Database</a>';} ?><br><br>
-
-  </div>
-
-</nav>
-
-</nav>
-
-
-
-
-
-<!-- Overlay effect when opening sidebar on small screens -->
-
-<div class="w3-overlay w3-hide-large w3-animate-opacity" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
-
-
+<!-- Sidebar -->
+<?php include_once('includes/sidebar.php') ?>
 
 <!-- !PAGE CONTENT! -->
-
 <div class="w3-main" style="margin-left:200px;margin-top:43px;">
 
 
@@ -275,68 +195,13 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   </div>
 
   <!-- Footer -->
-
-  <footer class="w3-container w3-padding-16 w3-dark-grey">
-
-    <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
-
-  </footer>
+  <?php require_once('includes/footer.php') ?>
 
 
 
   <!-- End page content -->
 
 </div>
-
-
-
-<script>
-
-// Get the Sidebar
-
-var mySidebar = document.getElementById("mySidebar");
-
-
-
-// Get the DIV with overlay effect
-
-var overlayBg = document.getElementById("myOverlay");
-
-
-
-// Toggle between showing and hiding the sidebar, and add overlay effect
-
-function w3_open() {
-
-    if (mySidebar.style.display === 'block') {
-
-        mySidebar.style.display = 'none';
-
-        overlayBg.style.display = "none";
-
-    } else {
-
-        mySidebar.style.display = 'block';
-
-        overlayBg.style.display = "block";
-
-    }
-
-}
-
-
-
-// Close the sidebar with the close button
-
-function w3_close() {
-
-    mySidebar.style.display = "none";
-
-    overlayBg.style.display = "none";
-
-}
-
-  </script>
 
   <script>
 

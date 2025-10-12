@@ -1,5 +1,5 @@
 <?php
-
+define("PAGE_NAME", "home");
 session_start();
 
 if (!isset($_SESSION['id'])){
@@ -40,7 +40,20 @@ if (mysqli_num_rows($result) > 0) {
 
 }
 
+// Get global site settings
+$sql = "SELECT * FROM Site_Instellingen";
+$result = mysqli_query($conn, $sql);
 
+$siteSettings = array();
+
+if (mysqli_num_rows($result) > 0) {
+    while($row = mysqli_fetch_assoc($result)) {
+      $siteSettings[$row['Instelling']] = $row['Waarde'];
+    }
+} else {
+    echo "0 results";
+    exit();
+}
 
 $sql = "SELECT id, count(*) as NUM FROM Voslocaties WHERE type='Hint' GROUP BY ingestuurd_op";
 
@@ -88,10 +101,6 @@ if (mysqli_num_rows($result) > 0) {
 
 }
 
-
-
-
-
 $sql = "SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')";
 
 $result = mysqli_query($conn, $sql);
@@ -111,79 +120,6 @@ if (mysqli_num_rows($result) > 0) {
     }
 
 }
-
-
-
-$sql = "Select * FROM Voslog ORDER BY datumtijd desc LIMIT 1";
-
-$result = mysqli_query($conn, $sql);
-
-
-
-if (mysqli_num_rows($result) > 0) {
-
-    // output data of each row
-
-    $a = 0;
-
-  $vossen = array("Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel");
-
-    while($row = mysqli_fetch_assoc($result)) {
-
-      //////////
-
-      foreach ($vossen as $vosnaam){
-
-        $voslc = lcfirst($vosnaam);
-
-          $sql_2 = "SELECT MAX(datumtijd) as datumtijd FROM Voslog orig WHERE $vosnaam <> (SELECT $vosnaam FROM Voslog WHERE id = orig.id - 1);";
-
-          $result_2 = mysqli_query($conn, $sql_2);
-
-          if (mysqli_num_rows($result_2) > 0) {
-
-            while($row_2 = mysqli_fetch_assoc($result_2)) {
-
-              $vos[$vosnaam]["verandering"] = $row_2['datumtijd'];
-
-              // dynamic duration: seconds, minutes, hours, or "> 24 uur"
-              $diff = time() - strtotime($row_2['datumtijd']);
-              if ($diff < 60) {
-                $vos[$vosnaam]["duratie"] = $diff . " sec";
-              } elseif ($diff < 3600) {
-                $vos[$vosnaam]["duratie"] = round($diff / 60) . " min";
-              } elseif ($diff < 86400) {
-                $vos[$vosnaam]["duratie"] = round($diff / 3600, 1) . " uur";
-              } else {
-                $vos[$vosnaam]["duratie"] = "24 uur +";
-              }
-
-            }
-
-          }
-
-        $vos[$vosnaam]["Status"] = $row[$voslc];
-
-        if ($row[$voslc] == 0){
-
-          $vos[$vosnaam]["Kleur"] = "red";
-
-        } elseif ($row[$voslc] == 1){
-
-          $vos[$vosnaam]["Kleur"] = "orange";
-
-        } elseif ($row[$voslc] == 2){
-
-          $vos[$vosnaam]["Kleur"] = "green";
-
-        }
-
-      }
-
-    }
-
-}
-
 ?>
 
 <!DOCTYPE html>
@@ -221,112 +157,12 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 <body class="w3-light-grey">
 
 
-
-<!-- Top container -->
-
-<div class="w3-bar w3-top w3-black w3-large" style="z-index:4;">
-
-  <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey" onclick="w3_open();"><i class="fa fa-bars"></i>  Menu</button>
-
-  <!-- Desktop / medium+ : show on medium and large (hide only on small) -->
-  <div class="w3-hide-small w3-hide-medium w3-bar-item" style="display:flex; gap:6px; align-items:center; flex:1; min-width:0;">
-    <?php
-      $names = array("Alpha","Bravo","Charlie","Delta","Echo","Foxtrot","Golf","Hotel");
-      foreach ($names as $n) {
-        // each item is a bar-item, uses w3-center + color class from PHP
-        // fixed height and centered content so thickness is consistent
-        echo '<div class="w3-center w3-padding-small w3-round w3-'.$vos[$n]["Kleur"].'" style="flex:1; min-width:90px; box-sizing:border-box; height:34px; display:flex; align-items:center; justify-content:center; font-size:0.95rem;">';
-        echo '<span style="font-weight:700; margin-right:6px;">'.substr($n,0,1).'</span><span>'.$vos[$n]["duratie"].'</span>';
-        echo '</div>';
-      }
-    ?>
-  </div>
-
-  <!-- Title (fixed) -->
-  <div class="w3-bar-item w3-right" style="flex:none; width:200px; text-align:right;">De Geuzen Arnhem</div>
-
-</div>
+<!-- Topbar -->
+<?php include_once('includes/topbar.php') ?>
 
 
-
-<!-- Sidebar/menu -->
-
-<nav class="w3-sidebar w3-collapse w3-white w3-animate-left" style="z-index:3;width:200px;" id="mySidebar"><br>
-
-  <div class="w3-container w3-row">
-
-    <div class="w3-col s4">
-
-      <img src="media/geusje.png" class="w3-margin-right" style="width:46px">
-
-    </div>
-
-    <div class="w3-col s8 w3-bar">
-
-      <span>Welkom, <strong><?php echo ucfirst($vn); ?></strong></span><br>
-
-      <a href="index" class="w3-bar-item w3-button"><i class="fas fa-sign-out-alt"></i></a>
-
-      <a href="functies?gpstoggle=true&return=home" class="w3-bar-item w3-button <?php if ($_SESSION['gps'] == "true"){echo "w3-green";}else{echo "w3-red";} ?>"><i class="fas fa-location-arrow"></i></a>
-
-    </div>
-
-  </div>
-
-  <hr>
-
-  <div class="w3-container">
-
-    <h5>Dashboard</h5>
-
-  </div>
-
-  <div class="w3-bar-block">
-
-    <a href="#" class="w3-bar-item w3-button w3-padding-16 w3-hide-large w3-dark-grey w3-hover-black" onclick="w3_close()" title="close menu"><i class="fa fa-remove fa-fw"></i>  Sluit Menu</a>
-
-    <a href="home" class="w3-bar-item w3-button w3-padding w3-blue"><i class="fa fa-users fa-fw"></i>  Overzicht</a>
-
-    <?php if ($priv > 0){echo '<a href="kaarten" class="w3-bar-item w3-button w3-padding"><i class="fas fa-map-marked-alt fa-fw"></i>  Kaarten</a>';}?>
-
-    <?php if ($priv > 0){echo '<a href="hunts" class="w3-bar-item w3-button w3-padding"><i class="fas fa-map-marker-alt fa-fw"></i>  Hunt!</a>';}?>
-
-    <?php if ($priv > 0){echo '<a href="vossen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-bullseye fa-fw"></i>  Vossen</a>';}?>
-
-    <a href="nieuws" class="w3-bar-item w3-button w3-padding"><i class="far fa-newspaper fa-fw"></i>  Nieuws</a>
-
-    <a href="opdrachten" class="w3-bar-item w3-button w3-padding"><i class="far fa-bell fa-fw"></i>  Opdrachten</a>
-
-    <a href="hints" class="w3-bar-item w3-button w3-padding"><i class="fas fa-question-circle fa-fw"></i>  Hints</a>
-
-    <?php if ($priv > 0){echo '<a href="punten" class="w3-bar-item w3-button w3-padding"><i class="fas fa-trophy fa-fw"></i>  Punten</a>';}?>
-
-    <a href="groepen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-home fa-fw"></i>  Groepen</a>
-
-    <a href="instellingen" class="w3-bar-item w3-button w3-padding"><i class="fas fa-cog fa-fw"></i>  Instellingen</a>
-
-    <?php if ($priv > 0){echo '<a href="autos" class="w3-bar-item w3-button w3-padding"><i class="fas fa-car fa-fw"></i>  Auto\'s</a>';}?>
-
-    <?php if ($priv > 1){echo '<a href="admin/users" class="w3-bar-item w3-button w3-padding"><i class="fas fa-user-cog fa-fw"></i>  [Admin] Users</a>';} ?>
-
-    <?php if ($priv > 1){echo '<a href="admin/cronjobs" class="w3-bar-item w3-button w3-padding"><i class="fas fa-stopwatch fa-fw"></i>  [Admin] Cronjobs</a>';} ?>
-
-    <?php if ($priv > 1){echo '<a href="admin/database" class="w3-bar-item w3-button w3-padding"><i class="fas fa-database fa-fw"></i>  [Admin] Database</a>';} ?><br><br>
-
-  </div>
-
-</nav>
-
-</nav>
-
-
-
-
-
-<!-- Overlay effect when opening sidebar on small screens -->
-
-<div class="w3-overlay w3-hide-large w3-animate-opacity" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
-
+<!-- Sidebar -->
+<?php include_once('includes/sidebar.php') ?>
 
 
 <!-- !PAGE CONTENT! -->
@@ -497,12 +333,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 </div>
 
   <!-- Footer -->
-
-  <footer class="w3-container w3-padding-16 w3-dark-grey">
-
-    <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
-
-  </footer>
+  <?php require_once('includes/footer.php') ?>
 
 <div id="demo">
 
@@ -555,6 +386,120 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   <!-- End page content -->
 
 </div>
+
+<!-- Welcome modal (lorem ipsum title/content) -->
+<?php
+// show welcome modal once after login for priv 0
+if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] === true && isset($_SESSION['priv']) && $_SESSION['priv'] == 0) {
+  // unset immediately so it won't show on refresh
+  unset($_SESSION['show_welcome_modal']);
+  ?>
+  <div id="welcomeModal" class="w3-modal">
+    <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width:600px">
+      <header class="w3-container w3-theme-d1"> 
+        <h2>Welkom bij de Jotihunt van de Geuzen Arnhem!</h2>
+      </header>
+      <div class="w3-container w3-padding">
+        <p>
+          Hoi <?php echo ucfirst($vn); ?>, als nieuwe gebruiker van dit platform willen we je graag welkom heten!
+        </p>
+        <p>
+          Dit platform is speciaal ontwikkeld voor de Jotihunt en biedt verschillende functies om je ervaring te verbeteren. Hier zijn enkele belangrijke punten om te weten:
+        </p>
+        <ul>
+          <li>Je kunt eenvoudig hints opvragen en opdrachten bekijken via het menu.</li>
+          <li>Je locatie kan worden gedeeld met de homebase. Dit kun je aan- of uitzetten met de GPS-knop linksbovenin.</li>
+          <li>Voor vragen of problemen kun je altijd contact opnemen met de organisatie.</li>
+        </ul>
+        <p>
+          <strong>Jij hebt op dit moment nog geen extra rechten, maar deze kan je aanvragen bij de volgende gebruikers:</strong>
+        </p>
+        <ul>
+          <?php
+          $sql = "SELECT voornaam, achternaam FROM Gebruikers WHERE priv > 1 ORDER BY voornaam ASC";
+          $result = mysqli_query($conn, $sql);
+          if (mysqli_num_rows($result) > 0) {
+            while($row = mysqli_fetch_assoc($result)) {
+              echo '<li>'.ucfirst($row['voornaam']).' '.ucfirst($row['achternaam']).'</li>';
+            }
+          } else {
+            echo '<li>Geen gebruikers met extra rechten gevonden...</br>Als je beheerder bent dien je dat handmatig te doen via de database door de kolomn priv van 0 of 1 naar 2 aan te passen.</li>';
+          }
+          ?>
+        </ul>
+      </div>
+      <footer class="w3-container w3-theme-d1 w3-padding">
+        <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px;">
+          <div id="closeWrap" style="position:relative; display:inline-block; min-width:160px;">
+            <!-- disabled button with countdown -->
+            <button id="welcomeClose" class="w3-button w3-green w3-round w3-disabled" disabled
+                    style="position:relative; z-index:2; opacity:0.65; min-width:160px; display:flex; align-items:center; justify-content:center; gap:8px;">
+              <span id="closeLabel">Sluiten</span>
+              <span id="closeCountdown" style="opacity:0.9;">(7s)</span>
+            </button>
+            <!-- green progress overlay that fills the button -->
+            <div id="welcomeProgress" style="position:absolute; left:0; top:0; height:100%; background:rgba(34,177,76,0.18); width:0%; border-radius:8px; z-index:1; pointer-events:none;"></div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    // auto-open welcome modal on page load and force 7s read-delay with countdown
+    (function() {
+      window.addEventListener('load', function() {
+        var modal = document.getElementById('welcomeModal');
+        if (!modal) return;
+        modal.style.display = 'block';
+
+        var closeBtn = document.getElementById('welcomeClose');
+        var progress = document.getElementById('welcomeProgress');
+        var countdownEl = document.getElementById('closeCountdown');
+        var duration = 7000; // milliseconds
+        var start = Date.now();
+
+        // update loop using requestAnimationFrame for smooth progress + 1s steps for countdown
+        var raf;
+        function tick() {
+          var elapsed = Date.now() - start;
+          var pct = Math.min(100, (elapsed / duration) * 100);
+          progress.style.width = pct + '%';
+
+          var remaining = Math.max(0, Math.ceil((duration - elapsed) / 1000));
+          // show "(Ns)" until finished
+          if (remaining > 0) {
+            countdownEl.textContent = '(' + remaining + 's)';
+          } else {
+            countdownEl.style.display = 'none';
+          }
+
+          if (elapsed < duration) {
+            raf = requestAnimationFrame(tick);
+          } else {
+            // enable button after duration
+            closeBtn.disabled = false;
+            closeBtn.classList.remove('w3-disabled');
+            closeBtn.style.opacity = '1';
+            progress.style.display = 'none';
+            cancelAnimationFrame(raf);
+          }
+        }
+        // start anim
+        tick();
+
+        // close handler (only effective after enabled)
+        closeBtn.addEventListener('click', function() {
+          if (!closeBtn.disabled) {
+            modal.style.display = 'none';
+          }
+        });
+      });
+    })();
+  </script>
+  <?php
+}
+?>
 
 <input type="hidden" id="hgtyhgty">
 
@@ -751,51 +696,6 @@ function invulgegevens(str = "6") {
 }
 
 ';}?>  
-
-// Get the Sidebar
-
-var mySidebar = document.getElementById("mySidebar");
-
-
-
-// Get the DIV with overlay effect
-
-var overlayBg = document.getElementById("myOverlay");
-
-
-
-// Toggle between showing and hiding the sidebar, and add overlay effect
-
-function w3_open() {
-
-    if (mySidebar.style.display === 'block') {
-
-        mySidebar.style.display = 'none';
-
-        overlayBg.style.display = "none";
-
-    } else {
-
-        mySidebar.style.display = 'block';
-
-        overlayBg.style.display = "block";
-
-    }
-
-}
-
-
-
-// Close the sidebar with the close button
-
-function w3_close() {
-
-    mySidebar.style.display = "none";
-
-    overlayBg.style.display = "none";
-
-}
-
   </script>
 
   <script>

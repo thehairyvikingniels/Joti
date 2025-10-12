@@ -422,7 +422,7 @@ if (isset($_GET['route'])){
 
         while($row = mysqli_fetch_assoc($result)) {
 
-          $link .= substr($row['coordinaat_y'],0,-5).",".substr($row['coordinaat_x'],0,-5);
+          $link .= substr($row['coordinaat_y'],0,-7).",".substr($row['coordinaat_x'],0,-7);
 
           $radius .= "25";
 
@@ -503,7 +503,7 @@ if (isset($_GET['route'])){
             $color = "#FF6F6F";
             break;
           case "Hotel":
-            $color = "#7E2EFF";
+            $color = "#00BFA5";
             break;
           default:
             $color = "#000000";
@@ -615,7 +615,7 @@ if (isset($_GET['hints'])){
             $color = "#FF6F6F";
             break;
           case "Hotel":
-            $color = "#7E2EFF";
+            $color = "#00BFA5";
             break;
           default:
             $color = "#000000";

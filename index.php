@@ -32,7 +32,7 @@ session_destroy();
               <h1 class="w3-center">Login</h1>
             </header>
             <div class="w3-container w3-theme-l4">
-              <center><img class="w3-margin" src="media/jotihunt2024_achtergrondloos.png" style="width:60%"></center>
+              <center><img class="w3-margin" src="media/geusje_bevosd.png" style="width:60%"></center>
               
               <?php
               if (isset($_GET['error'])){
@@ -56,10 +56,8 @@ session_destroy();
               </form>
             </div>
         </div>
-    <!-- Footer -->
-        <footer class="w3-container w3-theme-d5 w3-padding-16" style="width:100%;">
-      <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
-    </footer>
+        <!-- Footer -->
+        <?php require_once('includes/footer.php') ?>
       </div>
       <div id="modal01" class="w3-modal">
           <div class="w3-modal-content w3-card-4 w3-animate-top" style="max-width:400px">
