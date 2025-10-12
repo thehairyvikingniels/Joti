@@ -402,6 +402,141 @@ if (isset($_GET['personen'])){
 
 }
 
+// --- START: SEARCH CIRCLE FEATURE ---
+$zoekcirkel_layers = "";
+$zoekcirkel_js_helper = "";
+
+if (isset($_GET['zoekcirkel']) && $_GET['zoekcirkel'] == 'true') {
+    $zoekcirkel_js_helper = "
+    function createGeoJSONCircle(center, radiusInKm, points = 64) {
+        const coords = {
+            latitude: center[1],
+            longitude: center[0]
+        };
+        const km = radiusInKm;
+        const ret = [];
+        const distanceX = km / (111.320 * Math.cos(coords.latitude * Math.PI / 180));
+        const distanceY = km / 110.574;
+        let theta, x, y;
+        for (let i = 0; i < points; i++) {
+            theta = (i / points) * (2 * Math.PI);
+            x = distanceX * Math.cos(theta);
+            y = distanceY * Math.sin(theta);
+            ret.push([coords.longitude + x, coords.latitude + y]);
+        }
+        ret.push(ret[0]);
+        return {
+            type: 'geojson',
+            data: {
+                type: 'FeatureCollection',
+                features: [{
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [ret]
+                    }
+                }]
+            }
+        };
+    };
+    ";
+
+    $deelgebieden = array("Alpha","Bravo","Charlie","Delta","Echo","Foxtrot", "Golf", "Hotel");
+    $now = new DateTime();
+
+    foreach ($deelgebieden as $deelgebied) {
+        $sql = "SELECT coordinaat_x, coordinaat_y, ingestuurd_op FROM Voslocaties WHERE deelgebied = '".mysqli_real_escape_string($conn, $deelgebied)."' ORDER BY ingestuurd_op ASC";
+        $result = mysqli_query($conn, $sql);
+        
+        $points = [];
+        if (mysqli_num_rows($result) > 0) {
+            while($row = mysqli_fetch_assoc($result)) {
+                $points[] = [
+                    'lat' => (float)$row['coordinaat_x'],
+                    'lon' => (float)$row['coordinaat_y'],
+                    'time' => new DateTime($row['ingestuurd_op'])
+                ];
+            }
+        }
+
+        $radius_km = null;
+        $center_lat = null;
+        $center_lon = null;
+
+        if (count($points) == 1) {
+            $last_point = $points[0];
+            $time_diff_seconds = $now->getTimestamp() - $last_point['time']->getTimestamp();
+            $time_diff_hours = $time_diff_seconds / 3600;
+            $radius_km = $time_diff_hours * 5.5; // Base speed
+            $center_lon = $last_point['lon'];
+            $center_lat = $last_point['lat'];
+        } elseif (count($points) >= 2) {
+            $last_point = end($points);
+            $second_last_point = $points[count($points) - 2];
+
+            $dist_km = haversineGreatCircleDistance(
+                $second_last_point['lat'], $second_last_point['lon'],
+                $last_point['lat'], $last_point['lon']
+            );
+            $time_diff_seconds_between_points = $last_point['time']->getTimestamp() - $second_last_point['time']->getTimestamp();
+            $time_diff_hours_between_points = $time_diff_seconds_between_points / 3600;
+            $avg_speed = ($time_diff_hours_between_points > 0) ? ($dist_km / $time_diff_hours_between_points) : 5.5;
+
+            $time_diff_seconds_from_now = $now->getTimestamp() - $last_point['time']->getTimestamp();
+            $time_diff_hours_from_now = $time_diff_seconds_from_now / 3600;
+            $radius_km = $time_diff_hours_from_now * $avg_speed;
+            $center_lon = $last_point['lon'];
+            $center_lat = $last_point['lat'];
+        }
+
+        if (isset($radius_km) && $radius_km > 0) {
+            switch (ucfirst($deelgebied)) {
+              case "Alpha":   $color = "#9829FF"; break;
+              case "Bravo":   $color = "#2F9CEB"; break;
+              case "Charlie": $color = "#2DFF69"; break;
+              case "Delta":   $color = "#F5F02C"; break;
+              case "Echo":    $color = "#FFA12E"; break;
+              case "Foxtrot": $color = "#F52E2B"; break;
+              case "Golf":    $color = "#FF6F6F"; break;
+              case "Hotel":   $color = "#00BFA5"; break;
+              default:        $color = "#000000"; break;
+            }
+
+            $zoekcirkel_layers .= "
+               const center_".$deelgebied." = [".$center_lon.", ".$center_lat."];
+               const radius_".$deelgebied." = ".$radius_km.";
+               const source_id_".$deelgebied." = 'polygon_".$deelgebied."';
+
+               if (!map.getSource(source_id_".$deelgebied.")) {
+                 map.addSource(source_id_".$deelgebied.", createGeoJSONCircle(center_".$deelgebied.", radius_".$deelgebied."));
+               }
+
+               map.addLayer({
+                   'id': 'circle_fill_".$deelgebied."',
+                   'type': 'fill',
+                   'source': source_id_".$deelgebied.",
+                   'layout': {},
+                   'paint': {
+                       'fill-color': '".$color."',
+                       'fill-opacity': 0.2
+                   }
+               });
+               map.addLayer({
+                   'id': 'circle_border_".$deelgebied."',
+                   'type': 'line',
+                   'source': source_id_".$deelgebied.",
+                   'layout': {},
+                   'paint': {
+                       'line-color': '".$color."',
+                       'line-width': 2
+                   }
+               });
+            ";
+        }
+    }
+}
+// --- END: SEARCH CIRCLE FEATURE ---
+
 
 // --- START: PREDICTED ROUTE FEATURE ---
 $predicted_route_layers = "";
@@ -674,11 +809,15 @@ function goAway() {
 
 
 map.on('style.load', () => {
-
   map.setFog({}); // Set the default atmosphere style
+  
+  <?php
+  if (!empty($zoekcirkel_js_helper)) echo $zoekcirkel_js_helper;
+  ?>
 
   <?php
   if (!empty($predicted_route_layers)) echo $predicted_route_layers;
+  if (!empty($zoekcirkel_layers)) echo $zoekcirkel_layers;
   if (!empty($vossenpad_layers)) {
       echo $vossenpad_layers;
       

@@ -52,6 +52,10 @@ if (mysqli_num_rows($result) > 0) {
     exit();
 }
 
+// Check if there are any fox locations to enable the radius checkbox
+$sql = "SELECT id FROM Voslocaties LIMIT 1";
+$result = mysqli_query($conn, $sql);
+$hasVoslocaties = (mysqli_num_rows($result) > 0);
 
 ?>
 
@@ -117,13 +121,15 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
           <input type="checkbox" onclick="kaartveranderen()" id="vossenpad" name="vossenpad" value="true"> <label for="vossenpad">Vossenpad</label>
           
-          <input type="checkbox" onclick="kaartveranderen()" id="predicted_route" name="predicted_route" value="true"> <label for="predicted_route">Voorspelde Route</label><br>
+          <input type="checkbox" onclick="kaartveranderen()" id="predicted_route" name="predicted_route" value="true"> <label for="predicted_route">Voorspelde Route</label>
+          
+          <input type="checkbox" onclick="kaartveranderen()" id="zoekcirkel" name="zoekcirkel" value="true" disabled> <label for="zoekcirkel">Zoekcirkel</label><br>
 
         </form>
 
       </div>
 
-      <iframe id="iframe01" src="maps.php?groepen=false&personen=false&hints=false&vossenpad=false&predicted_route=false" style="width:100%; height:73vh"></iframe>
+      <iframe id="iframe01" src="maps.php?groepen=false&personen=false&hints=false&vossenpad=false&predicted_route=false&zoekcirkel=false" style="width:100%; height:73vh"></iframe>
 
     </div>
 
@@ -156,6 +162,8 @@ function kaartveranderen(a) {
 
   var predicted_route = document.getElementById("predicted_route");
 
+  var zoekcirkel = document.getElementById("zoekcirkel");
+
   
 
   var url = "maps.php?";
@@ -167,6 +175,7 @@ function kaartveranderen(a) {
   url += "&hints=" + (hints.checked ? "true" : "false");
   url += "&vossenpad=" + (vossenpad.checked ? "true" : "false");
   url += "&predicted_route=" + (predicted_route.checked ? "true" : "false");
+  url += "&zoekcirkel=" + (zoekcirkel.checked ? "true" : "false");
 
   
 
@@ -174,6 +183,11 @@ function kaartveranderen(a) {
 
 }
 
+<?php if ($hasVoslocaties): ?>
+window.onload = function() {
+  document.getElementById("zoekcirkel").disabled = false;
+};
+<?php endif; ?>
   
   </script>
 
