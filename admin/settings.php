@@ -271,7 +271,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   <?php require_once('../includes/footer.php') ?>
 
 </div>
-
+<script>
 if ("<?php echo $_SESSION['gps']?>" == "true"){
 
   setInterval(function() {
