@@ -8,13 +8,13 @@ $pagelist = array(
         'active' => null,
         'filename' => 'kaarten.php'
     ),
-    'hunts' => array(
-        'active' => null,
-        'filename' => 'hunts.php'
-    ),
     'vossen' => array(
         'active' => null,
         'filename' => 'vossen.php'
+    ),
+    'voslocaties' => array(
+        'active' => null,
+        'filename' => 'voslocaties.php'
     ),
     'nieuws' => array(
         'active' => null,
@@ -112,8 +112,8 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
     <a href="#" class="w3-bar-item w3-button w3-padding-16 w3-hide-large w3-dark-grey w3-hover-black" onclick="w3_close()" title="close menu"><i class="fa fa-remove fa-fw"></i>  Sluit Menu</a>
     <a href="<?=$notInAdminfolder?>home" class="w3-bar-item w3-button w3-padding<?= $pagelist['home']['active']?>"><i class="fa fa-users fa-fw"></i>  Overzicht</a>
     <?php if ($priv > 0){echo '<a href="'.$notInAdminfolder.'kaarten" class="w3-bar-item w3-button w3-padding'.$pagelist['kaarten']['active'].'"><i class="fas fa-map-marked-alt fa-fw"></i>  Kaarten</a>';}?>
-    <?php if ($priv > 0){echo '<a href="'.$notInAdminfolder.'hunts" class="w3-bar-item w3-button w3-padding'.$pagelist['hunts']['active'].'"><i class="fas fa-map-marker-alt fa-fw"></i>  Hunt!</a>';}?>
     <?php if ($priv > 0){echo '<a href="'.$notInAdminfolder.'vossen" class="w3-bar-item w3-button w3-padding'.$pagelist['vossen']['active'].'"><i class="fas fa-bullseye fa-fw"></i>  Vossen</a>';}?>
+    <?php if ($priv > 0){echo '<a href="'.$notInAdminfolder.'voslocaties" class="w3-bar-item w3-button w3-padding'.$pagelist['voslocaties']['active'].'"><i class="fas fa-circle-nodes fa-fw"></i>  Voslocaties</a>';}?>
     <a href="<?=$notInAdminfolder?>nieuws" class="w3-bar-item w3-button w3-padding<?= $pagelist['nieuws']['active']?>"><i class="far fa-newspaper fa-fw"></i>  Nieuws</a>
     <a href="<?=$notInAdminfolder?>opdrachten" class="w3-bar-item w3-button w3-padding<?= $pagelist['opdrachten']['active']?>"><i class="far fa-bell fa-fw"></i>  Opdrachten</a>
     <a href="<?=$notInAdminfolder?>hints" class="w3-bar-item w3-button w3-padding<?= $pagelist['hints']['active']?>"><i class="fas fa-question-circle fa-fw"></i>  Hints</a>

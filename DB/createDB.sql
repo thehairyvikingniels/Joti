@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: maarleveld.one.mysql.service.one.com:3306
--- Generation Time: Oct 11, 2025 at 01:46 PM
+-- Generation Time: Oct 12, 2025 at 07:07 PM
 -- Server version: 10.6.23-MariaDB-ubu2204
 -- PHP Version: 8.1.2-1ubuntu2.22
 
@@ -214,13 +214,14 @@ INSERT INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) VALUES
 CREATE TABLE `Voslocaties` (
   `id` int(11) NOT NULL,
   `ingestuurd_op` datetime DEFAULT NULL,
-  `type` varchar(16) NOT NULL,
+  `type` enum('Hint','Hunt','Spot','Voorspelling') NOT NULL,
   `deelgebied` varchar(8) NOT NULL,
   `ingeleverd` tinyint(4) NOT NULL DEFAULT 0,
   `ingeleverd_door` int(11) DEFAULT NULL,
   `coordinaat_x` decimal(8,6) NOT NULL,
   `coordinaat_y` decimal(9,6) NOT NULL,
-  `code` varchar(32) DEFAULT NULL
+  `code` varchar(32) DEFAULT NULL,
+  `opmerking` varchar(128) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
