@@ -62,6 +62,34 @@ if (isset($_GET['punt_lat'])){
 
 require("dblogin.php");
 
+/**
+ * Calculates the great-circle distance between two points, with
+ * the Haversine formula.
+ * @param float $latitudeFrom Latitude of start point in [deg decimal]
+ * @param float $longitudeFrom Longitude of start point in [deg decimal]
+ * @param float $latitudeTo Latitude of target point in [deg decimal]
+ * @param float $longitudeTo Longitude of target point in [deg decimal]
+ * @param float $earthRadius Mean earth radius in [km]
+ * @return float Distance between points in [km]
+ */
+function haversineGreatCircleDistance(
+  $latitudeFrom, $longitudeFrom, $latitudeTo, $longitudeTo, $earthRadius = 6371)
+{
+  // convert from degrees to radians
+  $latFrom = deg2rad($latitudeFrom);
+  $lonFrom = deg2rad($longitudeFrom);
+  $latTo = deg2rad($latitudeTo);
+  $lonTo = deg2rad($longitudeTo);
+
+  $latDelta = $latTo - $latFrom;
+  $lonDelta = $lonTo - $lonFrom;
+
+  $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+    cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+  return $angle * $earthRadius;
+}
+
+
 echo "         
 
 mapboxgl.accessToken = 'pk.eyJ1IjoidGhlaGFpcnl2aWtpbmduaWVscyIsImEiOiJjam40YzI2eGEwMjh6M3hscGEweHpxYzg1In0.3obc3XmgMCZ-rY5LLzhW2A';
@@ -571,7 +599,93 @@ if (isset($_GET['route'])){
 }
 
 
+// --- START: VOSSENPAD FEATURE ---
+$vossenpad_layers = "";
+$vossenpad_stats = []; // PHP array to hold stats
 
+if (isset($_GET['vossenpad']) && $_GET['vossenpad'] == "true"){
+    $deelgebieden = array("Alpha","Bravo","Charlie","Delta","Echo","Foxtrot", "Golf", "Hotel");
+    
+    foreach ($deelgebieden as $deelgebied) {
+        $sql = "SELECT coordinaat_x, coordinaat_y, ingestuurd_op FROM Voslocaties WHERE deelgebied = '".mysqli_real_escape_string($conn, $deelgebied)."' ORDER BY ingestuurd_op ASC";
+        $result = mysqli_query($conn, $sql);
+        
+        $points = [];
+        if (mysqli_num_rows($result) > 1) { // Need at least 2 points
+            while($row = mysqli_fetch_assoc($result)) {
+                $points[] = [
+                    'lat' => (float)$row['coordinaat_x'],
+                    'lon' => (float)$row['coordinaat_y'],
+                    'time' => new DateTime($row['ingestuurd_op'])
+                ];
+            }
+        
+            // Calculate stats
+            $total_distance_km = 0;
+            for ($i = 1; $i < count($points); $i++) {
+                $total_distance_km += haversineGreatCircleDistance(
+                    $points[$i-1]['lat'], $points[$i-1]['lon'],
+                    $points[$i]['lat'], $points[$i]['lon']
+                );
+            }
+
+            $first_point_time = $points[0]['time'];
+            $last_point_time = end($points)['time'];
+            $time_diff_seconds = $last_point_time->getTimestamp() - $first_point_time->getTimestamp();
+            $total_hours = $time_diff_seconds / 3600;
+
+            $avg_speed_kmh = ($total_hours > 0) ? ($total_distance_km / $total_hours) : 0;
+            
+            $coords = array_map(function($p) { return [$p['lon'], $p['lat']]; }, $points);
+        
+            switch (ucfirst($deelgebied)) {
+              case "Alpha":   $color = "#9829FF"; break;
+              case "Bravo":   $color = "#2F9CEB"; break;
+              case "Charlie": $color = "#2DFF69"; break;
+              case "Delta":   $color = "#F5F02C"; break;
+              case "Echo":    $color = "#FFA12E"; break;
+              case "Foxtrot": $color = "#F52E2B"; break;
+              case "Golf":    $color = "#FF6F6F"; break;
+              case "Hotel":   $color = "#00BFA5"; break;
+              default:        $color = "#000000"; break;
+            }
+            
+            // Store stats for this team
+            $vossenpad_stats[$deelgebied] = [
+                'speed' => number_format($avg_speed_kmh, 1) . " km/u",
+                'distance' => number_format($total_distance_km, 1) . " km",
+                'original_color' => $color
+            ];
+            
+            $vossenpad_layers .=  "
+            map.addLayer({
+              id: 'vossenpad_".$deelgebied."',
+              type: 'line',
+              source: {
+                type: 'geojson',
+                data: {
+                  type: 'Feature',
+                  properties: {},
+                  geometry: {
+                    type: 'LineString',
+                    coordinates: ".json_encode($coords)."
+                  }
+                }
+              },
+              layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+              },
+              paint: {
+                'line-color': '".$color."',
+                'line-width': 8,
+                'line-opacity': 0.75
+              }
+            });";
+        }
+    }
+}
+// --- END: VOSSENPAD FEATURE ---
 
 
 if (isset($_GET['hints'])){
@@ -689,6 +803,47 @@ map.on('style.load', () => {
   <?php
 
   if (isset($route)) echo $route;
+  if (!empty($vossenpad_layers)) {
+      echo $vossenpad_layers;
+      
+      // Inject stats and add event listeners
+      echo "const vossenpad_stats = ".json_encode($vossenpad_stats).";\n";
+      echo "
+      let selectedPathId = null;
+
+      Object.keys(vossenpad_stats).forEach(team => {
+          const layerId = 'vossenpad_' + team;
+          
+          map.on('click', layerId, (e) => {
+              // Reset previous selection if it exists
+              if (selectedPathId && selectedPathId !== layerId) {
+                  const oldTeam = selectedPathId.replace('vossenpad_', '');
+                  map.setPaintProperty(selectedPathId, 'line-color', vossenpad_stats[oldTeam].original_color);
+              }
+              
+              // Highlight the new selection
+              map.setPaintProperty(layerId, 'line-color', '#808080'); // Grey color for selection
+              selectedPathId = layerId;
+
+              const stats = vossenpad_stats[team];
+              new mapboxgl.Popup()
+                  .setLngLat(e.lngLat)
+                  .setHTML(`<h3>Team \${team}</h3>
+                           <p><strong>Gem. snelheid:</strong> \${stats.speed}</p>
+                           <p><strong>Afstand:</strong> \${stats.distance}</p>`)
+                  .addTo(map)
+                  .on('close', () => {
+                      // On popup close, reset the color
+                      map.setPaintProperty(layerId, 'line-color', stats.original_color);
+                      selectedPathId = null;
+                  });
+          });
+
+          map.on('mouseenter', layerId, () => { map.getCanvas().style.cursor = 'pointer'; });
+          map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
+      });
+      ";
+  }
 
   ?>
 
@@ -705,8 +860,4 @@ map.on('style.load', () => {
 </body>
 
 </html>
-
-
-
-
 

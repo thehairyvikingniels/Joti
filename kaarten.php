@@ -115,13 +115,15 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
           <input type="checkbox" onclick="kaartveranderen()" id="hints" name="hints" value="true"> <label for="hints">Vossen (hints)</label>
 
-          <input type="checkbox" onclick="kaartveranderen()" id="route" name="route" value="true"> <label for="route">Mogelijke vossen route</label><br>
+          <input type="checkbox" onclick="kaartveranderen()" id="route" name="route" value="true"> <label for="route">Mogelijke vossen route</label>
+          
+          <input type="checkbox" onclick="kaartveranderen()" id="vossenpad" name="vossenpad" value="true"> <label for="vossenpad">Vossenpad</label><br>
 
         </form>
 
       </div>
 
-      <iframe id="iframe01" src="maps.php?groepen=false&personen=false&hints=false&route=false" style="width:100%; height:73vh"></iframe>
+      <iframe id="iframe01" src="maps.php?groepen=false&personen=false&hints=false&route=false&vossenpad=false" style="width:100%; height:73vh"></iframe>
 
     </div>
 
@@ -151,6 +153,8 @@ function kaartveranderen(a) {
   var hints = document.getElementById("hints");
 
   var route = document.getElementById("route");
+  
+  var vossenpad = document.getElementById("vossenpad");
 
   
 
@@ -160,11 +164,11 @@ function kaartveranderen(a) {
 
   if (groepen.checked == true){
 
-    var groepen = "groepen=true";
+    var groepen_param = "groepen=true";
 
   } else {
 
-    var groepen = "groepen=false";
+    var groepen_param = "groepen=false";
 
   }
 
@@ -172,11 +176,11 @@ function kaartveranderen(a) {
 
   if (route.checked == true){
 
-    var route = "&route=true";
+    var route_param = "&route=true";
 
   } else {
 
-    var route = "&route=false";
+    var route_param = "&route=false";
 
   }
 
@@ -184,11 +188,11 @@ function kaartveranderen(a) {
 
   if (personen.checked == true){
 
-    var personen = "&personen=true";
+    var personen_param = "&personen=true";
 
   } else {
 
-    var personen = "&personen=false";
+    var personen_param = "&personen=false";
 
   }
 
@@ -196,17 +200,27 @@ function kaartveranderen(a) {
 
   if (hints.checked == true){
 
-    var hints = "&hints=true";
+    var hints_param = "&hints=true";
 
   } else {
 
-    var hints = "&hints=false";
+    var hints_param = "&hints=false";
+
+  }
+
+  if (vossenpad.checked == true){
+
+    var vossenpad_param = "&vossenpad=true";
+
+  } else {
+
+    var vossenpad_param = "&vossenpad=false";
 
   }
 
   
 
-  var url = "maps.php?"+groepen+hints+personen+route;
+  var url = "maps.php?"+groepen_param+hints_param+personen_param+route_param+vossenpad_param;
 
   document.getElementById('iframe01').src = url;
 
