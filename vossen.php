@@ -247,10 +247,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 </style>
 <body class="w3-light-grey">
 
-<!-- Top container --><div class="w3-bar w3-top w3-black w3-large" style="z-index:4">
-  <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey" onclick="w3_open();"><i class="fa fa-bars"></i>  Menu</button>
-  <span class="w3-bar-item w3-right">De Geuzen Arnhem</span>
-</div>
+<!-- Topbar -->
+<?php include_once('includes/topbar.php') ?>
 
 <!-- Sidebar -->
 <?php include_once('includes/sidebar.php') ?>
@@ -258,7 +256,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 <!-- !PAGE CONTENT! -->
 <div class="w3-main" style="margin-left:200px;margin-top:43px;">
 
-  <!-- Header --><header class="w3-container" style="padding-top:22px">
+  <!-- Header -->
+  <header class="w3-container" style="padding-top:22px">
     <h5><b><i class="fas fa-bullseye"></i> Vossen</b></h5>
   </header>
 
@@ -400,32 +399,9 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
 
-  <!-- End page content --></div>
-
-<script>
-// Get the Sidebar
-var mySidebar = document.getElementById("mySidebar");
-
-// Get the DIV with overlay effect
-var overlayBg = document.getElementById("myOverlay");
-
-// Toggle between showing and hiding the sidebar, and add overlay effect
-function w3_open() {
-    if (mySidebar.style.display === 'block') {
-        mySidebar.style.display = 'none';
-        overlayBg.style.display = "none";
-    } else {
-        mySidebar.style.display = 'block';
-        overlayBg.style.display = "block";
-    }
-}
-
-// Close the sidebar with the close button
-function w3_close() {
-    mySidebar.style.display = "none";
-    overlayBg.style.display = "none";
-}
-  </script>
+  <!-- End page content -->
+  </div>
+  
   <script>
 
 if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
