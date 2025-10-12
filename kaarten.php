@@ -113,17 +113,17 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
           <input type="checkbox" onclick="kaartveranderen()" id="personen" name="personen" value="true"> <label for="personen">Personen</label>
 
-          <input type="checkbox" onclick="kaartveranderen()" id="hints" name="hints" value="true"> <label for="hints">Vossen (hints)</label>
+          <input type="checkbox" onclick="kaartveranderen()" id="hints" name="hints" value="true"> <label for="hints">Vossen (locaties)</label>
 
-          <input type="checkbox" onclick="kaartveranderen()" id="route" name="route" value="true"> <label for="route">Mogelijke vossen route</label>
+          <input type="checkbox" onclick="kaartveranderen()" id="vossenpad" name="vossenpad" value="true"> <label for="vossenpad">Vossenpad</label>
           
-          <input type="checkbox" onclick="kaartveranderen()" id="vossenpad" name="vossenpad" value="true"> <label for="vossenpad">Vossenpad</label><br>
+          <input type="checkbox" onclick="kaartveranderen()" id="predicted_route" name="predicted_route" value="true"> <label for="predicted_route">Voorspelde Route</label><br>
 
         </form>
 
       </div>
 
-      <iframe id="iframe01" src="maps.php?groepen=false&personen=false&hints=false&route=false&vossenpad=false" style="width:100%; height:73vh"></iframe>
+      <iframe id="iframe01" src="maps.php?groepen=false&personen=false&hints=false&vossenpad=false&predicted_route=false" style="width:100%; height:73vh"></iframe>
 
     </div>
 
@@ -152,75 +152,23 @@ function kaartveranderen(a) {
 
   var hints = document.getElementById("hints");
 
-  var route = document.getElementById("route");
-  
   var vossenpad = document.getElementById("vossenpad");
 
+  var predicted_route = document.getElementById("predicted_route");
+
   
 
-  var url = "";
+  var url = "maps.php?";
 
   // If the checkbox is checked, display the output text
 
-  if (groepen.checked == true){
-
-    var groepen_param = "groepen=true";
-
-  } else {
-
-    var groepen_param = "groepen=false";
-
-  }
-
-
-
-  if (route.checked == true){
-
-    var route_param = "&route=true";
-
-  } else {
-
-    var route_param = "&route=false";
-
-  }
+  url += "groepen=" + (groepen.checked ? "true" : "false");
+  url += "&personen=" + (personen.checked ? "true" : "false");
+  url += "&hints=" + (hints.checked ? "true" : "false");
+  url += "&vossenpad=" + (vossenpad.checked ? "true" : "false");
+  url += "&predicted_route=" + (predicted_route.checked ? "true" : "false");
 
   
-
-  if (personen.checked == true){
-
-    var personen_param = "&personen=true";
-
-  } else {
-
-    var personen_param = "&personen=false";
-
-  }
-
-  
-
-  if (hints.checked == true){
-
-    var hints_param = "&hints=true";
-
-  } else {
-
-    var hints_param = "&hints=false";
-
-  }
-
-  if (vossenpad.checked == true){
-
-    var vossenpad_param = "&vossenpad=true";
-
-  } else {
-
-    var vossenpad_param = "&vossenpad=false";
-
-  }
-
-  
-
-  var url = "maps.php?"+groepen_param+hints_param+personen_param+route_param+vossenpad_param;
 
   document.getElementById('iframe01').src = url;
 
@@ -317,3 +265,4 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
 </body>
 
 </html>
+

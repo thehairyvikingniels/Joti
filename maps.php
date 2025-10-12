@@ -403,200 +403,77 @@ if (isset($_GET['personen'])){
 }
 
 
-
-if (isset($_GET['route'])){
-
-  if ($_GET['route'] == "true"){
-
-
-
-    $pk = "pk.eyJ1IjoidGhlaGFpcnl2aWtpbmduaWVscyIsImEiOiJjam40YzI2eGEwMjh6M3hscGEweHpxYzg1In0.3obc3XmgMCZ-rY5LLzhW2A";
-
-    //$pk = "sk.eyJ1IjoidGhlaGFpcnl2aWtpbmduaWVscyIsImEiOiJjbDk3MTBya2Yyb29tM3BwMmtpc2VlODQwIn0.3KsZ5Q0eyYegMg3Ytr6Otw";
-
-    
-
-    
-
-    
-
+// --- START: PREDICTED ROUTE FEATURE ---
+$predicted_route_layers = "";
+if (isset($_GET['predicted_route']) && $_GET['predicted_route'] == "true"){
     $deelgebieden = array("Alpha","Bravo","Charlie","Delta","Echo","Foxtrot", "Golf", "Hotel");
-
+    $pk = "pk.eyJ1IjoidGhlaGFpcnl2aWtpbmduaWVscyIsImEiOiJjam40YzI2eGEwMjh6M3hscGEweHpxYzg1In0.3obc3XmgMCZ-rY5LLzhW2A";
     
-
-
-
-    $route = null;
-
     foreach ($deelgebieden as $deelgebied) {
-
-      $link = "https://api.mapbox.com/matching/v5/mapbox/cycling/";
-
-      $sql = "SELECT * FROM Voslocaties WHERE deelgebied = '".$deelgebied."'";
-
-      $result = mysqli_query($conn, $sql);
-
-      
-
-      if (mysqli_num_rows($result) > 0) {
-
-        // output data of each row
-
-        $i = 1;
-
-        $radius = null;
-
-        $coords = array();
-
-        while($row = mysqli_fetch_assoc($result)) {
-
-          $link .= substr($row['coordinaat_y'],0,-7).",".substr($row['coordinaat_x'],0,-7);
-
-          $radius .= "25";
-
-      
-
-          if (mysqli_num_rows($result) != $i) {
-
-              $link .= ";";
-
-              $radius .= ";";
-
-          }
-
-      
-
-          $i++;
-
-        }
-
-      
-
-      
-
-        $link .= "?radiuses=".$radius;
-
-        $link .= "&steps=true";
-
-        $link .= "&access_token=".$pk;
-
-
-
-        $result = json_decode(file_get_contents($link),true);
-
-        //print_r($result);
-
-        if (isset($result['matchings'][0]['legs'][0])) {
-
-          $i = 0;
-
-          foreach ($result['matchings'][0]['legs'] as $leg) {
-
-            foreach ($leg['steps'] as $step) {
-
-              $coords[$i][0] = $step['maneuver']['location'][0];
-
-              $coords[$i][1] = $step['maneuver']['location'][1];
-
-
-
-              $i++;
-
+        $sql = "SELECT coordinaat_x, coordinaat_y FROM Voslocaties WHERE deelgebied = '".mysqli_real_escape_string($conn, $deelgebied)."' ORDER BY ingestuurd_op ASC";
+        $result = mysqli_query($conn, $sql);
+        
+        $coords_for_api = [];
+        if (mysqli_num_rows($result) > 1) {
+            while($row = mysqli_fetch_assoc($result)) {
+                $coords_for_api[] = $row['coordinaat_y'] . "," . $row['coordinaat_x'];
             }
+            
+            $api_url = "https://api.mapbox.com/directions/v5/mapbox/walking/" . implode(';', $coords_for_api) . "?steps=true&geometries=geojson&access_token=" . $pk;
+            
+            // Use cURL for better error handling and performance
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $api_url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Adjust for local dev if needed
+            $api_response = curl_exec($ch);
+            curl_close($ch);
 
-          }
-
-        }
-
-        switch (ucfirst($deelgebied)) {
-          case "Alpha":
-            $color = "#9829FF";
-            break;
-          case "Bravo":
-            $color = "#2F9CEB";
-            break;
-          case "Charlie":
-            $color = "#2DFF69";
-            break;
-          case "Delta":
-            $color = "#F5F02C";
-            break;
-          case "Echo":
-            $color = "#FFA12E";
-            break;
-          case "Foxtrot":
-            $color = "#F52E2B";
-            break;
-          case "Golf":
-            $color = "#FF6F6F";
-            break;
-          case "Hotel":
-            $color = "#00BFA5";
-            break;
-          default:
-            $color = "#000000";
-            break;
-        }
-
-
-
-        $route .=  "
-
-        map.addLayer({
-
-          id: 'route_".$deelgebied."',
-
-          type: 'line',
-
-          source: {
-
-            type: 'geojson',
-
-            data: {
-
-              type: 'Feature',
-
-              properties: {},
-
-              geometry: {
-
-                type: 'LineString',
-
-                coordinates: ".json_encode($coords)."
-
-              }
-
+            $route_data = json_decode($api_response, true);
+            
+            if (isset($route_data['routes'][0])) {
+                $route_geometry = json_encode($route_data['routes'][0]['geometry']);
+                
+                switch (ucfirst($deelgebied)) {
+                  case "Alpha":   $color = "#9829FF"; break;
+                  case "Bravo":   $color = "#2F9CEB"; break;
+                  case "Charlie": $color = "#2DFF69"; break;
+                  case "Delta":   $color = "#F5F02C"; break;
+                  case "Echo":    $color = "#FFA12E"; break;
+                  case "Foxtrot": $color = "#F52E2B"; break;
+                  case "Golf":    $color = "#FF6F6F"; break;
+                  case "Hotel":   $color = "#00BFA5"; break;
+                  default:        $color = "#000000"; break;
+                }
+                
+                $predicted_route_layers .= "
+                map.addLayer({
+                  id: 'predicted_route_".$deelgebied."',
+                  type: 'line',
+                  source: {
+                    type: 'geojson',
+                    data: {
+                      type: 'Feature',
+                      properties: {},
+                      geometry: ".$route_geometry."
+                    }
+                  },
+                  layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                  },
+                  paint: {
+                    'line-color': '".$color."',
+                    'line-width': 4,
+                    'line-opacity': 0.8,
+                    'line-dasharray': [2, 2]
+                  }
+                });";
             }
-
-          },
-
-          layout: {
-
-            'line-join': 'round',
-
-            'line-cap': 'round'
-
-          },
-
-          paint: {
-
-            'line-color': '".$color."',
-
-            'line-width': 7,
-
-            'line-opacity': 0.7
-
-          }
-
-        });";
-
-      }
-
+        }
     }
-
-  }
-
 }
+// --- END: PREDICTED ROUTE FEATURE ---
 
 
 // --- START: VOSSENPAD FEATURE ---
@@ -801,8 +678,7 @@ map.on('style.load', () => {
   map.setFog({}); // Set the default atmosphere style
 
   <?php
-
-  if (isset($route)) echo $route;
+  if (!empty($predicted_route_layers)) echo $predicted_route_layers;
   if (!empty($vossenpad_layers)) {
       echo $vossenpad_layers;
       
