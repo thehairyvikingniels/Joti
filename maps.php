@@ -126,7 +126,7 @@ if (isset($_GET['groepen'])){
 
       // output data of each row
 
-      $i=0;
+      $i_group=0;
 
       while($row = mysqli_fetch_assoc($result)) {
 
@@ -136,21 +136,21 @@ if (isset($_GET['groepen'])){
 
           echo "
 
-          const img_".$i." = document.createElement('div');
+          const img_group_".$i_group." = document.createElement('div');
 
-          img_".$i.".className = 'marker';
+          img_group_".$i_group.".className = 'marker';
 
-          img_".$i.".style.backgroundImage = `url(media/icons/pin_hut_".$row['deelgebied'].".png)`;
+          img_group_".$i_group.".style.backgroundImage = `url(media/icons/pin_hut_".$row['deelgebied'].".png)`;
 
-          img_".$i.".style.width = `40px`;
+          img_group_".$i_group.".style.width = `40px`;
 
-          img_".$i.".style.height = `32px`;
+          img_group_".$i_group.".style.height = `32px`;
 
-          img_".$i.".style.backgroundSize = '100%';
+          img_group_".$i_group.".style.backgroundSize = '100%';
 
 
 
-          const marker_".$i." = new mapboxgl.Marker(img_".$i.")
+          const marker_group_".$i_group." = new mapboxgl.Marker(img_group_".$i_group.")
 
               .setLngLat([".$row['lon'].",".$row['lat']."])
 
@@ -160,7 +160,7 @@ if (isset($_GET['groepen'])){
 
           ";
 
-        $i++;
+        $i_group++;
 
       }      
 
@@ -306,39 +306,38 @@ if (isset($_GET['personen'])){
 
       // output data of each row
 
-      $i=0;
+      $i_person=0;
 
       while($row = mysqli_fetch_assoc($result)) {
 
-        $sunrise = date('Y-m-d H:i:s', strtotime('-10 seconds'));
+        $geotijd = $row['geotijd'];
+        if (!$geotijd) continue; // Skip users with no location time
 
-        $sunset = date('Y-m-d H:i:s', strtotime('+10 seconds'));
+        $date1 = DateTime::createFromFormat('Y-m-d H:i:s', $geotijd);
+        if ($date1 === false) continue; // Skip users with invalid date format
 
-        $date1 = DateTime::createFromFormat('Y-m-d H:i:s', $row['geotijd']);
+        $now = new DateTime();
+        $interval = $now->diff($date1);
+        $minutes_since = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
 
-        $date2 = DateTime::createFromFormat('Y-m-d H:i:s', $sunrise);
-
-        $date3 = DateTime::createFromFormat('Y-m-d H:i:s', $sunset);
-
-        if ($date1 > $date2 && $date1 < $date3) {
-
+        if ($minutes_since <= 15) { // Show anyone active in the last 15 minutes
           echo "
 
-          const person_".$i." = document.createElement('div');
+          const person_".$i_person." = document.createElement('div');
 
-          person_".$i.".className = 'marker';
+          person_".$i_person.".className = 'marker';
 
-          person_".$i.".style.backgroundImage = `url(media/icons/pin_user.png)`;
+          person_".$i_person.".style.backgroundImage = `url(media/icons/pin_user.png)`;
 
-          person_".$i.".style.width = `40px`;
+          person_".$i_person.".style.width = `40px`;
 
-          person_".$i.".style.height = `32px`;
+          person_".$i_person.".style.height = `32px`;
 
-          person_".$i.".style.backgroundSize = '100%';
+          person_".$i_person.".style.backgroundSize = '100%';
 
 
 
-          const marker_".$i." = new mapboxgl.Marker(person_".$i.")
+          const marker_person_".$i_person." = new mapboxgl.Marker(person_".$i_person.")
 
               .setLngLat([".$row['lon'].",".$row['lat']."])
 
@@ -347,59 +346,11 @@ if (isset($_GET['personen'])){
               .addTo(map)
 
           ";
-
-          goto next;
-
         }
-
-        $sunrise = date('Y-m-d H:i:s', strtotime('-900 seconds'));
-
-        $sunset = date('Y-m-d H:i:s', strtotime('+7 seconds'));
-
-        $date2 = DateTime::createFromFormat('Y-m-d H:i:s', $sunrise);
-
-        $date3 = DateTime::createFromFormat('Y-m-d H:i:s', $sunset);
-
-      if ($date1 > $date2 && $date1 < $date3) {
-
-        echo "
-
-        const person_".$i." = document.createElement('div');
-
-        person_".$i.".className = 'marker';
-
-        person_".$i.".style.backgroundImage = `url(media/icons/pin_user.png)`;
-
-        person_".$i.".style.width = `40px`;
-
-        person_".$i.".style.height = `32px`;
-
-        person_".$i.".style.backgroundSize = '100%';
-
-
-
-        const marker_p_".$i." = new mapboxgl.Marker(person_".$i.")
-
-            .setLngLat([".$row['lon'].",".$row['lat']."])
-
-            .setPopup(new mapboxgl.Popup().setHTML(\"".ucfirst(str_replace("'"," ",$row['gebruikersnaam']))." was hier ".time2str($row['geotijd'])."\"))
-
-            .addTo(map)
-
-        ";
-
-        }
-
-      next:
-
-      $i++;
-
+        $i_person++;
       }
-
     }
-
   }
-
 }
 
 // --- START: SEARCH CIRCLE FEATURE ---
@@ -714,7 +665,7 @@ if (isset($_GET['hints'])){
 
       // output data of each row
 
-      $i = 0;
+      $i_hint = 0;
 
       while($row = mysqli_fetch_assoc($result)) {
 
@@ -752,7 +703,7 @@ if (isset($_GET['hints'])){
 
         echo "
 
-        const marker_v_".$i." = new mapboxgl.Marker({
+        const marker_v_".$i_hint." = new mapboxgl.Marker({
 
           color: \"".$color."\"
 
@@ -760,13 +711,13 @@ if (isset($_GET['hints'])){
 
             .setLngLat([".$row['coordinaat_y'].",".$row['coordinaat_x']."])
 
-            .setPopup(new mapboxgl.Popup().setHTML(\"".str_replace("'"," ",$row['deelgebied'])."</br>".date('D H:i', strtotime($row['ingestuurd_op']))."</br><a href='https://www.google.com/maps/dir/?api=1&origin=&destination=".urlencode($row['coordinaat_x'].",".$row['coordinaat_y'])."&travelmode=driving&dir_action=navigate' target='_blank'>Navigeer</a>\"))
+            .setPopup(new mapboxgl.Popup().setHTML(\"".str_replace("'"," ",$row['deelgebied'])."</br>".date('D H:i', strtotime($row['ingestuurd_op']))."</br><a href='https://www.google.com/maps/dir/?api=1&origin=&destination=".urlencode($row['coordinaat_x'].",".$row['coordinaat_y'])."' target='_blank'>Navigeer</a>\"))
 
             .addTo(map)
 
         ";
 
-        $i++;
+        $i_hint++;
 
       }
 
