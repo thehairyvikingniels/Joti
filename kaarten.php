@@ -74,15 +74,16 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
         <form>
           <input type="checkbox" onchange="kaartveranderen()" id="groepen" name="groepen" value="true"><label for="groepen" class="w3-margin-left">Groepen</label>
           <input type="checkbox" onchange="kaartveranderen()" id="personen" name="personen" value="true" class="w3-margin-left"><label for="personen" class="w3-margin-left">Personen</label>
+          <input type="checkbox" onchange="kaartveranderen()" id="autos" name="autos" value="true" class="w3-margin-left"><label for="autos" class="w3-margin-left">Auto's</label>
           <input type="checkbox" onchange="kaartveranderen()" id="hints" name="hints" value="true" class="w3-margin-left"><label for="hints" class="w3-margin-left">Vossen (locaties)</label>
-          <br class="w3-hide-large w3-hide-medium"> <!-- Break line on smaller screens -->
+          <br class="w3-hide-large w3-hide-medium">
           <input type="checkbox" onchange="kaartveranderen()" id="vossenpad" name="vossenpad" value="true" class="w3-margin-left"><label for="vossenpad" class="w3-margin-left">Vossenpad</label>
           <input type="checkbox" onchange="kaartveranderen()" id="predicted_route" name="predicted_route" value="true" class="w3-margin-left"><label for="predicted_route" class="w3-margin-left">Voorspelde Route</label>
           <input type="checkbox" onchange="kaartveranderen()" id="zoekcirkel" name="zoekcirkel" value="true" <?php if (!$hasVoslocaties) echo 'disabled'; ?> class="w3-margin-left"><label for="zoekcirkel" class="w3-margin-left">Zoekcirkel</label>
         </form>
     </div>
     <div class="w3-card w3-white w3-margin-top" style="width:100%; height:73vh">
-      <iframe id="iframe01" src="maps.php?groepen=false&personen=false&hints=false&vossenpad=false&predicted_route=false&zoekcirkel=false" style="width:100%; height:100%; border:0;"></iframe>
+      <iframe id="iframe01" src="maps.php?groepen=false&personen=false&hints=false&vossenpad=false&predicted_route=false&zoekcirkel=false&autos=false" style="width:100%; height:100%; border:0;"></iframe>
     </div>
   </div>
 
@@ -94,7 +95,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
 <script>
 function kaartveranderen() {
-  const checkboxes = ['groepen', 'personen', 'hints', 'vossenpad', 'predicted_route', 'zoekcirkel'];
+  const checkboxes = ['groepen', 'personen', 'hints', 'vossenpad', 'predicted_route', 'zoekcirkel', 'autos'];
   const params = checkboxes.map(id => {
     const el = document.getElementById(id);
     return `${id}=${el.checked ? 'true' : 'false'}`;
