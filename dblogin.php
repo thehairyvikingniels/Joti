@@ -1,9 +1,5 @@
 <?php
-// $servername = "localhost";
-// $username = "nielsmd365_joti";
-// $password = "jotihunt2019";
-// $dbname = "nielsmd365_joti";
-
+// Database connection
 $servername = "localhost";
 $username = "maarleveld_one_joti";
 $password = "jVfxEi8VxemB7mTF";
