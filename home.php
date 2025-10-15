@@ -516,35 +516,20 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
 
 
 <script>
-
   // Your web app's Firebase configuration
-
   var firebaseConfig = {
-
-    apiKey: "AIzaSyA6Jz4tgPa_Trsw87UOVj-ut_ojdzhX5ps",
-
+    apiKey: "<?php echo addslashes($siteSettings['API_KEY_FIREBASE'] ?? ''); ?>",
     authDomain: "jotihunt-1539122761269.firebaseapp.com",
-
     databaseURL: "https://jotihunt-1539122761269.firebaseio.com",
-
     projectId: "jotihunt-1539122761269",
-
     storageBucket: "",
-
     messagingSenderId: "376439098940",
-
     appId: "1:376439098940:web:3bf5ab91c34efafd3e3d39",
-
     measurementId: "G-1ZGJEPTP5T"
-
   };
-
   // Initialize Firebase
-
   firebase.initializeApp(firebaseConfig);
-
   firebase.analytics();
-
 </script>
 
     </body>
