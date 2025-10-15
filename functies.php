@@ -15,6 +15,72 @@ if (isset($_GET['gpstoggle'])){
   header("Location: ".$_GET['return']."");
   
 }
+
+// Verwijder een Voslocatie
+if (isset($_GET['verwijder_voslocatie'])) {
+    // Check user privilege
+    $sql_priv = "SELECT priv FROM Gebruikers WHERE id='" . $_SESSION['id'] . "'";
+    $result_priv = mysqli_query($conn, $sql_priv);
+    $user = mysqli_fetch_assoc($result_priv);
+
+    if ($user && $user['priv'] > 1) {
+        $id_to_delete = intval($_GET['verwijder_voslocatie']);
+        $sql_delete = "DELETE FROM Voslocaties WHERE id = " . $id_to_delete;
+        
+        if (mysqli_query($conn, $sql_delete)) {
+            // Success
+        } else {
+            // Error, you could add error logging here
+            error_log("Error deleting record: " . mysqli_error($conn));
+        }
+    }
+    header("Location: admin/database"); // Redirect back to the admin page
+    exit();
+}
+
+// Update een Voslocatie
+if (isset($_POST['update_voslocatie'])) {
+    // Check user privilege
+    $sql_priv = "SELECT priv FROM Gebruikers WHERE id='" . $_SESSION['id'] . "'";
+    $result_priv = mysqli_query($conn, $sql_priv);
+    $user = mysqli_fetch_assoc($result_priv);
+
+    if ($user && $user['priv'] > 1) {
+        $id = intval($_POST['voslocatie_id']);
+        $type = mysqli_real_escape_string($conn, $_POST['type']);
+        $deelgebied = mysqli_real_escape_string($conn, $_POST['deelgebied']);
+        $ingestuurd_op = mysqli_real_escape_string($conn, date('Y-m-d H:i:s', strtotime($_POST['ingestuurd_op'])));
+        $coord_x = mysqli_real_escape_string($conn, $_POST['coordinaat_x']);
+        $coord_y = mysqli_real_escape_string($conn, $_POST['coordinaat_y']);
+        $code = mysqli_real_escape_string($conn, $_POST['code']);
+        $opmerking = mysqli_real_escape_string($conn, $_POST['opmerking']);
+
+        // Validation for 'code' when type is 'Hunt'
+        if ($type === 'Hunt' && empty($code)) {
+            die("Error: Code is verplicht bij het type Hunt.");
+        }
+
+        $sql_update = "UPDATE Voslocaties SET 
+                        type = '$type',
+                        deelgebied = '$deelgebied',
+                        ingestuurd_op = '$ingestuurd_op',
+                        coordinaat_x = '$coord_x',
+                        coordinaat_y = '$coord_y',
+                        code = '$code',
+                        opmerking = '$opmerking'
+                      WHERE id = $id";
+        
+        if (mysqli_query($conn, $sql_update)) {
+            // Success
+        } else {
+            // Error
+            error_log("Error updating record: " . mysqli_error($conn));
+        }
+    }
+    header("Location: admin/database"); // Redirect back to the admin page
+    exit();
+}
+
   
 // elke x seconden gps locatie ophalen
 if (isset($_GET['lat']) AND isset($_GET['lon'])){
