@@ -1,11 +1,6 @@
 <?php
-// Correct token    cc39d671.b495066  Niels Maarleveld
-// Correct token    1fad5865.7e31e58  Lilian Venema
-// Incorrect Token  c6e6badd.79a96a0
-// Impossible Token c6e6badd.79a96a9
-
-
 header('Content-Type: application/json');
+
 require("../dblogin.php");
 
 
@@ -60,7 +55,6 @@ if (isset($_GET['groups'])) {
   if (is_numeric($_GET['groups'])) { $query =  " WHERE id = '".$_GET['groups']."'";} 
   elseif ($_GET['groups'] == "me") { }
   else {$query = null;}
-  //$sql = "SELECT * FROM Groepen $query";
   $sql = "SELECT * FROM Groepen".$query;
   $result = mysqli_query($conn, $sql);
   if (mysqli_num_rows($result) > 0) {
@@ -89,7 +83,6 @@ if (isset($_GET['vossen'])) {
     $vossen = explode(",",$_GET['vossen']);
     foreach($vossen as $vos) {
       if (in_array($vos,$vossen_all)){
-//         echo "true";
       } else {
         $output["status"]["code"] = 400;
         $output["status"]["info"] = "Unknown Vos, grrrrr";
@@ -99,7 +92,6 @@ if (isset($_GET['vossen'])) {
   } else {
     $vossen = $vossen_all;
   }
-  //$vossen = array("alpha","foxtrot");
   if ($priv >= 1){
     $sql = "SELECT * FROM Voslog ORDER BY datumtijd asc";
     $result = mysqli_query($conn, $sql);
