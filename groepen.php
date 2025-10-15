@@ -9,7 +9,7 @@ if (!isset($_SESSION['id'])){
 }
 
 require("dblogin.php");
-
+require_once("functies.php");
 
 
 $sql = "SELECT * FROM Gebruikers WHERE id='".$_SESSION['id']."'";

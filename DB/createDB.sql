@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: maarleveld.one.mysql.service.one.com:3306
--- Generation Time: Oct 12, 2025 at 07:07 PM
--- Server version: 10.6.23-MariaDB-ubu2204
--- PHP Version: 8.1.2-1ubuntu2.22
+-- Gegenereerd op: 15 okt 2025 om 13:20
+-- Serverversie: 10.6.23-MariaDB-ubu2204
+-- PHP-versie: 8.1.2-1ubuntu2.22
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -24,7 +24,7 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Auto`
+-- Tabelstructuur voor tabel `Auto`
 --
 
 CREATE TABLE `Auto` (
@@ -36,7 +36,7 @@ CREATE TABLE `Auto` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Auto_Bijrijders`
+-- Tabelstructuur voor tabel `Auto_Bijrijders`
 --
 
 CREATE TABLE `Auto_Bijrijders` (
@@ -48,7 +48,7 @@ CREATE TABLE `Auto_Bijrijders` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Auto_Positie`
+-- Tabelstructuur voor tabel `Auto_Positie`
 --
 
 CREATE TABLE `Auto_Positie` (
@@ -62,7 +62,7 @@ CREATE TABLE `Auto_Positie` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Cronjobs`
+-- Tabelstructuur voor tabel `Cronjobs`
 --
 
 CREATE TABLE `Cronjobs` (
@@ -76,7 +76,7 @@ CREATE TABLE `Cronjobs` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Cronlogs`
+-- Tabelstructuur voor tabel `Cronlogs`
 --
 
 CREATE TABLE `Cronlogs` (
@@ -90,7 +90,7 @@ CREATE TABLE `Cronlogs` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Gebruikers`
+-- Tabelstructuur voor tabel `Gebruikers`
 --
 
 CREATE TABLE `Gebruikers` (
@@ -111,7 +111,7 @@ CREATE TABLE `Gebruikers` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Groepen`
+-- Tabelstructuur voor tabel `Groepen`
 --
 
 CREATE TABLE `Groepen` (
@@ -131,7 +131,7 @@ CREATE TABLE `Groepen` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Hints`
+-- Tabelstructuur voor tabel `Hints`
 --
 
 CREATE TABLE `Hints` (
@@ -144,7 +144,7 @@ CREATE TABLE `Hints` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Nieuws`
+-- Tabelstructuur voor tabel `Nieuws`
 --
 
 CREATE TABLE `Nieuws` (
@@ -157,7 +157,7 @@ CREATE TABLE `Nieuws` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Opdrachten`
+-- Tabelstructuur voor tabel `Opdrachten`
 --
 
 CREATE TABLE `Opdrachten` (
@@ -166,40 +166,50 @@ CREATE TABLE `Opdrachten` (
   `inhoud` text NOT NULL,
   `datum` datetime NOT NULL,
   `eindtijd` datetime NOT NULL,
-  `maxpunten` int(11) NOT NULL
+  `maxpunten` int(11) NOT NULL,
+  `ingestuurd_op` timestamp NULL DEFAULT NULL COMMENT 'Timestamp of when the group submitted this assignment'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Punten`
+-- Tabelstructuur voor tabel `Punten`
 --
 
 CREATE TABLE `Punten` (
-  `groep_id` int(11) NOT NULL
+  `groep_id` int(11) NOT NULL,
+  `hunts` int(11) DEFAULT 0,
+  `tegenhunts` int(11) DEFAULT 0,
+  `opdrachten` int(11) DEFAULT 0,
+  `foto_opdrachten` int(11) DEFAULT 0,
+  `hints` int(11) DEFAULT 0,
+  `strafpunten` int(11) DEFAULT 0,
+  `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Site_Instellingen`
+-- Tabelstructuur voor tabel `Site_Instellingen`
 --
 
 CREATE TABLE `Site_Instellingen` (
   `Instelling` varchar(32) NOT NULL,
-  `Waarde` varchar(32) NOT NULL,
+  `Waarde` varchar(128) NOT NULL,
   `Omschrijving` varchar(128) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `Site_Instellingen`
+-- Gegevens worden geëxporteerd voor tabel `Site_Instellingen`
 --
 
 INSERT INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) VALUES
-('FOXEXCHANGE_ENDDATE', '2025-10-18T23:15:00+02:00', 'Datumtijd van het einde van de vossenwissel in ISO 8601 met offset formaat. Bepaald ook wanneer de 2e speelhelft begint.'),
-('FOXEXCHANGE_STARTDATE', '2025-10-18T22:45:00+02:00', 'Datumtijd van de begin van de vossenwissel in ISO 8601 met offset formaat. Bepaald ook wanneer de 2e speelhelft begint.'),
-('GAME_ENDDATE', '2025-10-19T12:00:00+02:00', 'Datumtijd van het einde van de Jotihunt in ISO 8601 met offset formaat.'),
-('GAME_STARTDATE', '2025-10-18T10:00:00+02:00', 'Datumtijd van de start van de Jotihunt in ISO 8601 met offset formaat.'),
+('API_KEY_FIREBASE', 'jouw_firebase_api_key_hier', 'The API key for the Firebase configuration.'),
+('API_KEY_MAPBOX', 'jouw_mapbox_api_key_hier', 'The public access token for Mapbox.'),
+('FOXEXCHANGE_ENDDATE', '2025-10-12T23:15:00+02:00', 'Datumtijd van het einde van de vossenwissel in ISO 8601 met offset formaat. Bepaald ook wanneer de 2e speelhelft begint.'),
+('FOXEXCHANGE_STARTDATE', '2025-10-11T22:45:00+02:00', 'Datumtijd van de begin van de vossenwissel in ISO 8601 met offset formaat. Bepaald ook wanneer de 2e speelhelft begint.'),
+('GAME_ENDDATE', '2025-10-12T12:00:00+02:00', 'Datumtijd van het einde van de Jotihunt in ISO 8601 met offset formaat.'),
+('GAME_STARTDATE', '2025-10-11T10:00:00+02:00', 'Datumtijd van de start van de Jotihunt in ISO 8601 met offset formaat.'),
 ('GROUP_LOGO_LARGE_URL', 'media/geusje_bevosd.png', 'A local or external URL for the group logo.'),
 ('GROUP_LOGO_SMALL_URL', 'media/geusje_bevosd.png', 'A local or external URL for the group logo. '),
 ('GROUP_NAME', 'De Geuzen Arnhem', 'The name of the scout group(s) using this website.'),
@@ -208,7 +218,7 @@ INSERT INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Voslocaties`
+-- Tabelstructuur voor tabel `Voslocaties`
 --
 
 CREATE TABLE `Voslocaties` (
@@ -227,7 +237,7 @@ CREATE TABLE `Voslocaties` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `Voslog`
+-- Tabelstructuur voor tabel `Voslog`
 --
 
 CREATE TABLE `Voslog` (
@@ -244,146 +254,152 @@ CREATE TABLE `Voslog` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Indexes for dumped tables
+-- Indexen voor geëxporteerde tabellen
 --
 
 --
--- Indexes for table `Auto`
+-- Indexen voor tabel `Auto`
 --
 ALTER TABLE `Auto`
   ADD PRIMARY KEY (`kenteken`),
   ADD KEY `eigenaar` (`eigenaar`);
 
 --
--- Indexes for table `Auto_Bijrijders`
+-- Indexen voor tabel `Auto_Bijrijders`
 --
 ALTER TABLE `Auto_Bijrijders`
   ADD PRIMARY KEY (`gebruiker_id`),
   ADD KEY `Auto_Bijrijders_ibfk_3` (`auto`);
 
 --
--- Indexes for table `Auto_Positie`
+-- Indexen voor tabel `Auto_Positie`
 --
 ALTER TABLE `Auto_Positie`
   ADD PRIMARY KEY (`auto`,`datumtijd`),
   ADD KEY `gebruiker_id` (`gebruiker_id`);
 
 --
--- Indexes for table `Cronjobs`
+-- Indexen voor tabel `Cronjobs`
 --
 ALTER TABLE `Cronjobs`
   ADD PRIMARY KEY (`name`);
 
 --
--- Indexes for table `Cronlogs`
+-- Indexen voor tabel `Cronlogs`
 --
 ALTER TABLE `Cronlogs`
   ADD PRIMARY KEY (`name`,`exec_time`),
   ADD UNIQUE KEY `name` (`name`,`exec_time`);
 
 --
--- Indexes for table `Gebruikers`
+-- Indexen voor tabel `Gebruikers`
 --
 ALTER TABLE `Gebruikers`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `Groepen`
+-- Indexen voor tabel `Groepen`
 --
 ALTER TABLE `Groepen`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `Hints`
+-- Indexen voor tabel `Hints`
 --
 ALTER TABLE `Hints`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `Nieuws`
+-- Indexen voor tabel `Nieuws`
 --
 ALTER TABLE `Nieuws`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `Opdrachten`
+-- Indexen voor tabel `Opdrachten`
 --
 ALTER TABLE `Opdrachten`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `Site_Instellingen`
+-- Indexen voor tabel `Punten`
+--
+ALTER TABLE `Punten`
+  ADD PRIMARY KEY (`groep_id`);
+
+--
+-- Indexen voor tabel `Site_Instellingen`
 --
 ALTER TABLE `Site_Instellingen`
   ADD PRIMARY KEY (`Instelling`);
 
 --
--- Indexes for table `Voslocaties`
+-- Indexen voor tabel `Voslocaties`
 --
 ALTER TABLE `Voslocaties`
   ADD PRIMARY KEY (`id`),
   ADD KEY `ingeleverd_door` (`ingeleverd_door`);
 
 --
--- Indexes for table `Voslog`
+-- Indexen voor tabel `Voslog`
 --
 ALTER TABLE `Voslog`
   ADD PRIMARY KEY (`id`);
 
 --
--- AUTO_INCREMENT for dumped tables
+-- AUTO_INCREMENT voor geëxporteerde tabellen
 --
 
 --
--- AUTO_INCREMENT for table `Gebruikers`
+-- AUTO_INCREMENT voor een tabel `Gebruikers`
 --
 ALTER TABLE `Gebruikers`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `Voslocaties`
+-- AUTO_INCREMENT voor een tabel `Voslocaties`
 --
 ALTER TABLE `Voslocaties`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `Voslog`
+-- AUTO_INCREMENT voor een tabel `Voslog`
 --
 ALTER TABLE `Voslog`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- Constraints for dumped tables
+-- Beperkingen voor geëxporteerde tabellen
 --
 
 --
--- Constraints for table `Auto`
+-- Beperkingen voor tabel `Auto`
 --
 ALTER TABLE `Auto`
   ADD CONSTRAINT `Auto_ibfk_1` FOREIGN KEY (`eigenaar`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `Auto_Bijrijders`
+-- Beperkingen voor tabel `Auto_Bijrijders`
 --
 ALTER TABLE `Auto_Bijrijders`
   ADD CONSTRAINT `Auto_Bijrijders_ibfk_2` FOREIGN KEY (`gebruiker_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `Auto_Bijrijders_ibfk_3` FOREIGN KEY (`auto`) REFERENCES `Auto` (`kenteken`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `Auto_Positie`
+-- Beperkingen voor tabel `Auto_Positie`
 --
 ALTER TABLE `Auto_Positie`
   ADD CONSTRAINT `Auto_Positie_ibfk_2` FOREIGN KEY (`gebruiker_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `Auto_Positie_ibfk_3` FOREIGN KEY (`auto`) REFERENCES `Auto` (`kenteken`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `Cronlogs`
+-- Beperkingen voor tabel `Cronlogs`
 --
 ALTER TABLE `Cronlogs`
   ADD CONSTRAINT `Cronlogs_ibfk_1` FOREIGN KEY (`name`) REFERENCES `Cronjobs` (`name`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Constraints for table `Voslocaties`
+-- Beperkingen voor tabel `Voslocaties`
 --
 ALTER TABLE `Voslocaties`
   ADD CONSTRAINT `Voslocaties_ibfk_1` FOREIGN KEY (`ingeleverd_door`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;

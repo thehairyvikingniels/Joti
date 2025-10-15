@@ -56,7 +56,7 @@ if (isset($_GET['punt_lat'])){
 require("dblogin.php");
 
 // Get global site settings for game times
-$sql_settings = "SELECT * FROM Site_Instellingen WHERE Instelling IN ('FOXEXCHANGE_STARTDATE', 'FOXEXCHANGE_ENDDATE')";
+$sql_settings = "SELECT * FROM Site_Instellingen WHERE Instelling IN ('FOXEXCHANGE_STARTDATE', 'FOXEXCHANGE_ENDDATE', 'API_KEY_MAPBOX')";
 $result_settings = mysqli_query($conn, $sql_settings);
 $siteSettings = array();
 if (mysqli_num_rows($result_settings) > 0) {
@@ -151,10 +151,12 @@ if ($show_helft1 && !$show_helft2) {
     $time_filter_sql = " AND 1=0"; // Effectively show nothing
 }
 
+// Get Mapbox API Key from settings
+$mapbox_api_key = $siteSettings['API_KEY_MAPBOX'] ?? '';
+
+echo "mapboxgl.accessToken = '" . addslashes($mapbox_api_key) . "';";
 
 echo "         
-mapboxgl.accessToken = 'pk.eyJ1IjoidGhlaGFpcnl2aWtpbmduaWVscyIsImEiOiJjam40YzI2eGEwMjh6M3hscGEweHpxYzg1In0.3obc3XmgMCZ-rY5LLzhW2A';
-
 const map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/mapbox/streets-v11',

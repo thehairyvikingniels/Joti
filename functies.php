@@ -15,6 +15,151 @@ if (isset($_GET['gpstoggle'])){
   header("Location: ".$_GET['return']."");
   
 }
+
+// Zet een tijd in een leesbare vorm
+function time2str($ts) {
+    if(!ctype_digit($ts)) {
+        $ts = strtotime($ts);
+    }
+    $diff = time() - $ts;
+    if($diff == 0) {
+        return 'Nu';
+    } elseif($diff > 0) {
+        $day_diff = floor($diff / 86400);
+        if($day_diff == 0) {
+            if($diff < 60) return 'Zojuist';
+            if($diff < 120) return '1 min geleden';
+            if($diff < 3600) return floor($diff / 60) . ' min geleden';
+            if($diff < 7200) return '1 uur geleden';
+            if($diff < 86400) return floor($diff / 3600) . ' uur geleden';
+        }
+        if($day_diff == 1) { return 'Gisteren'; }
+        if($day_diff < 7) { return $day_diff . ' dagen geleden'; }
+        if($day_diff < 8) { return ceil($day_diff / 7) . ' week geleden'; }
+        if($day_diff < 31) { return ceil($day_diff / 7) . ' weken geleden'; }
+        if($day_diff < 60) { return 'Vorige maand'; }
+        return date('F Y', $ts);
+    } else {
+        $diff = abs($diff);
+        $day_diff = floor($diff / 86400);
+        if($day_diff == 0) {
+            if($diff < 120) { return 'Over een min'; }
+            if($diff < 3600) { return 'Over ' . floor($diff / 60) . ' min'; }
+            if($diff < 7200) { return 'Over een uur'; }
+            if($diff < 86400) { return 'Over ' . floor($diff / 3600) . ' uur'; }
+        }
+        if($day_diff == 1) { return 'Morgen'; }
+        if($day_diff < 4) { return date('l', $ts); }
+        if($day_diff < 7 + (7 - date('w'))) { return 'Volgende week'; }
+        if(ceil($day_diff / 7) < 4) { return 'Over ' . ceil($day_diff / 7) . ' weken'; }
+        if(date('n', $ts) == date('n') + 1) { return 'Volgende maand'; }
+        return date('F Y', $ts);
+    }
+}
+
+/**
+ * Calculates the great-circle distance between two points, with
+ * the Haversine formula.
+ * @param float $latitudeFrom Latitude of start point in [deg decimal]
+ * @param float $longitudeFrom Longitude of start point in [deg decimal]
+ * @param float $latitudeTo Latitude of target point in [deg decimal]
+ * @param float $longitudeTo Longitude of target point in [deg decimal]
+ * @param float $earthRadius Mean earth radius in [m]
+ * @return float Distance between points in [m] (same as earthRadius)
+ */
+function latlon_dist($latitudeFrom, $longitudeFrom, $latitudeTo, $longitudeTo, $earthRadius = 6371000) {
+    // convert from degrees to radians
+    $latFrom = deg2rad($latitudeFrom);
+    $lonFrom = deg2rad($longitudeFrom);
+    $latTo = deg2rad($latitudeTo);
+    $lonTo = deg2rad($longitudeTo);
+
+    $latDelta = $latTo - $latFrom;
+    $lonDelta = $lonTo - $lonFrom;
+
+    $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) + cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+    return round($angle * $earthRadius);
+}
+
+// RD coordinaten omzetten naar WGS84 coordinaten
+// https://forum.geocaching.nl/topic/7886-co%C3%B6rdinaat-transformaties-rd-wgs/#elComment_117766
+function rdtowgs($rdx, $rdy){
+  $dx = ($rdx - 155000) * pow(10,-5);
+  $dy = ($rdy - 463000) * pow(10,-5);
+  
+  $somN = (3235.65389 * $dy) + (-32.58297 * pow($dx,2)) + (-0.2475 * pow($dy,2)) + (-0.84978 * pow($dx,2) * $dy) + (-0.0655 * pow($dy,3)) + (-0.01709 * pow($dx,2) * pow($dy,2)) + (-0.00738 * $dx) + (0.0053 * pow($dx,4)) + (-0.00039 * pow($dx,2) * pow($dy,3)) + (0.00033 * pow($dx,4) * $dy) + (-0.00012 * $dx * $dy);
+  $somE = (5260.52916 * $dx) + (105.94684 * $dx * $dy) + (2.45656 * $dx * pow($dy,2)) + (-0.81885 * pow($dx,3)) + (0.05594 * $dx * pow($dy,3)) + (-0.05607 * pow($dx,3) * $dy) + (0.01199 * $dy) + (-0.00256 * pow($dx,3) * pow($dy,2)) + (0.00128 * $dx * pow($dy,4)) + (0.00022 * pow($dy,2)) + (-0.00022 * pow($dx,2)) + (0.00026 * pow($dx,5));
+    
+  $a["lat"] = 52.15517 + ($somN / 3600);
+  $a["lon"] = 5.387206 + ($somE / 3600);
+  return($a);
+}
+
+// Verwijder een Voslocatie
+if (isset($_GET['verwijder_voslocatie'])) {
+    // Check user privilege
+    $sql_priv = "SELECT priv FROM Gebruikers WHERE id='" . $_SESSION['id'] . "'";
+    $result_priv = mysqli_query($conn, $sql_priv);
+    $user = mysqli_fetch_assoc($result_priv);
+
+    if ($user && $user['priv'] > 1) {
+        $id_to_delete = intval($_GET['verwijder_voslocatie']);
+        $sql_delete = "DELETE FROM Voslocaties WHERE id = " . $id_to_delete;
+        
+        if (mysqli_query($conn, $sql_delete)) {
+            // Success
+        } else {
+            // Error, you could add error logging here
+            error_log("Error deleting record: " . mysqli_error($conn));
+        }
+    }
+    header("Location: admin/database"); // Redirect back to the admin page
+    exit();
+}
+
+// Update een Voslocatie
+if (isset($_POST['update_voslocatie'])) {
+    // Check user privilege
+    $sql_priv = "SELECT priv FROM Gebruikers WHERE id='" . $_SESSION['id'] . "'";
+    $result_priv = mysqli_query($conn, $sql_priv);
+    $user = mysqli_fetch_assoc($result_priv);
+
+    if ($user && $user['priv'] > 1) {
+        $id = intval($_POST['voslocatie_id']);
+        $type = mysqli_real_escape_string($conn, $_POST['type']);
+        $deelgebied = mysqli_real_escape_string($conn, $_POST['deelgebied']);
+        $ingestuurd_op = mysqli_real_escape_string($conn, date('Y-m-d H:i:s', strtotime($_POST['ingestuurd_op'])));
+        $coord_x = mysqli_real_escape_string($conn, $_POST['coordinaat_x']);
+        $coord_y = mysqli_real_escape_string($conn, $_POST['coordinaat_y']);
+        $code = mysqli_real_escape_string($conn, $_POST['code']);
+        $opmerking = mysqli_real_escape_string($conn, $_POST['opmerking']);
+
+        // Validation for 'code' when type is 'Hunt'
+        if ($type === 'Hunt' && empty($code)) {
+            die("Error: Code is verplicht bij het type Hunt.");
+        }
+
+        $sql_update = "UPDATE Voslocaties SET 
+                        type = '$type',
+                        deelgebied = '$deelgebied',
+                        ingestuurd_op = '$ingestuurd_op',
+                        coordinaat_x = '$coord_x',
+                        coordinaat_y = '$coord_y',
+                        code = '$code',
+                        opmerking = '$opmerking'
+                      WHERE id = $id";
+        
+        if (mysqli_query($conn, $sql_update)) {
+            // Success
+        } else {
+            // Error
+            error_log("Error updating record: " . mysqli_error($conn));
+        }
+    }
+    header("Location: admin/database"); // Redirect back to the admin page
+    exit();
+}
+
   
 // elke x seconden gps locatie ophalen
 if (isset($_GET['lat']) AND isset($_GET['lon'])){

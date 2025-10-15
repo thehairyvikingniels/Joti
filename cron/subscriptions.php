@@ -5,28 +5,9 @@ define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');
 $output = "";
 
-$token = "S5d78c5180a4457.86389445";
-// $servername = "localhost";
-// $username = "nielsmd365_joti";
-// $password = "jotihunt2019";
-// $dbname = "nielsmd365_joti";
+require_once("../dblogin.php");
 
-$servername = "localhost";
-$username = "maarleveld_one_joti";
-$password = "jVfxEi8VxemB7mTF";
-$dbname = "maarleveld_one_joti";
-
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
 $datumtijd = date('Y-m-d H:i:s');
-
-
-
-
 
 
 log2DB("-GROEPEN<br>");

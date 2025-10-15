@@ -5,6 +5,7 @@ if (!isset($_SESSION['id'])){
   header("Location: index");
 }
 require("dblogin.php");
+require_once("functies.php");
 
 $sql = "SELECT * FROM Gebruikers WHERE id='".$_SESSION['id']."'";
 $result = mysqli_query($conn, $sql);
