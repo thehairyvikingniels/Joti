@@ -9,7 +9,7 @@ if (!isset($_SESSION['id'])){
 }
 
 require("dblogin.php");
-
+require_once("functies.php");
 
 
 if (isset($_GET['refresh'])){

@@ -1,9 +1,9 @@
 <?php
 // Database connection
 $servername = "localhost";
-$username = "maarleveld_one_joti";
-$password = "jVfxEi8VxemB7mTF";
-$dbname = "maarleveld_one_joti";
+$username = "DB_Username";
+$password = "DB_Password";
+$dbname = "DB_Name";
 
 date_default_timezone_set('Europe/Amsterdam');
 
