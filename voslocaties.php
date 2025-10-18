@@ -167,7 +167,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
       <div class="w3-container w3-blue-gray">
         <h2>Nieuwe voslocatie toevoegen</h2>
       </div>
-      <form class="w3-container w3-padding" method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
+      <form class="w3-container w3-padding" method="post" action="voslocaties.php">
         
         <!-- This is where success or error messages will be displayed -->
         <?php echo $message; ?>
