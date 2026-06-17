@@ -1,10 +1,16 @@
-RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^([^\.]+)$ $1.php [NC,L]
+# Schakel MultiViews uit om conflicten met mod_rewrite te voorkomen
+Options -MultiViews
 
+RewriteEngine On
 
 ##------Forceer HTTPS verbinding geheel domein------##
-RewriteEngine On
 RewriteCond %{HTTPS} !=on
 RewriteRule ^/?(.*) https://%{SERVER_NAME}/$1 [R,L]
-##
+
+##------Verberg .php extensie------##
+# Controleer of de opgevraagde URL geen bestaande map is
+RewriteCond %{REQUEST_FILENAME} !-d
+# Controleer of de opgevraagde URL geen bestaand bestand is
+RewriteCond %{REQUEST_FILENAME} !-f
+# Voeg intern .php toe aan het verzoek EN behoud de GET-parameters (QSA)
+RewriteRule ^([^\.]+)$ $1.php [QSA,NC,L]
