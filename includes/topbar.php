@@ -1,15 +1,18 @@
 <?php
+$vossen = array("Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel");
+$vos = array();
+foreach ($vossen as $vosnaam) {
+    $vos[$vosnaam]["Kleur"] = "grey"; // Standaard w3css kleur bij geen data
+    $vos[$vosnaam]["duratie"] = "-";
+    $vos[$vosnaam]["Status"] = 0;
+}
 $sql = "Select * FROM Voslog ORDER BY datumtijd desc LIMIT 1";
 
 $result = mysqli_query($conn, $sql);
 
-
-
 if (mysqli_num_rows($result) > 0) {
   
   $a = 0;
-
-  $vossen = array("Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel");
 
     while($row = mysqli_fetch_assoc($result)) {
 
