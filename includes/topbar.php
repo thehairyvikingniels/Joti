@@ -93,3 +93,18 @@ if (mysqli_num_rows($result) > 0) {
   <span class="w3-bar-item w3-right"><?= $siteSettings['GROUP_NAME']?></span>
 
 </div>
+
+<style>
+  /* Maak alleen het hoofdgedeelte flexibel, laat de body en sidebar met rust */
+  .w3-main {
+    display: flex;
+    flex-direction: column;
+    /* 100% van de schermhoogte, min de 43px marge van de topbar */
+    min-height: calc(100vh - 43px); 
+  }
+
+  /* Duw de footer áltijd naar de bodem van w3-main */
+  #site-footer-wrapper {
+    margin-top: auto;
+  }
+</style>
