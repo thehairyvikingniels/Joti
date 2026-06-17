@@ -122,7 +122,7 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
     <a href="<?=$notInAdminfolder?>instellingen" class="w3-bar-item w3-button w3-padding<?= $pagelist['instellingen']['active']?>"><i class="fas fa-cog fa-fw"></i>  Instellingen</a>
     <?php if ($priv > 0){echo '<a href="'.$notInAdminfolder.'autos" class="w3-bar-item w3-button w3-padding'.$pagelist['autos']['active'].'"><i class="fas fa-car fa-fw"></i>  Auto\'s</a>';}?>
     <?php if ($priv > 1){echo '<a href="'.$inAdminfolder.'users" class="w3-bar-item w3-button w3-padding'.$pagelist['a_users']['active'].'"><i class="fas fa-user-cog fa-fw"></i>  [Admin] Users</a>';} ?>
-    <?php if ($priv > 1){echo '<a href="'.$inAdminfolder.'cronjobs" class="w3-bar-item w3-button w3-padding"'.$pagelist['a_cronjobs']['active'].'><i class="fas fa-stopwatch fa-fw"></i>  [Admin] Cronjobs</a>';} ?>
+    <?php if ($priv > 1){echo '<a href="'.$inAdminfolder.'cronjobs" class="w3-bar-item w3-button w3-padding'.$pagelist['a_cronjobs']['active'].'"><i class="fas fa-stopwatch fa-fw"></i>  [Admin] Cronjobs</a>';} ?>
     <?php if ($priv > 1){echo '<a href="'.$inAdminfolder.'database" class="w3-bar-item w3-button w3-padding'.$pagelist['a_database']['active'].'"><i class="fas fa-database fa-fw"></i>  [Admin] Database</a>';} ?>
     <?php if ($priv > 2){echo '<a href="'.$inAdminfolder.'settings" class="w3-bar-item w3-button w3-padding'.$pagelist['sa_settings']['active'].'"><i class="fas fa-toolbox fa-fw"></i>  [Admin] Settings</a>';} ?><br><br>
   </div>
