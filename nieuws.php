@@ -13,29 +13,18 @@ require("dblogin.php");
 require_once("functies.php");
 
 
-$sql = "SELECT * FROM Gebruikers WHERE id='".$_SESSION['id']."'";
+$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
+$stmt->bind_param("i", $_SESSION['id']);
+$stmt->execute();
+$result = $stmt->get_result();
 
-$result = mysqli_query($conn, $sql);
-
-
-
-if (mysqli_num_rows($result) > 0) {
-
-    // output data of each row
-
-    while($row = mysqli_fetch_assoc($result)) {
-
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
       $vn = $row['voornaam'];
-
       $priv = $row['priv'];
-
     }
-
-} else {
-
-    echo "0 results";
-
 }
+$stmt->close();
 
 
 // Get global site settings

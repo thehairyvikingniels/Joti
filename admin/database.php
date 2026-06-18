@@ -9,15 +9,18 @@ if (!isset($_SESSION['id'])) {
 
 require("../dblogin.php");
 
-$sql = "SELECT * FROM Gebruikers WHERE id='" . $_SESSION['id'] . "'";
-$result = mysqli_query($conn, $sql);
+$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
+$stmt->bind_param("i", $_SESSION['id']);
+$stmt->execute();
+$result = $stmt->get_result();
 
-if (mysqli_num_rows($result) > 0) {
-    while ($row = mysqli_fetch_assoc($result)) {
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
         $vn = $row['voornaam'];
         $priv = $row['priv'];
     }
 }
+$stmt->close();
 
 if ($priv < 2) {
     header("Location: ../home");
