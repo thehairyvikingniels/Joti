@@ -3,14 +3,13 @@ define("PAGE_NAME", "punten");
 session_start();
 
 if (!isset($_SESSION['id'])){
-
   header("Location: index");
-
 }
 
 require("dblogin.php");
 
 
+// Get userdata
 $stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
 $stmt->bind_param("i", $_SESSION['id']);
 $stmt->execute();
@@ -24,99 +23,66 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
+
 // Get global site settings
-$sql = "SELECT * FROM Site_Instellingen";
-$result = mysqli_query($conn, $sql);
+$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
+$stmt->execute();
+$result = $stmt->get_result();
 
 $siteSettings = array();
 
-if (mysqli_num_rows($result) > 0) {
-    while($row = mysqli_fetch_assoc($result)) {
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
       $siteSettings[$row['Instelling']] = $row['Waarde'];
     }
-} else {
-    echo "0 results";
-    exit();
 }
+$stmt->close();
 
 
-$sql = "SELECT id, count(*) as NUM FROM Groepen";
+// Get scout group count
+$stmt = $conn->prepare("SELECT id, count(*) as NUM FROM Groepen");
+$stmt->execute();
+$result = $stmt->get_result();
 
-$result = mysqli_query($conn, $sql);
-
-
-
-if (mysqli_num_rows($result) > 0) {
-
-    // output data of each row
-
-    while($row = mysqli_fetch_assoc($result)) {
-
-      $groepaantal = $row['NUM'];
-
-    }
-
+if ($result->num_rows > 0) {
+  while($row = $result->fetch_assoc()) {
+    $groepaantal = $row['NUM'];
+  }
 } else {
-
-    $groepaantal = "E?";
-
+  $groepaantal = "E?";
 }
+$stmt->close();
 
 
+// Get score from points table for 'Geuzen'
+$stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')");
+$stmt->execute();
+$result = $stmt->get_result();
 
-$sql = "SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')";
-
-$result = mysqli_query($conn, $sql);
-
-
-
-if (mysqli_num_rows($result) > 0) {
-
-    // output data of each row
-
-    while($row = mysqli_fetch_assoc($result)) {
-
+if ($result->num_rows > 0) {
+  while($row = $result->fetch_assoc()) {
       $plaats = $row['plaats'];
-
       $hunts = $row['hunts'];
-
       $tegenhunts = $row['tegenhunts'];
-
       $opdrachten = $row['opdrachten'];
-
       $fotoopdrachten = $row['fotoopdrachten'];
-
       $hints = $row['hints'];
-
       $bonus = $row['bonus'];
-
       $penalties = $row['penalties'];
-
       $puntentotaal = $row['totaal'];
-
-    }
-
+  }
 } else {
-
-    $plaats = 0;
-
-    $hunts = 0;
-
-    $tegenhunts = 0;
-
-    $opdrachten = 0;
-
-    $fotoopdrachten = 0;
-
-    $hints = 0;
-
-    $bonus = 0;
-
-    $penalties = 0;
-
-    $puntentotaal = 0;
-
+  $plaats = 0;
+  $hunts = 0;
+  $tegenhunts = 0;
+  $opdrachten = 0;
+  $fotoopdrachten = 0;
+  $hints = 0;
+  $bonus = 0;
+  $penalties = 0;
+  $puntentotaal = 0;
 }
+$stmt->close();
 
 ?>
 
@@ -267,53 +233,31 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
           </tr>
 
           <?php
+          // Get the points for own group
+          $stmt = $conn->prepare("SELECT * FROM Punten");
+          $stmt->execute();
+          $result = $stmt->get_result();
 
-          $sql = "SELECT * FROM Punten";
-
-          $result = mysqli_query($conn, $sql);
-
-
-
-          if (mysqli_num_rows($result) > 0) {
-
-            // output data of each row
-
-            while($row = mysqli_fetch_assoc($result)) {
-
+          if ($result->num_rows > 0) {
+            while($row = $result->fetch_assoc()) {
               echo '
-
               <tr>
-
                 <td>'.$row['id'].'</td>
-
                 <td>'.$row['hunts'].'</td>
-
                 <td>'.$row['tegenhunts'].'</td>
-
                 <td>'.$row['opdrachten'].'</td>
-
                 <td>'.$row['fotoopdrachten'].'</td>
-
                 <td>'.$row['hints'].'</td>
-
                 <td>'.$row['bonus'].'</td>
-
                 <td>'.$row['penalties'].'</td>
-
                 <td>'.$row['totaal'].'</td>
-
               </tr>
-
               ';
-
             }
-
           } else {
-
             echo "</table><h3>Nog geen punt-gegevens beschikbaar...</h3>";
-
           }
-
+          $stmt->close();
         ?>
 
         </table>
