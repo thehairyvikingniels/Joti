@@ -24,27 +24,32 @@ if ($result->num_rows > 0) {
 $stmt->close();
 
 // Get global site settings
-$sql = "SELECT * FROM Site_Instellingen";
-$result = mysqli_query($conn, $sql);
+$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
+$stmt->execute();
+$result = $stmt->get_result();
 
 $siteSettings = array();
 
-if (mysqli_num_rows($result) > 0) {
-    while($row = mysqli_fetch_assoc($result)) {
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
       $siteSettings[$row['Instelling']] = $row['Waarde'];
     }
-} else {
-    echo "0 results";
-    exit();
 }
+$stmt->close();
 
 // Fetch game and fox exchange times from settings
-$settings_sql = "SELECT Instelling, Waarde FROM Site_Instellingen WHERE Instelling IN ('GAME_STARTDATE', 'GAME_ENDDATE', 'FOXEXCHANGE_STARTDATE', 'FOXEXCHANGE_ENDDATE')";
-$settings_result = mysqli_query($conn, $settings_sql);
+$stmt = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen WHERE Instelling IN ('GAME_STARTDATE', 'GAME_ENDDATE', 'FOXEXCHANGE_STARTDATE', 'FOXEXCHANGE_ENDDATE')");
+$stmt->execute();
+$result = $stmt->get_result();
+
 $settings = [];
-while($row = mysqli_fetch_assoc($settings_result)) {
-    $settings[$row['Instelling']] = $row['Waarde'];
+
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+        $settings[$row['Instelling']] = $row['Waarde'];
+    }
 }
+$stmt->close();
 
 $game_start_str = $settings['GAME_STARTDATE'] ?? '2025-10-11 10:00:00';
 $game_end_str = $settings['GAME_ENDDATE'] ?? '2025-10-12 12:00:00';
@@ -66,13 +71,26 @@ if ($total_duration_seconds <= 0) {
 
 
 // Fetch all voslog data
-$voslog_sql = "SELECT * FROM Voslog WHERE datumtijd >= '".$game_start_time->format('Y-m-d H-i-s')."' AND datumtijd <= '".$game_end_time->format('Y-m-d H-i-s')."' ORDER BY datumtijd ASC";
-$voslog_result = mysqli_query($conn, $voslog_sql);
+$stmt = $conn->prepare("SELECT * FROM Voslog WHERE datumtijd >= ? AND datumtijd <= ? ORDER BY datumtijd ASC");
+
+// Assign the method outputs to variables first
+$start_fmt = $game_start_time->format('Y-m-d H-i-s');
+$end_fmt = $game_end_time->format('Y-m-d H-i-s');
+
+// Pass the variables to bind_param
+$stmt->bind_param("ss", $start_fmt, $end_fmt);
+
+$stmt->execute();
+$result = $stmt->get_result();
 
 $voslog_data = [];
-while ($row = mysqli_fetch_assoc($voslog_result)) {
-    $voslog_data[] = $row;
+
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+        $voslog_data[] = $row;
+    }
 }
+$stmt->close();
 
 $fox_teams = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel'];
 $status_colors = [
