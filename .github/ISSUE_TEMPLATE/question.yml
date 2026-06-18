@@ -1,0 +1,11 @@
+name: Ask a Question
+description: Submit a question, request or bug about the project.
+title: "[Question]: "
+labels: ["Prio: 5", "Status: Pending Review", "Type: Question"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: What is your question, request or bug?
+    validations:
+      required: true
