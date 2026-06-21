@@ -1,12 +1,11 @@
 <?php
-define("PAGE_NAME", "a_database");
+define("PAGE_NAME", "a_cronjobs");
+
 session_start();
-
-if (!isset($_SESSION['id'])) {
-    header("Location: ../index");
-    exit();
+if (!isset($_SESSION['id'])){
+  header("Location: ../index");
+  exit();
 }
-
 require("../dblogin.php");
 
 $stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
@@ -16,8 +15,8 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
-        $vn = $row['voornaam'];
-        $priv = $row['priv'];
+      $vn = $row['voornaam'];
+      $priv = $row['priv'];
     }
 } else {
     session_destroy();
@@ -26,32 +25,39 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
-if ($priv < 2) {
-    header("Location: ../home");
-    exit();
+if ($priv < 2){
+  header("Location: ../home");
+  exit();
 }
 
 // Get global site settings
 $stmt_settings = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen");
 $stmt_settings->execute();
 $result_settings = $stmt_settings->get_result();
+
 $siteSettings = array();
 
 if ($result_settings->num_rows > 0) {
-    while ($row_settings = $result_settings->fetch_assoc()) {
-        $siteSettings[$row_settings['Instelling']] = $row_settings['Waarde'];
+    while($row = $result_settings->fetch_assoc()) {
+      $siteSettings[$row['Instelling']] = $row['Waarde'];
     }
 } else {
-    echo "0 results for settings";
+    echo "0 results";
     $stmt_settings->close();
     exit();
 }
 $stmt_settings->close();
 
-// Fetch Voslocaties
-$stmt_vos = $conn->prepare("SELECT * FROM Voslocaties ORDER BY ingestuurd_op DESC");
-$stmt_vos->execute();
-$result_voslocaties = $stmt_vos->get_result();
+// Dit lijkt een overblijfsel van a_users.php, maar is voor de veiligheid toch omgezet naar een prepared statement.
+if (isset($_POST["user"]) && isset($_POST['priv'])){
+    $stmt_priv = $conn->prepare("UPDATE Gebruikers SET priv=? WHERE id=?");
+    $stmt_priv->bind_param("ii", $_POST['priv'], $_POST['user']);
+
+    if ($stmt_priv->execute()) {
+        $succes = true;
+    }
+    $stmt_priv->close();
+}
 
 ?>
 <!DOCTYPE html>
@@ -64,16 +70,13 @@ $result_voslocaties = $stmt_vos->get_result();
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
 <style>
-    html, body, h1, h2, h3, h4, h5 { font-family: "Raleway", sans-serif }
-    .w3-table-all th { background-color: #f2f2f2; cursor: pointer; user-select: none;}
-    .w3-button { user-select: none; }
-    th .fas {
-        margin-left: 5px;
-        color: #ccc;
-    }
-    th .fas.active {
-        color: #333;
-    }
+html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
+@media only screen and (max-width: 600px) {
+  .mobile100 {
+    width:100%!important;
+    flex-basis:100%!important
+  }
+}
 </style>
 <body class="w3-light-grey">
 
@@ -83,229 +86,222 @@ $result_voslocaties = $stmt_vos->get_result();
 
 <div class="w3-main" style="margin-left:200px;margin-top:43px;">
 
-    <header class="w3-container" style="padding-top:22px">
-        <h5><b><i class="fas fa-cogs"></i> Admin</b></h5>
-    </header>
-
-    <div class="w3-row-padding" style="margin-bottom:100px;">
-        <div class="w3-col l12 m12 s12">
-            <div class="w3-card-4 w3-white">
-                <div class="w3-container w3-blue-gray w3-padding">
-                    <h5>Ingestuurde Locaties (Hints, Hunts, etc.)</h5>
-                </div>
-                <div class="w3-container w3-responsive">
-                    <table class="w3-table-all w3-hoverable" id="voslocatiesTable">
-                        <thead>
-                            <tr class="w3-light-grey">
-                                <th onclick="sortTable(0)">Type <i class="fas fa-sort"></i></th>
-                                <th onclick="sortTable(1)">Deelgebied <i class="fas fa-sort"></i></th>
-                                <th onclick="sortTable(2)">Ingestuurd Op <i class="fas fa-sort"></i></th>
-                                <th>Coördinaten (Lat, Lon)</th>
-                                <th>Code</th>
-                                <th>Opmerking</th>
-                                <th>Acties</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php
-                            if ($result_voslocaties->num_rows > 0) {
-                                while ($row = $result_voslocaties->fetch_assoc()) {
-                                    echo "<tr>";
-                                    echo "<td>" . htmlspecialchars($row['type']) . "</td>";
-                                    echo "<td>" . htmlspecialchars($row['deelgebied']) . "</td>";
-                                    echo "<td>" . date('Y-m-d H:i', strtotime($row['ingestuurd_op'])) . "</td>";
-                                    echo "<td>" . htmlspecialchars($row['coordinaat_x']) . ", " . htmlspecialchars($row['coordinaat_y']) . "</td>";
-                                    echo "<td>" . htmlspecialchars($row['code']) . "</td>";
-                                    echo "<td>" . htmlspecialchars($row['opmerking']) . "</td>";
-                                    
-                                    // Veilig encoderen van de JSON data voor gebruik in een HTML attribuut
-                                    $json_data = htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8');
-                                    
-                                    echo '<td>
-                                            <button onclick="openEditModal(' . $json_data . ')" class="w3-button w3-blue w3-small"><i class="fas fa-pencil-alt"></i></button>
-                                            <button onclick="openDeleteModal(' . (int)$row['id'] . ')" class="w3-button w3-red w3-small"><i class="fas fa-trash-alt"></i></button>
-                                          </td>';
-                                    echo "</tr>";
-                                }
-                            } else {
-                                echo "<tr><td colspan='7' class='w3-center'>Geen locaties gevonden.</td></tr>";
-                            }
-                            $stmt_vos->close();
-                            ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+  <header class="w3-container" style="padding-top:22px">
+    <h5><b><i class="fas fa-cogs"></i> Admin</b></h5>
+  </header>
+  <div class="w3-row" style="margin-bottom:100px;">
+    <div class="w3-col l12 m12 s12 w3-padding">
+      <div class="w3-card-4 w3-white">
+        <div class="w3-blue-gray w3-padding" style="width:100%">
+          <h5>Cronjobs [WIP]</h5>
         </div>
+        <ul class="w3-ul">
+        <?php
+        $sql = "SELECT cj.name, cj.enabled, cj.URL, cj.description, cj.interval, cl.exec_time, cl.exec_length, cl.exec_stat, cl.exec_output
+                FROM Cronjobs cj LEFT JOIN Cronlogs cl ON cj.name = cl.name
+                WHERE cl.exec_time IS NULL
+                    OR cl.exec_time = (
+                        SELECT MAX(cl2.exec_time)
+                        FROM Cronlogs cl2
+                        WHERE cl2.name = cj.name
+                    )";
+                    
+        $stmt_cron = $conn->prepare($sql);
+        $stmt_cron->execute();
+        $result_cron = $stmt_cron->get_result();
+
+        if ($result_cron->num_rows > 0) {
+            $i = 0;
+            while($row = $result_cron->fetch_assoc()) {
+              $name = ucfirst(htmlspecialchars($row['name']));
+              $interval = number_format($row['interval'] / 60, 1, ',')." min";
+              
+              // Fallback voor als er nog geen exec_time is
+              $exec_time = $row['exec_time'] ? date("d/m H:i:s", strtotime($row['exec_time'])) : "Nooit";
+              $exec_length = $row['exec_length'] ? number_format($row['exec_length'] / 1000, 2, ',')." sec" : "0,00 sec";
+              $exec_status = $row['exec_stat'];
+              
+              $exec_next = $row['exec_time'] ? ($row['interval'] + strtotime($row['exec_time']) - time())." sec" : "Onbekend";
+
+              if ($row['enabled'] == 1) {
+                $enabled = '<i class="fas fa-toggle-on fa-fw"></i>';
+              } else {
+                $enabled = '<i class="fas fa-toggle-off fa-fw"></i>';
+              }
+
+              switch ($exec_status) {
+                case 200: // succes
+                  $stat_color = "w3-text-green";
+                  break;
+                case 429: // too many requests
+                  $stat_color = "w3-text-yellow";
+                  break;
+                case 500: // script error
+                  $stat_color = "w3-text-red";
+                  break;
+                default:
+                  $stat_color = ($exec_status === null) ? "w3-text-grey" : "w3-text-red";
+                  break;
+              }
+
+              echo "<li class='cronTimer' style='display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between'>
+                      <div class='mobile100' style='flex-basis: 250px'>
+                        <h3>
+                          <span id='cron_enabled_".$i."' style='cursor:pointer;' onclick='toggleCron(\"".htmlspecialchars(strtolower($name))."\")'>".$enabled."</span>
+                          <span id='cron_status_".$i."' class='".$stat_color."' title='HTML ".htmlspecialchars($exec_status)." code'><i class='fas fa-circle'></i></span>
+                          <span id='cron_name_".$i."'>".$name."</span>
+                        </h3>
+                      </div>
+                      <div><i class='fas fa-calendar-alt'></i> <b>Interval:</b><br><span id='cron_interval_".$i."'>".$interval."</span></div>
+                      <div><i class='far fa-clock'></i> <b>Next exec.:</b><br><span id='cron_exec_next_".$i."'>".$exec_next."</span></div>
+                      <div><i class='fas fa-history'></i> <b>Last exec.:</b><br><span id='cron_exec_time_".$i."'>".$exec_time."</span></div>
+                      <div><i class='fas fa-hourglass-half'></i> <b>Prev. Dur.:</b><br><span id='cron_exec_length_".$i."'>".$exec_length."</span></div>
+                      <div><h4><i id='cron_start_".$i."' class='fas fa-play'></i></h4></div>
+                    </li>";
+              $i++;
+            }
+        }
+        $stmt_cron->close();
+        ?>
+        </ul>
+      </div>
     </div>
 
-    <div id="editModal" class="w3-modal">
-        <div class="w3-modal-content w3-card-4 w3-animate-zoom" style="max-width:600px">
-            <header class="w3-container w3-blue-gray">
-                <span onclick="document.getElementById('editModal').style.display='none'" class="w3-button w3-display-topright w3-hover-red">&times;</span>
-                <h4>Bewerk Locatie</h4>
-            </header>
-            <form id="editForm" class="w3-container" action="../functies.php" method="POST">
-                <input type="hidden" id="edit_id" name="voslocatie_id">
-                
-                <p>
-                    <label>Type</label>
-                    <select class="w3-select w3-border" id="edit_type" name="type" required>
-                        <option value="Hint">Hint</option>
-                        <option value="Hunt">Hunt</option>
-                        <option value="Spot">Spot</option>
-                        <option value="Voorspelling">Voorspelling</option>
-                    </select>
-                </p>
-                <p>
-                    <label>Deelgebied</label>
-                    <select class="w3-select w3-border" id="edit_deelgebied" name="deelgebied" required>
-                        <option value="Alpha">Alpha</option>
-                        <option value="Bravo">Bravo</option>
-                        <option value="Charlie">Charlie</option>
-                        <option value="Delta">Delta</option>
-                        <option value="Echo">Echo</option>
-                        <option value="Foxtrot">Foxtrot</option>
-                        <option value="Golf">Golf</option>
-                        <option value="Hotel">Hotel</option>
-                    </select>
-                </p>
-                <p>
-                    <label>Ingestuurd Op</label>
-                    <input class="w3-input w3-border" type="datetime-local" id="edit_ingestuurd_op" name="ingestuurd_op" required>
-                </p>
-                <p>
-                    <label>Latitude (X)</label>
-                    <input class="w3-input w3-border" type="text" id="edit_coord_x" name="coordinaat_x" required>
-                </p>
-                <p>
-                    <label>Longitude (Y)</label>
-                    <input class="w3-input w3-border" type="text" id="edit_coord_y" name="coordinaat_y" required>
-                </p>
-                <p>
-                    <label>Code (max. 8 tekens, verplicht bij Hunt)</label>
-                    <input class="w3-input w3-border" type="text" id="edit_code" name="code" maxlength="8">
-                </p>
-                <p>
-                    <label>Opmerking (max. 128 tekens)</label>
-                    <input class="w3-input w3-border" type="text" id="edit_opmerking" name="opmerking" maxlength="128">
-                </p>
+  </div>
+  <?php require_once('../includes/footer.php') ?>
 
-                <div class="w3-container w3-light-grey w3-padding">
-                    <button type="button" onclick="document.getElementById('editModal').style.display='none'" class="w3-button w3-right w3-border">Annuleren</button>
-                    <button type="submit" name="update_voslocatie" class="w3-button w3-blue">Opslaan</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="deleteModal" class="w3-modal">
-        <div class="w3-modal-content w3-card-4 w3-animate-zoom" style="max-width:500px">
-            <div class="w3-container w3-padding">
-                <h4>Verwijder Locatie</h4>
-                <p>Weet je zeker dat je dit item wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.</p>
-                <div class="w3-container w3-light-grey w3-padding">
-                    <button onclick="document.getElementById('deleteModal').style.display='none'" class="w3-button w3-right w3-border">Annuleren</button>
-                    <a id="deleteLink" href="#" class="w3-button w3-red">Verwijderen</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <?php require_once('../includes/footer.php') ?>
-
-</div>
+  </div>
 
 <script>
-    let sortDirections = {}; // Object to track sorting direction for each column
+if ("<?php echo $_SESSION['gps']?>" == "true"){
+  setInterval(function() {
+    GPSrefresh();
+  }, 5555);
+}
 
-    function sortTable(columnIndex) {
-        const table = document.getElementById("voslocatiesTable");
-        const tbody = table.tBodies[0];
-        const rows = Array.from(tbody.rows);
-        const header = table.tHead.rows[0].cells[columnIndex];
-        const dir = sortDirections[columnIndex] === 'asc' ? 'desc' : 'asc';
-        sortDirections = {}; // Reset all directions
-        sortDirections[columnIndex] = dir;
+setInterval(function() {
+  TimerRefresh();
+}, 1000);
 
-        // Reset all sort icons
-        document.querySelectorAll('#voslocatiesTable th .fas').forEach((icon, index) => {
-            icon.classList.remove('fa-sort-up', 'fa-sort-down', 'active');
-            if (index !== columnIndex) {
-                icon.classList.add('fa-sort');
-            }
-        });
-        
-        const sortIcon = header.querySelector('.fas');
-        sortIcon.classList.remove('fa-sort', 'fa-sort-up', 'fa-sort-down');
-        sortIcon.classList.add(dir === 'asc' ? 'fa-sort-up' : 'fa-sort-down', 'active');
-        
-        rows.sort((a, b) => {
-            const aText = a.cells[columnIndex].textContent.trim();
-            const bText = b.cells[columnIndex].textContent.trim();
+var countAmont = document.getElementsByClassName('cronTimer').length;
 
-            // For date sorting (column 2), convert to timestamp
-            if (columnIndex === 2) {
-                return dir === 'asc' ? new Date(aText) - new Date(bText) : new Date(bText) - new Date(aText);
-            }
+setInterval(function() {
+  CronRefresh();
+}, 6000);
 
-            return dir === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
-        });
-
-        rows.forEach(row => tbody.appendChild(row));
+function toggleCron(name) {
+  if (window.XMLHttpRequest) {
+        xmlhttp = new XMLHttpRequest();
+    } else {
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
     }
+    xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          CronRefresh();
+        }
+    };
+    xmlhttp.open("GET","cronjobs_helper.php?toggleCron="+encodeURIComponent(name),true);
+    xmlhttp.send();
+}
 
-    // JavaScript voor het openen en vullen van de modals
-    function openEditModal(data) {
-        document.getElementById('edit_id').value = data.id;
-        document.getElementById('edit_type').value = data.type;
-        document.getElementById('edit_deelgebied').value = data.deelgebied;
+function TimerRefresh() {
+  for (let i = 0; i < countAmont; i++) {
+    var timer = document.getElementById("cron_exec_next_" + i);
+    var cron_start = document.getElementById("cron_start_" + i);
+    var cron_enabled = document.getElementById("cron_enabled_" + i);
+
+    if (cron_enabled.innerHTML.includes("off")) {
+      timer.innerHTML = " - disabled - ";
+      cron_start.className = "fas fa-stop";
+    } else {
+      if (timer.innerHTML !== "executing..." && timer.innerHTML !== "Onbekend") {
+        let currentSecs = parseInt(timer.innerHTML);
+        currentSecs--;
         
-        // Format date for datetime-local input
-        const date = new Date(data.ingestuurd_op.replace(' ', 'T'));
-        const localIsoString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-        document.getElementById('edit_ingestuurd_op').value = localIsoString;
+        cron_start.className = "fas fa-play";
         
-        document.getElementById('edit_coord_x').value = data.coordinaat_x;
-        document.getElementById('edit_coord_y').value = data.coordinaat_y;
-        document.getElementById('edit_code').value = data.code;
-        document.getElementById('edit_opmerking').value = data.opmerking;
-        document.getElementById('editModal').style.display = 'block';
-    }
-
-    function openDeleteModal(id) {
-        document.getElementById('deleteLink').href = '../functies.php?verwijder_voslocatie=' + id;
-        document.getElementById('deleteModal').style.display = 'block';
-    }
-
-    // GPS refresh functie
-    if ("<?php echo $_SESSION['gps'] ?? 'false'; ?>" == "true") {
-        setInterval(function() {
-            GPSrefresh();
-        }, 5555);
-    }
-
-    function GPSrefresh() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(showPosition);
+        if (currentSecs <= 0) {
+          timer.innerHTML = "executing...";
+          cron_start.className = "fas fa-sync-alt fa-spin";
         } else {
-            console.log("Geolocation is not supported by this browser.");
-        }
-
-        function showPosition(position) {
-            console.log("Latitude: " + position.coords.latitude + "\nLongitude: " + position.coords.longitude);
-            if (window.XMLHttpRequest) {
-                xmlhttp = new XMLHttpRequest();
-            } else {
-                xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-            }
-            xmlhttp.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {}
-            };
-            xmlhttp.open("GET", "../functies.php?lat=" + position.coords.latitude + "&lon=" + position.coords.longitude, true);
-            xmlhttp.send();
-        }
+          timer.innerHTML = currentSecs + " sec";
+        }        
+      }
     }
+  }
+}
+
+function CronRefresh() {
+  if (window.XMLHttpRequest) {
+      xmlhttp = new XMLHttpRequest();
+  } else {
+      xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+  }
+  xmlhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        // Zorg ervoor dat de log niet volloopt in de console in productie
+        // console.log(this.responseText); 
+        try {
+            var json = JSON.parse(this.responseText);
+            countAmont = json.length;
+            
+            for(var i = 0; i < json.length; i++){
+              var cron_enabled = document.getElementById("cron_enabled_" + i);
+              var cron_status = document.getElementById("cron_status_" + i);
+              var cron_name = document.getElementById("cron_name_" + i);
+              var cron_interval = document.getElementById("cron_interval_" + i);
+              var cron_exec_time = document.getElementById("cron_exec_time_" + i);
+              var cron_exec_length = document.getElementById("cron_exec_length_" + i);
+              var cron_exec_next = document.getElementById("cron_exec_next_" + i);
+              var cron_start = document.getElementById("cron_start_" + i);
+
+              cron_enabled.innerHTML = json[i]['enabled'];
+              cron_status.className = json[i]['stat_color'];
+              cron_status.title = "HTML " + json[i]['exec_status'] + " code.";
+              cron_name.innerHTML = json[i]['name'];
+              cron_name.title = json[i]['description'];
+              cron_interval.innerHTML = json[i]['interval'];
+              cron_exec_time.innerHTML = json[i]['exec_time'];
+              cron_exec_length.innerHTML = json[i]['exec_length'];
+              cron_exec_next.innerHTML = json[i]['exec_next'];
+              
+              if (parseInt(json[i]['exec_next']) <= 0) {
+                cron_start.className = 'fas fa-sync-alt fa-spin';
+              } else {
+                cron_start.className = 'fas fa-play';
+              }
+            }
+        } catch (e) {
+            console.error("Ongeldige JSON ontvangen van cronjobs_helper.php");
+        }
+      }
+  };
+  xmlhttp.open("GET","cronjobs_helper.php?cronjobs",true);
+  xmlhttp.send();
+}
+
+function GPSrefresh() {
+  if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(showPosition);
+  } else {
+      console.log("Geolocation is not supported by this browser.");
+  }
+  
+  function showPosition(position) {
+    if (window.XMLHttpRequest) {
+        xmlhttp = new XMLHttpRequest();
+    } else {
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            // Gelukt
+        }
+    };
+    xmlhttp.open("GET","../functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
+    xmlhttp.send();
+  }
+} 
 </script>
 
 </body>
