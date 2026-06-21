@@ -1,6 +1,5 @@
 <?php
 define("PAGE_NAME", "sa_settings");
-
 session_start();
 
 if (!isset($_SESSION['id'])) {
@@ -10,93 +9,102 @@ if (!isset($_SESSION['id'])) {
 
 require("../dblogin.php");
 
-// Check user privileges
-$sql = "SELECT voornaam, priv FROM Gebruikers WHERE id='".$_SESSION['id']."'";
-$result = mysqli_query($conn, $sql);
+// Rechten van de gebruiker controleren
+$stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
+$stmt->bind_param("i", $_SESSION['id']);
+$stmt->execute();
+$result = $stmt->get_result();
 
-if (mysqli_num_rows($result) > 0) {
-    $row = mysqli_fetch_assoc($result);
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
     $vn = $row['voornaam'];
     $priv = $row['priv'];
 } else {
-    // Failsafe if user not found
+    // Failsafe als de gebruiker niet (meer) bestaat
+    session_destroy();
     header("Location: ../index");
     exit();
 }
+$stmt->close();
 
 if ($priv < 3) {
     header("Location: ../home");
     exit();
 }
 
-// Get global site settings
-$sql = "SELECT * FROM Site_Instellingen";
-$result = mysqli_query($conn, $sql);
-
+// Get global site settings (voor het inladen van eventuele basis-variabelen)
+$stmt_settings = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen");
+$stmt_settings->execute();
+$result_settings = $stmt_settings->get_result();
 $siteSettings = array();
 
-if (mysqli_num_rows($result) > 0) {
-    while($row = mysqli_fetch_assoc($result)) {
+if ($result_settings->num_rows > 0) {
+    while($row = $result_settings->fetch_assoc()) {
       $siteSettings[$row['Instelling']] = $row['Waarde'];
     }
 } else {
     echo "0 results";
+    $stmt_settings->close();
     exit();
 }
+$stmt_settings->close();
 
 $succes_message = '';
 $error_message = '';
 
-// Handle form submission to UPDATE settings
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'update_settings') {
+// Verwerken van formulier om instellingen te UPDATEN
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['action'] === 'update_settings') {
     $all_updates_successful = true;
     
-    // Using prepared statements to prevent SQL injection
-    $stmt = $conn->prepare("UPDATE Site_Instellingen SET Waarde = ? WHERE Instelling = ?");
+    // Prepared statement één keer voorbereiden buiten de loop (optimaal voor performance)
+    $stmt_upd = $conn->prepare("UPDATE Site_Instellingen SET Waarde = ? WHERE Instelling = ?");
 
-    if ($stmt) {
+    if ($stmt_upd) {
+        $uitzonderingen = ['action', 'add_setting_name', 'add_setting_value', 'add_setting_description'];
+        
         foreach ($_POST as $instelling => $waarde) {
-            // Only process fields that are actual settings (not action or other form data)
-            if ($instelling != 'action' && $instelling != 'add_setting_name' && $instelling != 'add_setting_value' && $instelling != 'add_setting_description') {
-                $instelling = trim($instelling);
-                $waarde = trim($waarde);
+            // Sla verborgen of toevoeg-velden over
+            if (!in_array($instelling, $uitzonderingen)) {
+                $inst_clean = trim($instelling);
+                $waarde_clean = trim($waarde);
                 
-                $stmt->bind_param("ss", $waarde, $instelling);
-                if (!$stmt->execute()) {
+                $stmt_upd->bind_param("ss", $waarde_clean, $inst_clean);
+                if (!$stmt_upd->execute()) {
                     $all_updates_successful = false;
-                    $error_message = "Fout bij het bijwerken van de instelling: " . htmlspecialchars($instelling);
-                    break; // Exit the loop on first error
+                    $error_message = "Fout bij het bijwerken van de instelling: " . htmlspecialchars($inst_clean);
+                    break; // Stop de loop bij de eerste de beste fout
                 }
             }
         }
-        $stmt->close();
+        $stmt_upd->close();
         
         if ($all_updates_successful) {
             $succes_message = "De instellingen zijn succesvol opgeslagen!";
         }
     } else {
-        $error_message = "Er is een fout opgetreden bij het voorbereiden van de database-update.";
+        $error_message = "Er is een fout opgetreden bij het voorbereiden van de database-update: " . $conn->error;
     }
 }
 
-// Handle form submission to ADD new setting
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'add_setting') {
+// Verwerken van formulier om nieuwe instelling TOE TE VOEGEN
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['action'] === 'add_setting') {
     $newName = trim($_POST['add_setting_name'] ?? '');
     $newValue = trim($_POST['add_setting_value'] ?? '');
     $newDescription = trim($_POST['add_setting_description'] ?? '');
 
     if (!empty($newName)) {
-        // Check if setting already exists
-        $check_stmt = $conn->prepare("SELECT COUNT(*) FROM Site_Instellingen WHERE Instelling = ?");
+        // Controleer of de instelling al bestaat
+        $check_stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM Site_Instellingen WHERE Instelling = ?");
         $check_stmt->bind_param("s", $newName);
         $check_stmt->execute();
-        $check_stmt->bind_result($count);
-        $check_stmt->fetch();
+        $check_result = $check_stmt->get_result();
+        $check_row = $check_result->fetch_assoc();
         $check_stmt->close();
 
-        if ($count > 0) {
+        if ($check_row['cnt'] > 0) {
             $error_message = "Instelling met de naam '" . htmlspecialchars($newName) . "' bestaat al.";
         } else {
+            // Voeg toe
             $insert_stmt = $conn->prepare("INSERT INTO Site_Instellingen (Instelling, Waarde, Omschrijving) VALUES (?, ?, ?)");
             if ($insert_stmt) {
                 $insert_stmt->bind_param("sss", $newName, $newValue, $newDescription);
@@ -115,9 +123,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     }
 }
 
-// Handle deletion of a setting
+// Verwerken van VERWIJDEREN van een instelling
 if (isset($_GET['delete_setting'])) {
     $setting_to_delete = trim($_GET['delete_setting']);
+    
     if (!empty($setting_to_delete)) {
         $delete_stmt = $conn->prepare("DELETE FROM Site_Instellingen WHERE Instelling = ?");
         if ($delete_stmt) {
@@ -134,15 +143,18 @@ if (isset($_GET['delete_setting'])) {
     }
 }
 
-// Fetch all current settings to display in the form
-$sql_settings = "SELECT Instelling, Waarde, Omschrijving FROM Site_Instellingen";
-$result_settings = mysqli_query($conn, $sql_settings);
+// Haal alle huidige instellingen op voor weergave in het formulier
+$stmt_all = $conn->prepare("SELECT Instelling, Waarde, Omschrijving FROM Site_Instellingen ORDER BY Instelling ASC");
+$stmt_all->execute();
+$result_all = $stmt_all->get_result();
 $settings = [];
-if (mysqli_num_rows($result_settings) > 0) {
-    while ($row = mysqli_fetch_assoc($result_settings)) {
+
+if ($result_all->num_rows > 0) {
+    while ($row = $result_all->fetch_assoc()) {
         $settings[] = $row;
     }
 }
+$stmt_all->close();
 ?>
 <!DOCTYPE html>
 <html>
@@ -158,19 +170,13 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 </style>
 <body class="w3-light-grey">
 
-
-<!-- Topbar -->
 <?php include_once('../includes/topbar.php') ?>
 
-
-<!-- Sidebar -->
 <?php include_once('../includes/sidebar.php') ?>
 
-
-<!-- !PAGE CONTENT! -->
 <div class="w3-main" style="margin-left:200px;margin-top:43px;">
 
-  <!-- Header --><header class="w3-container" style="padding-top:22px">
+  <header class="w3-container" style="padding-top:22px">
     <h5><b><i class="fas fa-toolbox"></i> Site Instellingen</b></h5>
   </header>
 
@@ -178,17 +184,18 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <?php if (!empty($succes_message)): ?>
       <div class="w3-panel w3-green w3-display-container w3-round-large">
         <span onclick="this.parentElement.style.display='none'" class="w3-button w3-large w3-display-topright">&times;</span>
-        <p><?php echo $succes_message; ?></p>
+        <p><?php echo htmlspecialchars($succes_message); ?></p>
       </div>
     <?php endif; ?>
+    
     <?php if (!empty($error_message)): ?>
       <div class="w3-panel w3-red w3-display-container w3-round-large">
         <span onclick="this.parentElement.style.display='none'" class="w3-button w3-large w3-display-topright">&times;</span>
-        <p><?php echo $error_message; ?></p>
+        <p><?php echo htmlspecialchars($error_message); ?></p>
       </div>
     <?php endif; ?>
 
-    <!-- Card 1: Edit Existing Settings --><div class="w3-card-4 w3-white w3-margin-bottom">
+    <div class="w3-card-4 w3-white w3-margin-bottom">
       <div class="w3-container w3-blue-gray">
         <h5>Bewerk Bestaande Instellingen</h5>
       </div>
@@ -221,7 +228,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
       </div>
     </div>
 
-    <!-- Card 2: Add New Setting --><div class="w3-card-4 w3-white">
+    <div class="w3-card-4 w3-white">
       <div class="w3-container w3-blue-gray">
         <h5>Voeg Nieuwe Instelling Toe</h5>
       </div>
@@ -248,7 +255,6 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     </div>
   </div>
 
-  <!-- Delete Confirmation Modal -->
   <div id="deleteModal" class="w3-modal">
     <div class="w3-modal-content w3-card-4 w3-animate-zoom" style="max-width:600px">
       <div class="w3-container w3-red">
@@ -266,89 +272,40 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     </div>
   </div>
 
-  <!-- Footer -->
   <?php require_once('../includes/footer.php') ?>
 
 </div>
 <script>
 if ("<?php echo $_SESSION['gps']?>" == "true"){
-
   setInterval(function() {
-
     GPSrefresh();
-
   }, 5555);
-
 }
 
-  
-
- 
-
- function GPSrefresh() {
-
+function GPSrefresh() {
     if (navigator.geolocation) {
-
         navigator.geolocation.getCurrentPosition(showPosition);
-
     } else {
-
         console.log("Geolocation is not supported by this browser.");
-
     }
-
+    
     function showPosition(position) {
-
-     console.log("Latitude: " + position.coords.latitude + 
-
-      "<br>Longitude: " + position.coords.longitude);
-
-      if (window.XMLHttpRequest) {
-
-            // code for IE7+, Firefox, Chrome, Opera, Safari
-
+        console.log("Latitude: " + position.coords.latitude + "\nLongitude: " + position.coords.longitude);
+        
+        if (window.XMLHttpRequest) {
             xmlhttp = new XMLHttpRequest();
-
         } else {
-
-            // code for IE6, IE5
-
             xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-
         }
-
         xmlhttp.onreadystatechange = function() {
-
             if (this.readyState == 4 && this.status == 200) {
-
+               // Succes logica
             }
-
         };
-
-        xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-
+        // Opgelet: Pad aangepast naar ../functies.php omdat deze pagina zich in een subfolder lijkt te bevinden (gezien require("../dblogin.php"))
+        xmlhttp.open("GET", "../functies.php?lat=" + position.coords.latitude + "&lon=" + position.coords.longitude, true);
         xmlhttp.send();
     }
- }
-
-function showPosition(position) {
-    var lat = position.coords.latitude;
-    var lon = position.coords.longitude;
-    
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "functies.php?lat=" + lat + "&lon=" + lon, true);
-    xhr.onload = function () {
-        if (xhr.status === 200) {
-            // Success
-            console.log("GPS position sent.");
-        } else {
-            // Error
-            console.error("Failed to send GPS position. Status: " + xhr.status);
-        }
-        // Redirect to settings.php to refresh messages or prevent resubmission
-        window.location.href = "settings"; 
-    };
-    xhr.send();
 }
 
 // Show W3 modal for deleting a setting
@@ -367,4 +324,3 @@ function confirmDelete(settingName) {
 
 </body>
 </html>
-

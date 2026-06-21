@@ -56,16 +56,24 @@ if (isset($_GET['punt_lat'])){
 require("dblogin.php");
 
 // Get global site settings for game times
-$sql_settings = "SELECT * FROM Site_Instellingen WHERE Instelling IN ('FOXEXCHANGE_STARTDATE', 'FOXEXCHANGE_ENDDATE', 'API_KEY_MAPBOX')";
-$result_settings = mysqli_query($conn, $sql_settings);
+$stmt = $conn->prepare("SELECT * FROM Site_Instellingen WHERE Instelling IN ('FOXEXCHANGE_STARTDATE', 'FOXEXCHANGE_ENDDATE', 'API_KEY_MAPBOX')");
+$stmt->execute();
+$result = $stmt->get_result();
+
 $siteSettings = array();
-if (mysqli_num_rows($result_settings) > 0) {
-    while($row = mysqli_fetch_assoc($result_settings)) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
+
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+        $siteSettings[$row['Instelling']] = $row['Waarde'];
     }
 }
+$stmt->close();
+
+// If halves haven't been set, use these default values
 $helft1_end = isset($siteSettings['FOXEXCHANGE_STARTDATE']) ? new DateTime($siteSettings['FOXEXCHANGE_STARTDATE']) : new DateTime('2025-10-11T22:45:00+02:00');
 $helft2_start = isset($siteSettings['FOXEXCHANGE_ENDDATE']) ? new DateTime($siteSettings['FOXEXCHANGE_ENDDATE']) : new DateTime('2025-10-12T23:15:00+02:00');
+
+
 
 if (!function_exists('time2str')) {
     function time2str($ts)
@@ -140,13 +148,19 @@ if (isset($_GET['teams']) && !empty($_GET['teams'])) {
 }
 
 $time_filter_sql = "";
+$time_filter_params = [];
+$time_filter_types = "";
 $show_helft1 = isset($_GET['helft1']) && $_GET['helft1'] == 'true';
 $show_helft2 = isset($_GET['helft2']) && $_GET['helft2'] == 'true';
 
 if ($show_helft1 && !$show_helft2) {
-    $time_filter_sql = " AND ingestuurd_op <= '".$helft1_end->format('Y-m-d H:i:s')."'";
+    $time_filter_sql = " AND ingestuurd_op <= ?";
+    $time_filter_params[] = $helft1_end->format('Y-m-d H:i:s');
+    $time_filter_types .= "s";
 } elseif (!$show_helft1 && $show_helft2) {
-    $time_filter_sql = " AND ingestuurd_op >= '".$helft2_start->format('Y-m-d H:i:s')."'";
+    $time_filter_sql = " AND ingestuurd_op >= ?";
+    $time_filter_params[] = $helft2_start->format('Y-m-d H:i:s');
+    $time_filter_types .= "s";
 } elseif (!$show_helft1 && !$show_helft2) {
     $time_filter_sql = " AND 1=0"; // Effectively show nothing
 }
@@ -185,34 +199,54 @@ map.on('load', sendMapState); // Send initial state on load
 ";
 
 if (isset($_GET['groepen']) && $_GET['groepen'] == "true"){
+    // Get all scout groups
     $sql_groepen = "SELECT * FROM Groepen";
+    $params = [];
+    $types = "";
+
+    // Dynamically build the IN clause with placeholders if filters exist
     if (!empty($deelgebieden_filter)) {
-        $sql_groepen .= " WHERE deelgebied IN ('" . implode("','", array_map(function($item) use ($conn) {
-            return mysqli_real_escape_string($conn, $item);
-        }, $deelgebieden_filter)) . "')";
+        $placeholders = implode(',', array_fill(0, count($deelgebieden_filter), '?'));
+        $sql_groepen .= " WHERE deelgebied IN ($placeholders)";
+        
+        $types .= str_repeat('s', count($deelgebieden_filter));
+        $params = $deelgebieden_filter;
     }
-    
-    $result = mysqli_query($conn, $sql_groepen);
-    if ($result && mysqli_num_rows($result) > 0) {
-      $i_group=0;
-      while($row = mysqli_fetch_assoc($result)) {
-        $row["deelgebied"] = lcfirst($row["deelgebied"]);
-        if ($row["deelgebied"] == null) {$row["deelgebied"] = "unknown";}
-          echo "
-          const img_group_".$i_group." = document.createElement('div');
-          img_group_".$i_group.".className = 'marker';
-          img_group_".$i_group.".style.backgroundImage = `url(media/icons/pin_hut_".$row['deelgebied'].".png)`;
-          img_group_".$i_group.".style.width = `40px`;
-          img_group_".$i_group.".style.height = `32px`;
-          img_group_".$i_group.".style.backgroundSize = '100%';
-          const marker_group_".$i_group." = new mapboxgl.Marker(img_group_".$i_group.")
-              .setLngLat([".$row['lon'].",".$row['lat']."])
-              .setPopup(new mapboxgl.Popup().setHTML(\"<h4>".ucfirst(addslashes($row['naam']))."</h4><p>Deelgebied: ".$row['deelgebied']."</p><a href='https://www.google.com/maps/dir/?api=1&origin=&destination=".urlencode($row['straat']." ".$row['huisnummer']." ".$row['plaats'])."' target='_blank'>Navigeer</a>\"))
-              .addTo(map);
-          ";
-        $i_group++;
-      }      
+
+    $stmt = $conn->prepare($sql_groepen);
+
+    // Only bind parameters if there are any filters applied
+    if (!empty($params)) {
+        $stmt->bind_param($types, ...$params);
     }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $i_group = 0;
+        while($row = $result->fetch_assoc()) {
+            $row["deelgebied"] = lcfirst($row["deelgebied"]);
+            if ($row["deelgebied"] == null) {
+                $row["deelgebied"] = "unknown";
+            }
+            
+            echo "
+            const img_group_".$i_group." = document.createElement('div');
+            img_group_".$i_group.".className = 'marker';
+            img_group_".$i_group.".style.backgroundImage = `url(media/icons/pin_hut_".$row['deelgebied'].".png)`;
+            img_group_".$i_group.".style.width = `40px`;
+            img_group_".$i_group.".style.height = `32px`;
+            img_group_".$i_group.".style.backgroundSize = '100%';
+            const marker_group_".$i_group." = new mapboxgl.Marker(img_group_".$i_group.")
+                .setLngLat([".$row['lon'].",".$row['lat']."])
+                .setPopup(new mapboxgl.Popup().setHTML(\"<h4>".ucfirst(addslashes($row['naam']))."</h4><p>Deelgebied: ".$row['deelgebied']."</p><a href='https://www.google.com/maps/dir/?api=1&origin=&destination=".urlencode($row['straat']." ".$row['huisnummer']." ".$row['plaats'])."' target='_blank'>Navigeer</a>\"))
+                .addTo(map);
+            ";
+            $i_group++;
+        }      
+    }
+    $stmt->close();
 }
   
 if (isset($_GET['punt_lat'])){
@@ -240,11 +274,17 @@ if (isset($_GET['autos']) && $_GET['autos'] == "true") {
         GROUP BY ap.auto, ap.lat, ap.lon, ap.datumtijd
     ";
 
-    $result_autos = mysqli_query($conn, $sql_autos);
+    $stmt_autos = $conn->prepare($sql_autos);
+    $stmt_autos->execute();
+    $result_autos = $stmt_autos->get_result();
 
-    if ($result_autos && mysqli_num_rows($result_autos) > 0) {
+    if ($result_autos && $result_autos->num_rows > 0) {
         $i_auto = 0;
-        while ($row = mysqli_fetch_assoc($result_autos)) {
+        
+        // Prepare the path query once outside the loop for better performance
+        $stmt_path = $conn->prepare("SELECT lon, lat FROM Auto_Positie WHERE auto = ? AND datumtijd >= ? ORDER BY datumtijd ASC");
+        
+        while ($row = $result_autos->fetch_assoc()) {
             $date1 = new DateTime($row['datumtijd']);
             $now = new DateTime();
             $interval = $now->diff($date1);
@@ -253,11 +293,15 @@ if (isset($_GET['autos']) && $_GET['autos'] == "true") {
             if ($minutes_since <= 15) {
                 // Fetch path for this car for the last 2 hours
                 $two_hours_ago = date('Y-m-d H:i:s', strtotime('-2 hours'));
-                $sql_path = "SELECT lon, lat FROM Auto_Positie WHERE auto = '".mysqli_real_escape_string($conn, $row['kenteken'])."' AND datumtijd >= '".$two_hours_ago."' ORDER BY datumtijd ASC";
-                $result_path = mysqli_query($conn, $sql_path);
+                
+                // Bind parameters and execute for the current car
+                $stmt_path->bind_param("ss", $row['kenteken'], $two_hours_ago);
+                $stmt_path->execute();
+                $result_path = $stmt_path->get_result();
+                
                 $path_coords = [];
                 if ($result_path) {
-                    while($path_row = mysqli_fetch_assoc($result_path)) {
+                    while($path_row = $result_path->fetch_assoc()) {
                         $path_coords[] = [(float)$path_row['lon'], (float)$path_row['lat']];
                     }
                 }
@@ -294,20 +338,27 @@ if (isset($_GET['autos']) && $_GET['autos'] == "true") {
                 $i_auto++;
             }
         }
+        $stmt_path->close();
     }
+    $stmt_autos->close();
 }
 
 if (isset($_GET['personen']) && $_GET['personen'] == "true"){
-    $sql = "SELECT * FROM Gebruikers";
-    $result = mysqli_query($conn, $sql);
-    if ($result && mysqli_num_rows($result) > 0) {
-      $i_person=0;
-      while($row = mysqli_fetch_assoc($result)) {
+    // get location of people
+    $stmt_personen = $conn->prepare("SELECT * FROM Gebruikers");
+    $stmt_personen->execute();
+    $result_personen = $stmt_personen->get_result();
+
+    if ($result_personen && $result_personen->num_rows > 0) {
+      $i_person = 0;
+      while($row = $result_personen->fetch_assoc()) {
         if (empty($row['geotijd'])) continue;
+        
         $date1 = new DateTime($row['geotijd']);
         $now = new DateTime();
         $interval = $now->diff($date1);
         $minutes_since = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
+        
         if ($minutes_since <= 15) {
           echo "
           const person_".$i_person." = document.createElement('div');
@@ -324,20 +375,35 @@ if (isset($_GET['personen']) && $_GET['personen'] == "true"){
         $i_person++;
       }
     }
+    $stmt_personen->close();
 }
 
 if (!empty($deelgebieden_filter)) {
     if (isset($_GET['hints']) && $_GET['hints'] == "true"){
-        $sql = "SELECT v.*, g.voornaam FROM Voslocaties v LEFT JOIN Gebruikers g ON v.ingeleverd_door = g.id WHERE 1=1 " . $time_filter_sql;
-        $sql .= " AND v.deelgebied IN ('" . implode("','", array_map(function($item) use ($conn) {
-            return mysqli_real_escape_string($conn, $item);
-        }, $deelgebieden_filter)) . "')";
         
-        $result = mysqli_query($conn, $sql);
+        $sql = "SELECT v.*, g.voornaam FROM Voslocaties v LEFT JOIN Gebruikers g ON v.ingeleverd_door = g.id WHERE 1=1 " . $time_filter_sql;
+        
+        $params = $time_filter_params;
+        $types = $time_filter_types;
 
-        if ($result && mysqli_num_rows($result) > 0) {
+        $placeholders = implode(',', array_fill(0, count($deelgebieden_filter), '?'));
+        $sql .= " AND v.deelgebied IN ($placeholders)";
+        
+        $types .= str_repeat('s', count($deelgebieden_filter));
+        $params = array_merge($params, $deelgebieden_filter);
+        
+        $stmt_hints = $conn->prepare($sql);
+        
+        if (!empty($params)) {
+            $stmt_hints->bind_param($types, ...$params);
+        }
+        
+        $stmt_hints->execute();
+        $result = $stmt_hints->get_result();
+
+        if ($result && $result->num_rows > 0) {
             $i_hint = 0;
-            while($row = mysqli_fetch_assoc($result)) {
+            while($row = $result->fetch_assoc()) {
                 switch (ucfirst($row['deelgebied'])) {
                 case "Alpha": $color = "#9829FF"; break;
                 case "Bravo": $color = "#2F9CEB"; break;
@@ -376,20 +442,28 @@ if (!empty($deelgebieden_filter)) {
                 $i_hint++;
             }
         }
+        $stmt_hints->close();
     }
 
-    function buildVosQuery($conn, $time_filter_sql, $deelgebieden_filter) {
+    function buildVosQuery($conn, $time_filter_sql, $time_filter_types, $time_filter_params, $deelgebieden_filter) {
         $results = [];
         foreach ($deelgebieden_filter as $deelgebied) {
             $sql = "SELECT coordinaat_x, coordinaat_y, ingestuurd_op FROM Voslocaties WHERE deelgebied = ? " . $time_filter_sql . " ORDER BY ingestuurd_op ASC";
-            $stmt = mysqli_prepare($conn, $sql);
+            $stmt = $conn->prepare($sql);
             if ($stmt) {
-                mysqli_stmt_bind_param($stmt, "s", $deelgebied);
-                mysqli_stmt_execute($stmt);
-                $result = mysqli_stmt_get_result($stmt);
+                // Prepend the deelgebied 's' to the time filter types
+                $types = "s" . $time_filter_types;
+                // Prepend the specific deelgebied string to the time filter parameters
+                $params = array_merge([$deelgebied], $time_filter_params);
+                
+                // Unpack and bind
+                $stmt->bind_param($types, ...$params);
+                $stmt->execute();
+                
+                $result = $stmt->get_result();
                 $points = [];
-                if ($result && mysqli_num_rows($result) > 0) {
-                    while ($row = mysqli_fetch_assoc($result)) {
+                if ($result && $result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
                         $points[] = [
                             'lat' => (float)$row['coordinaat_x'],
                             'lon' => (float)$row['coordinaat_y'],
@@ -398,13 +472,13 @@ if (!empty($deelgebieden_filter)) {
                     }
                 }
                 $results[$deelgebied] = $points;
-                mysqli_stmt_close($stmt);
+                $stmt->close();
             }
         }
         return $results;
     }
 
-    $all_fox_data = buildVosQuery($conn, $time_filter_sql, $deelgebieden_filter);
+    $all_fox_data = buildVosQuery($conn, $time_filter_sql, $time_filter_types, $time_filter_params, $deelgebieden_filter);
 
     $zoekcirkel_layers = ""; $zoekcirkel_js_helper = "";
     $vossenpad_layers = ""; $vossenpad_stats = [];
@@ -609,4 +683,3 @@ map.on('style.load', () => {
 </body>
 
 </html>
-

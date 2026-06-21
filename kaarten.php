@@ -9,36 +9,40 @@ if (!isset($_SESSION['id'])){
 
 require("dblogin.php");
 
-$sql = "SELECT * FROM Gebruikers WHERE id='".$_SESSION['id']."'";
-$result = mysqli_query($conn, $sql);
+// Get userdata
+$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
+$stmt->bind_param("i", $_SESSION['id']);
+$stmt->execute();
+$result = $stmt->get_result();
 
-if (mysqli_num_rows($result) > 0) {
-    while($row = mysqli_fetch_assoc($result)) {
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
       $vn = $row['voornaam'];
       $priv = $row['priv'];
     }
-} else {
-    echo "0 results";
-    exit(); 
 }
+$stmt->close();
 
 // Get global site settings
-$sql = "SELECT * FROM Site_Instellingen";
-$result = mysqli_query($conn, $sql);
-$siteSettings = array();
-if (mysqli_num_rows($result) > 0) {
-    while($row = mysqli_fetch_assoc($result)) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-} else {
-    echo "0 results";
-    exit(); 
-}
+$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
+$stmt->execute();
+$result = $stmt->get_result();
 
-// Check if there are any fox locations to enable the radius checkbox
-$sql = "SELECT id FROM Voslocaties LIMIT 1";
-$result = mysqli_query($conn, $sql);
-$hasVoslocaties = (mysqli_num_rows($result) > 0);
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
+        $siteSettings[$row['Instelling']] = $row['Waarde'];
+    }
+}
+$stmt->close();
+
+
+// Check if there are any fox locations within the last 24 hours to enable the radius checkbox
+$stmt = $conn->prepare("SELECT id FROM Voslocaties WHERE ingestuurd_op >= NOW() - INTERVAL 24 HOUR LIMIT 1");
+$stmt->execute();
+$result = $stmt->get_result();
+
+$hasVoslocaties = ($result->num_rows > 0);
+$stmt->close();
 
 ?>
 <!DOCTYPE html>

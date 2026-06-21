@@ -7,45 +7,49 @@ if (!isset($_SESSION['id'])){
 require("dblogin.php");
 require_once("functies.php");
 
-$sql = "SELECT * FROM Gebruikers WHERE id='".$_SESSION['id']."'";
-$result = mysqli_query($conn, $sql);
 
-if (mysqli_num_rows($result) > 0) {
-    // output data of each row
-    while($row = mysqli_fetch_assoc($result)) {
-      $vn = $row['voornaam'];
-      $priv = $row['priv'];
-    }
-} else {
-    echo "0 results";
+// Get userdata
+$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
+$stmt->bind_param("i", $_SESSION['id']);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+  while($row = $result->fetch_assoc()) {
+    $vn = $row['voornaam'];
+    $priv = $row['priv'];
+  }
 }
+$stmt->close();
 
 
 // Get global site settings
-$sql = "SELECT * FROM Site_Instellingen";
-$result = mysqli_query($conn, $sql);
+$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
+$stmt->execute();
+$result = $stmt->get_result();
 
-$siteSettings = array();
-
-if (mysqli_num_rows($result) > 0) {
-    while($row = mysqli_fetch_assoc($result)) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-} else {
-    echo "0 results";
-    exit();
+if ($result->num_rows > 0) {
+  while($row = $result->fetch_assoc()) {
+    $siteSettings[$row['Instelling']] = $row['Waarde'];
+  }
 }
+$stmt->close();
 
 
+// Insert voslocaties after using hints form
 if (isset($_POST['subarea']) && isset($_POST['rdX']) && isset($_POST['rdY'])) {
   $latlon = rdtowgs($_POST['rdX'], $_POST['rdY']);
+  $ingestuurd_op = date("Y-m-d H:i:s");
+  $code = $_POST['subarea'] . " " . $_POST['rdX'] . " " . $_POST['rdY'];
+  $stmt = $conn->prepare("INSERT INTO Voslocaties (ingestuurd_op, type, deelgebied, ingeleverd, coordinaat_x, coordinaat_y, code) VALUES (?, 'Hint', ?, '0', ?, ?, ?)");
+  $stmt->bind_param("sssss", $ingestuurd_op, $_POST['subarea'], $latlon["lat"], $latlon["lon"], $code);
 
-  $sql = "INSERT INTO Voslocaties (ingestuurd_op, type, deelgebied, ingeleverd, coordinaat_x, coordinaat_y, code)
-  VALUES ('".date("Y-m-d H:i:s")."','Hint',  '".addslashes($_POST['subarea'])."', '0', '".$latlon["lat"]."', '".$latlon["lon"]."', '".$_POST['subarea']." ".$_POST['rdX']." ".$_POST['rdY']."')";
-
-  if ($conn->query($sql) === TRUE) {
+  if ($stmt->execute()) {
     echo "New record created successfully";
+  } else {
+    echo "Error: " . $stmt->error;
   }
+  $stmt->close();
 }
 
 
@@ -79,40 +83,48 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   </header>
 
   <div class="w3-row-padding" style="margin-bottom:100px;">
-  <?php
-  $sql = "SELECT * FROM Hints ORDER BY datum DESC";
-  $result = mysqli_query($conn, $sql);
+<?php
+  $stmt = $conn->prepare("SELECT * FROM Hints ORDER BY datum DESC");
+  $stmt->execute();
+  $result = $stmt->get_result();
+
   $vossen = array("alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel");
-  if (mysqli_num_rows($result) > 0) {
+  $colors = array("#9829FF", "#2F9CEB", "#2DFF69", "#F5F02C", "#FFA12E", "#F52E2B", "#FF00FF", "#00FFFF");
+
+  if ($result->num_rows > 0) {
       echo '<div class="w3-container">';
       echo '<ul class="w3-ul w3-card-4 w3-white">';
-      while($row = mysqli_fetch_assoc($result)) {
+      while($row = $result->fetch_assoc()) {
         $content = $row['inhoud'];
-        $doc=new DOMDocument();
+        $doc = new DOMDocument();
         @$doc->loadHTML($content);
         $imgNodes = $doc->getElementsByTagName('img');
         foreach($imgNodes as $node) {
           $node->setAttribute('width', '100%');
           $node->removeAttribute('height');
         }
+        
         echo '
         <li class="w3-padding-16">
           <div class="w3-bar w3-blue-gray w3-padding w3-round-large">
-            <span class="w3-xlarge">'.$row['titel'].'</span>
+            <span class="w3-xlarge">'.htmlspecialchars($row['titel']).'</span>
             <span style="float: right;">'.date("d/m H:i", strtotime($row['datum'])).'<br></span>
           </div><br>
           <p>'.$doc->saveHTML().'</p>';
+          
           $subareas = $vossen;
-          $colors = array("#9829FF", "#2F9CEB", "#2DFF69", "#F5F02C", "#FFA12E", "#F52E2B");
+          
           echo '<div class="w3-bar w3-blue-gray" style="display:flex; justify-content: space-around;flex-wrap:wrap;">';
           foreach($subareas as $key => $subarea) {
+            $unique_id = htmlspecialchars($row['id'] . '_' . $subarea);
+            
             echo '
           <form action="hints.php" method="POST">
           <div class="w3-card w3-white w3-padding-small w3-display-container w3-margin-small" style="flex-grow: 1; display:flex; align-items: center; justify-content: space-between;">
-            <span style="width:80px; background-color:'.$colors[$key].'" class="w3-center">'.ucfirst($subarea).'</span>
-            <div style="flex-shrink :1; max-width:75px"><input type="number" style="width:100%" id="rdX" name="rdX"></div>
-            <div style="flex-shrink :1; max-width:75px"><input type="number" style="width:100%" id="rdY" name="rdY"></div>
-            <input type="hidden" id="subarea" name="subarea" value="'.$subarea.'"> 
+            <span style="width:80px; background-color:'.($colors[$key] ?? '#FFFFFF').'" class="w3-center">'.ucfirst(htmlspecialchars($subarea)).'</span>
+            <div style="flex-shrink :1; max-width:75px"><input type="number" style="width:100%" id="rdX_'.$unique_id.'" name="rdX"></div>
+            <div style="flex-shrink :1; max-width:75px"><input type="number" style="width:100%" id="rdY_'.$unique_id.'" name="rdY"></div>
+            <input type="hidden" id="subarea_'.$unique_id.'" name="subarea" value="'.htmlspecialchars($subarea).'"> 
             <div class="w3-button w3-teal">Probeer</div>
             <button class="w3-button w3-green" type="submit">Opslaan</button>
           </div>
@@ -128,6 +140,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   } else {
       echo "<h4>Nog geen hints beschikbaar...</h4>";
   } 
+  $stmt->close();
   ?>
   </div>
   <!-- Footer -->

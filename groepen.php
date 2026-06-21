@@ -12,63 +12,46 @@ require("dblogin.php");
 require_once("functies.php");
 
 
-$sql = "SELECT * FROM Gebruikers WHERE id='".$_SESSION['id']."'";
+// Get userdata
+$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
+$stmt->bind_param("i", $_SESSION['id']);
+$stmt->execute();
+$result = $stmt->get_result();
 
-$result = mysqli_query($conn, $sql);
-
-
-
-if (mysqli_num_rows($result) > 0) {
-
-    // output data of each row
-
-    while($row = mysqli_fetch_assoc($result)) {
-
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
       $vn = $row['voornaam'];
-
       $priv = $row['priv'];
 
       if ($row['lat']) {
-
         $usr_lat = $row['lat'];
-
         $usr_lon = $row['lon'];
-
       } else {
-
         // LAT LON van RB bij geen persoonlijke latlon
-
         $usr_lat = 51.98769228691746;
-
         $usr_lon = 5.876286397679744;
-
       }
-
     }
-
-} else {
-
-    echo "0 results";
-
 }
+$stmt->close();
 
 
 // Get global site settings
-$sql = "SELECT * FROM Site_Instellingen";
-$result = mysqli_query($conn, $sql);
+$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
+$stmt->execute();
+$result = $stmt->get_result();
 
-$siteSettings = array();
+if ($result->num_rows > 0) {
+  while($row = $result->fetch_assoc()) {
+    $vn = $row['voornaam'];
+    $priv = $row['priv'];
 
-if (mysqli_num_rows($result) > 0) {
-    while($row = mysqli_fetch_assoc($result)) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
+    if ($row['lat']) {
+      siteSettings[$row['Instelling']] = $row['Waarde'];
     }
-} else {
-    echo "0 results";
-    exit();
+  }
 }
-
-
+$stmt->close();
 
 ?>
 
@@ -153,119 +136,109 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     </div>
 
   <?php
+  // Get all scout groups
+  $stmt = $conn->prepare("SELECT * FROM Groepen ORDER BY naam DESC");
+  $stmt->execute();
+  $result = $stmt->get_result();
 
-  $sql = "SELECT * FROM Groepen ORDER BY naam DESC";
-
-  $result = mysqli_query($conn, $sql);
-
-  
-
-  if (mysqli_num_rows($result) > 0) {
-
-      echo '<div class="w3-container w3-margin-top">';
-
-      echo '<ul id="tableSearchTable" class="w3-ul w3-card-4 w3-white">';
-
-      while($row = mysqli_fetch_assoc($result)) {
-        switch (ucfirst($row['deelgebied'])) {
-          case "Alpha":
-            $color = "#9829FF";
-            break;
-          case "Bravo":
-            $color = "#2F9CEB";
-            break;
-          case "Charlie":
-            $color = "#2DFF69";
-            break;
-          case "Delta":
-            $color = "#F5F02C";
-            break;
-          case "Echo":
-            $color = "#FFA12E";
-            break;
-          case "Foxtrot":
-            $color = "#F52E2B";
-            break;
-          case "Golf":
-            $color = "#FF6F6F";
-            break;
-          case "Hotel":
-            $color = "#00BFA5";
-            break;
-          default:
-            $color = "#000000";
-            break;
-        }
-
-        echo '
-
-        <li class="w3-padding-16" meta-name="'.$row['naam'].'" meta-subarea="'.$row['deelgebied'].'" meta-distance="'.latlon_dist($row['lat'], $row['lon'], $usr_lat, $usr_lon).'">
-
-          <div class="w3-bar w3-blue-gray w3-padding w3-round">
-
-            <span class="w3-large w3-tag w3-text-black w3-round" style="background-color:'.$color.'">'.$row['deelgebied'].'</span>
-
-            <span class="w3-large w3-hide-large w3-hide-medium" style="float:right">'.$row['naam'].'</span>
-
-            <span class="w3-xlarge w3-hide-small w3-margin-left">'.$row['naam'].'</span>
-
-          </div>
-
-          <div style="display: flex; justify-content: space-between; gap: 10px 20px; flex-wrap: wrap; align-items: center;">
-
-            <div class="" style="width:75px">
-
-              <img src="'.$row['url'].'" style="width:100%">
-
-            </div>
-
-            <div class="w3-hide-small w3-hide-medium" style="width:100px">
-
-
-
-            </div>
-
-            <div style="width: 250px; flex-grow: 2">
-
-              <p>
-
-                <i class="fas fa-map-pin fa-fw"></i> <span>'.$row['lat'].', '.$row['lon'].'</span></br>
-
-                <i class="fas fa-map-marked fa-fw"></i> <span>'.ucfirst($row['straat']).' '.$row['huisnummer'].', '.ucfirst($row['plaats']).'</span></br>
-
-                <i class="fas fa-ruler fa-fw"></i> <span>'.round(latlon_dist($row['lat'], $row['lon'], $usr_lat, $usr_lon)/1000, 1).'km</span>
-
-              </p>
-
-            </div>
-
-            <div style="min-width: 200px; flex-grow: 1; display: flex; justify-content: space-around; align-items: center">
-
-              <a href=""><div class="w3-button w3-blue-gray w3-round">Tegenhunt</div></a>
-
-              <a href="http://www.google.com/maps/dir/?api=1&destination='.urlencode($row['straat'].' '.$row['huisnummer'].', '.$row['plaats']).'&travelmode=driving" target="_blank"><div class="w3-button w3-blue-gray w3-round">Navigeer</div></a>
-
-              <a href="http://www.google.com/maps/search/?api=1&query='.$row['lat'].','.$row['lon'].'" target="_blank"><div class="w3-button w3-blue-gray w3-round">Maps</div></a>
-
-            </div>
-
-          </div>
-
-        </li>
-
-        ';
-
+  if ($result->num_rows > 0) {
+    echo '<div class="w3-container w3-margin-top">';
+    echo '<ul id="tableSearchTable" class="w3-ul w3-card-4 w3-white">';
+    while($row = $result->fetch_assoc()) {
+      switch (ucfirst($row['deelgebied'])) {
+        case "Alpha":
+          $color = "#9829FF";
+          break;
+        case "Bravo":
+          $color = "#2F9CEB";
+          break;
+        case "Charlie":
+          $color = "#2DFF69";
+          break;
+        case "Delta":
+          $color = "#F5F02C";
+          break;
+        case "Echo":
+          $color = "#FFA12E";
+          break;
+        case "Foxtrot":
+          $color = "#F52E2B";
+          break;
+        case "Golf":
+          $color = "#FF6F6F";
+          break;
+        case "Hotel":
+          $color = "#00BFA5";
+          break;
+        default:
+          $color = "#000000";
+          break;
       }
 
+      echo '
+
+      <li class="w3-padding-16" meta-name="'.$row['naam'].'" meta-subarea="'.$row['deelgebied'].'" meta-distance="'.latlon_dist($row['lat'], $row['lon'], $usr_lat, $usr_lon).'">
+
+        <div class="w3-bar w3-blue-gray w3-padding w3-round">
+
+          <span class="w3-large w3-tag w3-text-black w3-round" style="background-color:'.$color.'">'.$row['deelgebied'].'</span>
+
+          <span class="w3-large w3-hide-large w3-hide-medium" style="float:right">'.$row['naam'].'</span>
+
+          <span class="w3-xlarge w3-hide-small w3-margin-left">'.$row['naam'].'</span>
+
+        </div>
+
+        <div style="display: flex; justify-content: space-between; gap: 10px 20px; flex-wrap: wrap; align-items: center;">
+
+          <div class="" style="width:75px">
+
+            <img src="'.$row['url'].'" style="width:100%">
+
+          </div>
+
+          <div class="w3-hide-small w3-hide-medium" style="width:100px">
+
+
+
+          </div>
+
+          <div style="width: 250px; flex-grow: 2">
+
+            <p>
+
+              <i class="fas fa-map-pin fa-fw"></i> <span>'.$row['lat'].', '.$row['lon'].'</span></br>
+
+              <i class="fas fa-map-marked fa-fw"></i> <span>'.ucfirst($row['straat']).' '.$row['huisnummer'].', '.ucfirst($row['plaats']).'</span></br>
+
+              <i class="fas fa-ruler fa-fw"></i> <span>'.round(latlon_dist($row['lat'], $row['lon'], $usr_lat, $usr_lon)/1000, 1).'km</span>
+
+            </p>
+
+          </div>
+
+          <div style="min-width: 200px; flex-grow: 1; display: flex; justify-content: space-around; align-items: center">
+
+            <a href=""><div class="w3-button w3-blue-gray w3-round">Tegenhunt</div></a>
+
+            <a href="http://www.google.com/maps/dir/?api=1&destination='.urlencode($row['straat'].' '.$row['huisnummer'].', '.$row['plaats']).'&travelmode=driving" target="_blank"><div class="w3-button w3-blue-gray w3-round">Navigeer</div></a>
+
+            <a href="http://www.google.com/maps/search/?api=1&query='.$row['lat'].','.$row['lon'].'" target="_blank"><div class="w3-button w3-blue-gray w3-round">Maps</div></a>
+
+          </div>
+
+        </div>
+
+      </li>
+
+      ';
+
+    }
+
     echo "</ul>";
-
-      echo "</div>";
-
-  } else {
-
-      echo "Geen resultaten...";
-
-  } 
+    echo "</div>";
+  }
+  $stmt->close();
 
   ?>
 

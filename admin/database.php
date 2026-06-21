@@ -9,15 +9,22 @@ if (!isset($_SESSION['id'])) {
 
 require("../dblogin.php");
 
-$sql = "SELECT * FROM Gebruikers WHERE id='" . $_SESSION['id'] . "'";
-$result = mysqli_query($conn, $sql);
+$stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
+$stmt->bind_param("i", $_SESSION['id']);
+$stmt->execute();
+$result = $stmt->get_result();
 
-if (mysqli_num_rows($result) > 0) {
-    while ($row = mysqli_fetch_assoc($result)) {
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
         $vn = $row['voornaam'];
         $priv = $row['priv'];
     }
+} else {
+    session_destroy();
+    header("Location: ../index");
+    exit();
 }
+$stmt->close();
 
 if ($priv < 2) {
     header("Location: ../home");
@@ -25,21 +32,26 @@ if ($priv < 2) {
 }
 
 // Get global site settings
-$sql_settings = "SELECT * FROM Site_Instellingen";
-$result_settings = mysqli_query($conn, $sql_settings);
+$stmt_settings = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen");
+$stmt_settings->execute();
+$result_settings = $stmt_settings->get_result();
 $siteSettings = array();
-if (mysqli_num_rows($result_settings) > 0) {
-    while ($row_settings = mysqli_fetch_assoc($result_settings)) {
+
+if ($result_settings->num_rows > 0) {
+    while ($row_settings = $result_settings->fetch_assoc()) {
         $siteSettings[$row_settings['Instelling']] = $row_settings['Waarde'];
     }
 } else {
     echo "0 results for settings";
+    $stmt_settings->close();
     exit();
 }
+$stmt_settings->close();
 
 // Fetch Voslocaties
-$sql_voslocaties = "SELECT * FROM Voslocaties ORDER BY ingestuurd_op DESC";
-$result_voslocaties = mysqli_query($conn, $sql_voslocaties);
+$stmt_vos = $conn->prepare("SELECT * FROM Voslocaties ORDER BY ingestuurd_op DESC");
+$stmt_vos->execute();
+$result_voslocaties = $stmt_vos->get_result();
 
 ?>
 <!DOCTYPE html>
@@ -96,8 +108,8 @@ $result_voslocaties = mysqli_query($conn, $sql_voslocaties);
                         </thead>
                         <tbody>
                             <?php
-                            if (mysqli_num_rows($result_voslocaties) > 0) {
-                                while ($row = mysqli_fetch_assoc($result_voslocaties)) {
+                            if ($result_voslocaties->num_rows > 0) {
+                                while ($row = $result_voslocaties->fetch_assoc()) {
                                     echo "<tr>";
                                     echo "<td>" . htmlspecialchars($row['type']) . "</td>";
                                     echo "<td>" . htmlspecialchars($row['deelgebied']) . "</td>";
@@ -105,15 +117,20 @@ $result_voslocaties = mysqli_query($conn, $sql_voslocaties);
                                     echo "<td>" . htmlspecialchars($row['coordinaat_x']) . ", " . htmlspecialchars($row['coordinaat_y']) . "</td>";
                                     echo "<td>" . htmlspecialchars($row['code']) . "</td>";
                                     echo "<td>" . htmlspecialchars($row['opmerking']) . "</td>";
+                                    
+                                    // Veilig encoderen van de JSON data voor gebruik in een HTML attribuut
+                                    $json_data = htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8');
+                                    
                                     echo '<td>
-                                            <button onclick="openEditModal(' . htmlspecialchars(json_encode($row)) . ')" class="w3-button w3-blue w3-small"><i class="fas fa-pencil-alt"></i></button>
-                                            <button onclick="openDeleteModal(' . $row['id'] . ')" class="w3-button w3-red w3-small"><i class="fas fa-trash-alt"></i></button>
+                                            <button onclick="openEditModal(' . $json_data . ')" class="w3-button w3-blue w3-small"><i class="fas fa-pencil-alt"></i></button>
+                                            <button onclick="openDeleteModal(' . (int)$row['id'] . ')" class="w3-button w3-red w3-small"><i class="fas fa-trash-alt"></i></button>
                                           </td>';
                                     echo "</tr>";
                                 }
                             } else {
                                 echo "<tr><td colspan='7' class='w3-center'>Geen locaties gevonden.</td></tr>";
                             }
+                            $stmt_vos->close();
                             ?>
                         </tbody>
                     </table>
@@ -195,10 +212,9 @@ $result_voslocaties = mysqli_query($conn, $sql_voslocaties);
         </div>
     </div>
 
-
     <?php require_once('../includes/footer.php') ?>
 
-    </div>
+</div>
 
 <script>
     let sortDirections = {}; // Object to track sorting direction for each column
@@ -239,16 +255,17 @@ $result_voslocaties = mysqli_query($conn, $sql_voslocaties);
         rows.forEach(row => tbody.appendChild(row));
     }
 
-
     // JavaScript voor het openen en vullen van de modals
     function openEditModal(data) {
         document.getElementById('edit_id').value = data.id;
         document.getElementById('edit_type').value = data.type;
         document.getElementById('edit_deelgebied').value = data.deelgebied;
+        
         // Format date for datetime-local input
         const date = new Date(data.ingestuurd_op.replace(' ', 'T'));
         const localIsoString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
         document.getElementById('edit_ingestuurd_op').value = localIsoString;
+        
         document.getElementById('edit_coord_x').value = data.coordinaat_x;
         document.getElementById('edit_coord_y').value = data.coordinaat_y;
         document.getElementById('edit_code').value = data.code;
@@ -261,7 +278,7 @@ $result_voslocaties = mysqli_query($conn, $sql_voslocaties);
         document.getElementById('deleteModal').style.display = 'block';
     }
 
-    // GPS refresh functie (bestaande code)
+    // GPS refresh functie
     if ("<?php echo $_SESSION['gps'] ?? 'false'; ?>" == "true") {
         setInterval(function() {
             GPSrefresh();
@@ -276,7 +293,7 @@ $result_voslocaties = mysqli_query($conn, $sql_voslocaties);
         }
 
         function showPosition(position) {
-            console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
+            console.log("Latitude: " + position.coords.latitude + "\nLongitude: " + position.coords.longitude);
             if (window.XMLHttpRequest) {
                 xmlhttp = new XMLHttpRequest();
             } else {

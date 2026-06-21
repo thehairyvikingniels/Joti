@@ -13,45 +13,34 @@ require("dblogin.php");
 require_once("functies.php");
 
 
-$sql = "SELECT * FROM Gebruikers WHERE id='".$_SESSION['id']."'";
+// Get userdata
+$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
+$stmt->bind_param("i", $_SESSION['id']);
+$stmt->execute();
+$result = $stmt->get_result();
 
-$result = mysqli_query($conn, $sql);
-
-
-
-if (mysqli_num_rows($result) > 0) {
-
-    // output data of each row
-
-    while($row = mysqli_fetch_assoc($result)) {
-
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
       $vn = $row['voornaam'];
-
       $priv = $row['priv'];
-
     }
-
-} else {
-
-    echo "0 results";
-
 }
+$stmt->close();
 
 
 // Get global site settings
-$sql = "SELECT * FROM Site_Instellingen";
-$result = mysqli_query($conn, $sql);
+$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
+$stmt->execute();
+$result = $stmt->get_result();
 
 $siteSettings = array();
 
-if (mysqli_num_rows($result) > 0) {
-    while($row = mysqli_fetch_assoc($result)) {
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
       $siteSettings[$row['Instelling']] = $row['Waarde'];
     }
-} else {
-    echo "0 results";
-    exit();
 }
+$stmt->close();
 
 ?>
 
@@ -105,64 +94,43 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   <div class="w3-row-padding w3-margin-bottom">
 
   <?php
+  // Get news items
+  $stmt = $conn->prepare("SELECT * FROM Nieuws ORDER BY datum DESC");
+  $stmt->execute();
+  $result = $stmt->get_result();
 
-  $sql = "SELECT * FROM Nieuws ORDER BY datum DESC";
+  $siteSettings = array();
 
-  $result = mysqli_query($conn, $sql);
+  if ($result->num_rows > 0) {
+    echo '<div class="w3-container">';
 
-  
+    echo '<ul class="w3-ul w3-card-4 w3-white">';
+    while($row = $result->fetch_assoc()) {
+      $content = $row['inhoud'];
+      $doc=new DOMDocument();
+      @$doc->loadHTML($content);
+      $imgNodes = $doc->getElementsByTagName('img');
 
-  if (mysqli_num_rows($result) > 0) {
-
-      echo '<div class="w3-container">';
-
-      echo '<ul class="w3-ul w3-card-4 w3-white">';
-
-      while($row = mysqli_fetch_assoc($result)) {
-
-        $content = $row['inhoud'];
-
-        $doc=new DOMDocument();
-
-        @$doc->loadHTML($content);
-
-        $imgNodes = $doc->getElementsByTagName('img');
-
-        foreach($imgNodes as $node) {
-
-          $node->setAttribute('width', '100%');
-
-          $node->removeAttribute('height');
-
-        }
-
-        echo '
-
-        <li class="w3-padding-16" id="nieuws-'.$row['id'].'">
-
-          <div class="w3-bar w3-blue-gray w3-padding w3-round-xlarge">
-
-            <span class="w3-xlarge">'.$row['titel'].'</span><span style="float: right;">'.time2str($row['datum']).'</span>
-
-          </div>
-
-          <p>'.$doc->saveHTML().'</p>
-
-        </li>
-
-        ';
-
+      foreach($imgNodes as $node) {
+        $node->setAttribute('width', '100%');
+        $node->removeAttribute('height');
       }
 
+      echo '
+      <li class="w3-padding-16" id="nieuws-'.$row['id'].'">
+        <div class="w3-bar w3-blue-gray w3-padding w3-round-xlarge">
+          <span class="w3-xlarge">'.$row['titel'].'</span><span style="float: right;">'.time2str($row['datum']).'</span>
+        </div>
+        <p>'.$doc->saveHTML().'</p>
+      </li>
+      ';
+      
+    }
     echo "</ul>";
+    echo "</div>";
+  }
+  $stmt->close();
 
-      echo "</div>";
-
-  } else {
-
-      echo "0 results";
-
-  } 
 
   ?>
 
@@ -178,7 +146,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 </div>
 
 
-  <script>
+<script>
 
 
 

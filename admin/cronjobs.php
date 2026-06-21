@@ -4,44 +4,59 @@ define("PAGE_NAME", "a_cronjobs");
 session_start();
 if (!isset($_SESSION['id'])){
   header("Location: ../index");
+  exit();
 }
 require("../dblogin.php");
 
-$sql = "SELECT * FROM Gebruikers WHERE id='".$_SESSION['id']."'";
-$result = mysqli_query($conn, $sql);
+$stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
+$stmt->bind_param("i", $_SESSION['id']);
+$stmt->execute();
+$result = $stmt->get_result();
 
-if (mysqli_num_rows($result) > 0) {
-    // output data of each row
-    while($row = mysqli_fetch_assoc($result)) {
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
       $vn = $row['voornaam'];
       $priv = $row['priv'];
     }
+} else {
+    session_destroy();
+    header("Location: ../index");
+    exit();
 }
+$stmt->close();
+
 if ($priv < 2){
   header("Location: ../home");
+  exit();
 }
 
 // Get global site settings
-$sql = "SELECT * FROM Site_Instellingen";
-$result = mysqli_query($conn, $sql);
+$stmt_settings = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen");
+$stmt_settings->execute();
+$result_settings = $stmt_settings->get_result();
 
 $siteSettings = array();
 
-if (mysqli_num_rows($result) > 0) {
-    while($row = mysqli_fetch_assoc($result)) {
+if ($result_settings->num_rows > 0) {
+    while($row = $result_settings->fetch_assoc()) {
       $siteSettings[$row['Instelling']] = $row['Waarde'];
     }
 } else {
     echo "0 results";
+    $stmt_settings->close();
     exit();
 }
+$stmt_settings->close();
 
+// Dit lijkt een overblijfsel van a_users.php, maar is voor de veiligheid toch omgezet naar een prepared statement.
 if (isset($_POST["user"]) && isset($_POST['priv'])){
-  $sql = "UPDATE Gebruikers SET priv='".$_POST['priv']."' WHERE id='".$_POST['user']."'";
+    $stmt_priv = $conn->prepare("UPDATE Gebruikers SET priv=? WHERE id=?");
+    $stmt_priv->bind_param("ii", $_POST['priv'], $_POST['user']);
 
-  if (mysqli_query($conn, $sql)) {
-    $succes = true;
-  }
+    if ($stmt_priv->execute()) {
+        $succes = true;
+    }
+    $stmt_priv->close();
 }
 
 ?>
@@ -62,23 +77,15 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     flex-basis:100%!important
   }
 }
-
 </style>
 <body class="w3-light-grey">
 
-
-<!-- Topbar -->
 <?php include_once('../includes/topbar.php') ?>
 
-
-<!-- Sidebar -->
 <?php include_once('../includes/sidebar.php') ?>
 
-
-<!-- !PAGE CONTENT! -->
 <div class="w3-main" style="margin-left:200px;margin-top:43px;">
 
-  <!-- Header -->
   <header class="w3-container" style="padding-top:22px">
     <h5><b><i class="fas fa-cogs"></i> Admin</b></h5>
   </header>
@@ -90,214 +97,211 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
         </div>
         <ul class="w3-ul">
         <?php
-$sql = "SELECT cj.name, cj.enabled, cj.URL, cj.description, cj.interval, cl.exec_time, cl.exec_length, cl.exec_stat, cl.exec_output
-        FROM Cronjobs cj LEFT JOIN Cronlogs cl ON cj.name = cl.name
-        WHERE cl.exec_time IS NULL
-            OR cl.exec_time = (
-                SELECT MAX(cl2.exec_time)
-                FROM Cronlogs cl2
-                WHERE cl2.name = cj.name
-            )";
-$result = mysqli_query($conn, $sql);
+        $sql = "SELECT cj.name, cj.enabled, cj.URL, cj.description, cj.interval, cl.exec_time, cl.exec_length, cl.exec_stat, cl.exec_output
+                FROM Cronjobs cj LEFT JOIN Cronlogs cl ON cj.name = cl.name
+                WHERE cl.exec_time IS NULL
+                    OR cl.exec_time = (
+                        SELECT MAX(cl2.exec_time)
+                        FROM Cronlogs cl2
+                        WHERE cl2.name = cj.name
+                    )";
+                    
+        $stmt_cron = $conn->prepare($sql);
+        $stmt_cron->execute();
+        $result_cron = $stmt_cron->get_result();
 
-if (mysqli_num_rows($result) > 0) {
-  $i = 0;
-    // output data of each row
-    while($row = mysqli_fetch_assoc($result)) {
-      $name = ucfirst($row['name']);
-      $interval = number_format($row['interval'] / 60, 1, ',')." min";
-      $exec_time = date("d/m H:i:s",strtotime($row['exec_time']));
-      $exec_length = number_format($row['exec_length'] / 1000, 2, ',')." sec";
-      $exec_status = $row['exec_stat'];
-      $exec_output = $row['exec_output'];
-      $exec_next = ($row['interval'] + strtotime($row['exec_time']) - time())." sec";
+        if ($result_cron->num_rows > 0) {
+            $i = 0;
+            while($row = $result_cron->fetch_assoc()) {
+              $name = ucfirst(htmlspecialchars($row['name']));
+              $interval = number_format($row['interval'] / 60, 1, ',')." min";
+              
+              // Fallback voor als er nog geen exec_time is
+              $exec_time = $row['exec_time'] ? date("d/m H:i:s", strtotime($row['exec_time'])) : "Nooit";
+              $exec_length = $row['exec_length'] ? number_format($row['exec_length'] / 1000, 2, ',')." sec" : "0,00 sec";
+              $exec_status = $row['exec_stat'];
+              
+              $exec_next = $row['exec_time'] ? ($row['interval'] + strtotime($row['exec_time']) - time())." sec" : "Onbekend";
 
-      if ($row['enabled'] === "1") {
-        $enabled = '<i class="fas fa-toggle-on fa-fw"></i>';
-      } else {
-        $enabled = '<i class="fas fa-toggle-off fa-fw"></i>';
-      }
+              if ($row['enabled'] == 1) {
+                $enabled = '<i class="fas fa-toggle-on fa-fw"></i>';
+              } else {
+                $enabled = '<i class="fas fa-toggle-off fa-fw"></i>';
+              }
 
+              switch ($exec_status) {
+                case 200: // succes
+                  $stat_color = "w3-text-green";
+                  break;
+                case 429: // too many requests
+                  $stat_color = "w3-text-yellow";
+                  break;
+                case 500: // script error
+                  $stat_color = "w3-text-red";
+                  break;
+                default:
+                  $stat_color = ($exec_status === null) ? "w3-text-grey" : "w3-text-red";
+                  break;
+              }
 
-      switch ($exec_status) {
-        case 200: // succes
-          $stat_color = "w3-text-green";
-          break;
-        case 429: // too many requests
-          $stat_color = "w3-text-yellow";
-          break;
-        case 500: // script error
-          $stat_color = "w3-text-red";
-          break;
-        default:
-          $stat_color = "w3-text-red";
-          break;
-      }
-
-
-
-      echo "<li class='cronTimer' style='display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between'>
-              <div class='mobile100' style='flex-basis: 250px'>
-                <h3>
-                  <span id='cron_enabled_".$i."' onclick='toggleCron(\"".strtolower($name)."\")'>".$enabled."</span>
-                  <span id='cron_status_".$i."' class='".$stat_color."' title='HTML ".$exec_status." code'><i class='fas fa-circle'></i></span>
-                  <span id='cron_name_".$i."'>".$name."</span>
-                </h3>
-              </div>
-              <div><i class='fas fa-calendar-alt'></i> <b>Interval:</b><br><span id='cron_interval_".$i."'>".$interval."</span></div>
-              <div><i class='far fa-clock'></i> <b>Next exec.:</b><br><span id='cron_exec_next_".$i."'>".$exec_next."</span></div>
-              <div><i class='fas fa-history'></i> <b>Last exec.:</b><br><span id='cron_exec_time_".$i."'>".$exec_time."</span></div>
-              <div><i class='fas fa-hourglass-half'></i> <b>Prev. Dur.:</b><br><span id='cron_exec_length_".$i."'>".$exec_length."</span></div>
-              <div><h4><i id='cron_start_".$i."' class='fas fa-play'></i></h4><div>
-            </li>";
-      $i++;
-    }
-}       
+              echo "<li class='cronTimer' style='display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between'>
+                      <div class='mobile100' style='flex-basis: 250px'>
+                        <h3>
+                          <span id='cron_enabled_".$i."' style='cursor:pointer;' onclick='toggleCron(\"".htmlspecialchars(strtolower($name))."\")'>".$enabled."</span>
+                          <span id='cron_status_".$i."' class='".$stat_color."' title='HTML ".htmlspecialchars($exec_status)." code'><i class='fas fa-circle'></i></span>
+                          <span id='cron_name_".$i."'>".$name."</span>
+                        </h3>
+                      </div>
+                      <div><i class='fas fa-calendar-alt'></i> <b>Interval:</b><br><span id='cron_interval_".$i."'>".$interval."</span></div>
+                      <div><i class='far fa-clock'></i> <b>Next exec.:</b><br><span id='cron_exec_next_".$i."'>".$exec_next."</span></div>
+                      <div><i class='fas fa-history'></i> <b>Last exec.:</b><br><span id='cron_exec_time_".$i."'>".$exec_time."</span></div>
+                      <div><i class='fas fa-hourglass-half'></i> <b>Prev. Dur.:</b><br><span id='cron_exec_length_".$i."'>".$exec_length."</span></div>
+                      <div><h4><i id='cron_start_".$i."' class='fas fa-play'></i></h4></div>
+                    </li>";
+              $i++;
+            }
+        }
+        $stmt_cron->close();
         ?>
         </ul>
       </div>
     </div>
 
   </div>
-  <!-- Footer -->
   <?php require_once('../includes/footer.php') ?>
 
-  <!-- End page content -->
-</div>
+  </div>
 
-  <script>
-
+<script>
 if ("<?php echo $_SESSION['gps']?>" == "true"){
   setInterval(function() {
     GPSrefresh();
   }, 5555);
 }
-  setInterval(function() {
-    TimerRefresh();
-  }, 1000);
-  var countAmont = document.getElementsByClassName('cronTimer').length;
 
-  setInterval(function() {
-    CronRefresh();
-  }, 6000);
+setInterval(function() {
+  TimerRefresh();
+}, 1000);
 
-  function toggleCron(name) {
-    if (window.XMLHttpRequest) {
-          // code for IE7+, Firefox, Chrome, Opera, Safari
-          xmlhttp = new XMLHttpRequest();
-      } else {
-          // code for IE6, IE5
-          xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-      }
-      xmlhttp.onreadystatechange = function() {
-          if (this.readyState == 4 && this.status == 200) {
-            CronRefresh();
-          }
-      };
-      xmlhttp.open("GET","cronjobs_helper.php?toggleCron="+name,true);
-      xmlhttp.send();
-  }
+var countAmont = document.getElementsByClassName('cronTimer').length;
 
-  function TimerRefresh() {
-    for (let i = 0; i < countAmont; i++) {
-      var timer = document.getElementById("cron_exec_next_" + i);
-      var cron_start = document.getElementById("cron_start_" + i);
-      var cron_enabled = document.getElementById("cron_enabled_" + i);
+setInterval(function() {
+  CronRefresh();
+}, 6000);
 
-      if (cron_enabled.innerHTML.includes("off")) {
-        timer.innerHTML = " - disabled - ";
-      } else {
-        timer.innerHTML.replace(" sec", "");
-        if (timer.innerHTML != "executing...") {
-          timer.innerHTML = (parseInt(timer.innerHTML) - 1);
-          cron_start.className = "fas fa-play";
-          if (timer.innerHTML <= 0) {
-            timer.innerHTML = "executing...";
-            cron_start.className = "fas fa-sync-alt fa-spin";
-          } else {
-            timer.innerHTML += " sec";
-          }        
-        }
-      }
-    }
-  }
-
-  function CronRefresh() {
-    if (window.XMLHttpRequest) {
-        // code for IE7+, Firefox, Chrome, Opera, Safari
+function toggleCron(name) {
+  if (window.XMLHttpRequest) {
         xmlhttp = new XMLHttpRequest();
     } else {
-        // code for IE6, IE5
         xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
     }
     xmlhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-          console.log(this.responseText);
-          json = JSON.parse(this.responseText);
-          countAmont = json.length;
-          for(var i = 0; i < json.length; i++){
-            var cron_enabled = document.getElementById("cron_enabled_" + i);
-            var cron_status = document.getElementById("cron_status_" + i);
-            var cron_name = document.getElementById("cron_name_" + i);
-            var cron_interval = document.getElementById("cron_interval_" + i);
-            var cron_exec_time = document.getElementById("cron_exec_time_" + i);
-            var cron_exec_length = document.getElementById("cron_exec_length_" + i);
-            var cron_exec_next = document.getElementById("cron_exec_next_" + i);
-            var cron_start = document.getElementById("cron_start_" + i);
-
-            cron_enabled.innerHTML = json[i]['enabled'];
-            cron_status.className = json[i]['stat_color'];
-            cron_status.title = "HTML " + json[i]['exec_status'] + " code.";
-            cron_name.innerHTML = json[i]['name'];
-            cron_name.title = json[i]['description'];
-            cron_interval.innerHTML = json[i]['interval'];
-            cron_exec_time.innerHTML = json[i]['exec_time'];
-            cron_exec_length.innerHTML = json[i]['exec_length'];
-            cron_exec_next.innerHTML = json[i]['exec_next'];
-            if (json[i]['exec_next'] <= 0) {
-              cron_start.classname = 'fas fa-sync-alt fa-spin';
-            } else {
-              cron_start.classname = 'fas fa-play';
-            }
-            
-          }
+          CronRefresh();
         }
     };
-    xmlhttp.open("GET","cronjobs_helper.php?cronjobs",true);
+    xmlhttp.open("GET","cronjobs_helper.php?toggleCron="+encodeURIComponent(name),true);
+    xmlhttp.send();
+}
+
+function TimerRefresh() {
+  for (let i = 0; i < countAmont; i++) {
+    var timer = document.getElementById("cron_exec_next_" + i);
+    var cron_start = document.getElementById("cron_start_" + i);
+    var cron_enabled = document.getElementById("cron_enabled_" + i);
+
+    if (cron_enabled.innerHTML.includes("off")) {
+      timer.innerHTML = " - disabled - ";
+      cron_start.className = "fas fa-stop";
+    } else {
+      if (timer.innerHTML !== "executing..." && timer.innerHTML !== "Onbekend") {
+        let currentSecs = parseInt(timer.innerHTML);
+        currentSecs--;
+        
+        cron_start.className = "fas fa-play";
+        
+        if (currentSecs <= 0) {
+          timer.innerHTML = "executing...";
+          cron_start.className = "fas fa-sync-alt fa-spin";
+        } else {
+          timer.innerHTML = currentSecs + " sec";
+        }        
+      }
+    }
+  }
+}
+
+function CronRefresh() {
+  if (window.XMLHttpRequest) {
+      xmlhttp = new XMLHttpRequest();
+  } else {
+      xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+  }
+  xmlhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        // Zorg ervoor dat de log niet volloopt in de console in productie
+        // console.log(this.responseText); 
+        try {
+            var json = JSON.parse(this.responseText);
+            countAmont = json.length;
+            
+            for(var i = 0; i < json.length; i++){
+              var cron_enabled = document.getElementById("cron_enabled_" + i);
+              var cron_status = document.getElementById("cron_status_" + i);
+              var cron_name = document.getElementById("cron_name_" + i);
+              var cron_interval = document.getElementById("cron_interval_" + i);
+              var cron_exec_time = document.getElementById("cron_exec_time_" + i);
+              var cron_exec_length = document.getElementById("cron_exec_length_" + i);
+              var cron_exec_next = document.getElementById("cron_exec_next_" + i);
+              var cron_start = document.getElementById("cron_start_" + i);
+
+              cron_enabled.innerHTML = json[i]['enabled'];
+              cron_status.className = json[i]['stat_color'];
+              cron_status.title = "HTML " + json[i]['exec_status'] + " code.";
+              cron_name.innerHTML = json[i]['name'];
+              cron_name.title = json[i]['description'];
+              cron_interval.innerHTML = json[i]['interval'];
+              cron_exec_time.innerHTML = json[i]['exec_time'];
+              cron_exec_length.innerHTML = json[i]['exec_length'];
+              cron_exec_next.innerHTML = json[i]['exec_next'];
+              
+              if (parseInt(json[i]['exec_next']) <= 0) {
+                cron_start.className = 'fas fa-sync-alt fa-spin';
+              } else {
+                cron_start.className = 'fas fa-play';
+              }
+            }
+        } catch (e) {
+            console.error("Ongeldige JSON ontvangen van cronjobs_helper.php");
+        }
+      }
+  };
+  xmlhttp.open("GET","cronjobs_helper.php?cronjobs",true);
+  xmlhttp.send();
+}
+
+function GPSrefresh() {
+  if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(showPosition);
+  } else {
+      console.log("Geolocation is not supported by this browser.");
+  }
+  
+  function showPosition(position) {
+    if (window.XMLHttpRequest) {
+        xmlhttp = new XMLHttpRequest();
+    } else {
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            // Gelukt
+        }
+    };
+    xmlhttp.open("GET","../functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
     xmlhttp.send();
   }
- 
- function GPSrefresh() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    } else {
-        console.log("Geolocation is not supported by this browser.");
-    }
-    function showPosition(position) {
-     console.log("Latitude: " + position.coords.latitude + 
-      "<br>Longitude: " + position.coords.longitude);
-      
-      
-    if (window.XMLHttpRequest) {
-          // code for IE7+, Firefox, Chrome, Opera, Safari
-          xmlhttp = new XMLHttpRequest();
-      } else {
-          // code for IE6, IE5
-          xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-      }
-      xmlhttp.onreadystatechange = function() {
-          if (this.readyState == 4 && this.status == 200) {
-          }
-      };
-      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-      xmlhttp.send();
-    }
-   
-   
-
- } 
-  
-  
+} 
 </script>
 
 </body>

@@ -19,107 +19,75 @@ if (isset($_GET['refresh'])){
 }
 
 
+// Get userdata
+$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
+$stmt->bind_param("i", $_SESSION['id']);
+$stmt->execute();
+$result = $stmt->get_result();
 
-$sql = "SELECT * FROM Gebruikers WHERE id='".$_SESSION['id']."'";
-
-$result = mysqli_query($conn, $sql);
-
-
-
-if (mysqli_num_rows($result) > 0) {
-
-    // output data of each row
-
-    while($row = mysqli_fetch_assoc($result)) {
-
-      $vn = $row['voornaam'];
-
-      $priv = $row['priv'];
-
-    }
-
+if ($result->num_rows > 0) {
+  while($row = $result->fetch_assoc()) {
+    $vn = $row['voornaam'];
+    $priv = $row['priv'];
+  }
 }
+$stmt->close();
 
 // Get global site settings
-$sql = "SELECT * FROM Site_Instellingen";
-$result = mysqli_query($conn, $sql);
+$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
+$stmt->execute();
+$result = $stmt->get_result();
 
-$siteSettings = array();
+if ($result->num_rows > 0) {
+  while($row = $result->fetch_assoc()) {
+    $siteSettings[$row['Instelling']] = $row['Waarde'];
+  }
+}
+$stmt->close();
 
-if (mysqli_num_rows($result) > 0) {
-    while($row = mysqli_fetch_assoc($result)) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
+
+// Get hints
+$stmt = $conn->prepare("SELECT id, count(*) as NUM FROM Voslocaties WHERE type='Hint' GROUP BY ingestuurd_op");
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+  while($row = $result->fetch_assoc()) {
+    $hintaantal = $row['NUM'];
+  }
 } else {
-    echo "0 results";
-    exit();
+  $hintaantal = "0";
 }
-
-$sql = "SELECT id, count(*) as NUM FROM Voslocaties WHERE type='Hint' GROUP BY ingestuurd_op";
-
-$result = mysqli_query($conn, $sql);
+$stmt->close();
 
 
+// Get hunts
+$stmt = $conn->prepare("SELECT id, count(*) as NUM FROM Voslocaties WHERE type='Hunt'");
+$stmt->execute();
+$result = $stmt->get_result();
 
-if (mysqli_num_rows($result) > 0) {
-
-    // output data of each row
-
-    while($row = mysqli_fetch_assoc($result)) {
-
-      $hintaantal = $row['NUM'];
-
-    }
-
+if ($result->num_rows > 0) {
+  while($row = $result->fetch_assoc()) {
+    $huntaantal = $row['NUM'];
+  }
 } else {
-
-    $hintaantal = "0";
-
+  $huntaantal = "0";
 }
+$stmt->close();
 
 
+// Get points for Geuzen
+$stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')");
+$stmt->execute();
+$result = $stmt->get_result();
 
-$sql = "SELECT id, count(*) as NUM FROM Voslocaties WHERE type='Hunt'";
-
-$result = mysqli_query($conn, $sql);
-
-
-
-if (mysqli_num_rows($result) > 0) {
-
-    // output data of each row
-
-    while($row = mysqli_fetch_assoc($result)) {
-
-      $huntaantal = $row['NUM'];
-
-    }
-
-} else {
-
-    $huntaantal = "0";
-
+if ($result->num_rows > 0) {
+  while($row = $result->fetch_assoc()) {
+    $puntentotaal = $row['totaal'];
+    $plaats = $row['plaats'];
+  }
 }
-
-$sql = "SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')";
-
-$result = mysqli_query($conn, $sql);
-
-
-
-if (mysqli_num_rows($result) > 0) {
-
-    // output data of each row
-
-    while($row = mysqli_fetch_assoc($result)) {
-
-      $puntentotaal = $row['totaal'];
-
-      $plaats = $row['plaats'];
-
-    }
-
-}
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -327,9 +295,6 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     </div>
 
   </div>
-
-</div>
-
   <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
 
@@ -414,15 +379,19 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
         </p>
         <ul>
           <?php
-          $sql = "SELECT voornaam, achternaam FROM Gebruikers WHERE priv > 1 ORDER BY voornaam ASC";
-          $result = mysqli_query($conn, $sql);
-          if (mysqli_num_rows($result) > 0) {
-            while($row = mysqli_fetch_assoc($result)) {
+          // Get admins for the introduction modal
+          $stmt = $conn->prepare("SELECT voornaam, achternaam FROM Gebruikers WHERE priv > 1 ORDER BY voornaam ASC");
+          $stmt->execute();
+          $result = $stmt->get_result();
+
+          if ($result->num_rows > 0) {
+            while($row = $result->fetch_assoc()) {
               echo '<li>'.ucfirst($row['voornaam']).' '.ucfirst($row['achternaam']).'</li>';
             }
           } else {
             echo '<li>Geen gebruikers met extra rechten gevonden...</br>Als je beheerder bent dien je dat handmatig te doen via de database door de kolomn priv van 0 of 1 naar 2 aan te passen.</li>';
           }
+          $stmt->close();
           ?>
         </ul>
       </div>
