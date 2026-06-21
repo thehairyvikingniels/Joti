@@ -11,7 +11,7 @@ if (!isset($_SESSION['id'])){
 require("dblogin.php");
 
 
-
+// get userdata
 $stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
 $stmt->bind_param("i", $_SESSION['id']);
 $stmt->execute();
@@ -29,20 +29,19 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
+
 // Get global site settings
-$sql = "SELECT * FROM Site_Instellingen";
-$result = mysqli_query($conn, $sql);
+$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
+$stmt->execute();
+$result = $stmt->get_result();
 
-$siteSettings = array();
-
-if (mysqli_num_rows($result) > 0) {
-    while($row = mysqli_fetch_assoc($result)) {
+if ($result->num_rows > 0) {
+    while($row = $result->fetch_assoc()) {
       $siteSettings[$row['Instelling']] = $row['Waarde'];
     }
-} else {
-    echo "0 results";
-    exit();
 }
+$stmt->close();
+
 ?>
 
 <!DOCTYPE html>
