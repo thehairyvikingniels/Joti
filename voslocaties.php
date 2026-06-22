@@ -9,6 +9,7 @@ if (!isset($_SESSION['id'])) {
 }
 
 require("dblogin.php");
+require_once("functies.php");
 
 // --- START: NEW FEATURE - PROCESS FORM ---
 $message = ''; // Variable to store success or error messages for the user.
