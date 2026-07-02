@@ -8,7 +8,9 @@ if (!isset($_SESSION['id'])) {
 }
 
 require("../dblogin.php");
+require_once("../functies.php");
 
+// Get userdata
 $stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
 $stmt->bind_param("i", $_SESSION['id']);
 $stmt->execute();

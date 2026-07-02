@@ -99,9 +99,8 @@ session_destroy();
                 <center><button class="w3-button w3-theme-d2 w3-round-xlarge" type="submit">Maak account aan</button></center>
               </form>
             </div>
-            <footer class="w3-container w3-theme-d1">
-              <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
-            </footer>
+            <!-- Footer -->
+            <?php require_once('includes/footer.php') ?>
           </div>
         </div>
   </body>

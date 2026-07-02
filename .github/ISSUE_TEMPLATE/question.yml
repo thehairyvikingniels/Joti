@@ -1,0 +1,27 @@
+name: New issue.
+description: Submit a question, request or bug about the project.
+title: "[NEW]: "
+labels: ["Prio: 5", "Status: Pending Review", "Type: Question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to open an issue! Please provide as much detail as possible so we can help you quickly.
+  - type: textarea
+    id: question
+    attributes:
+      label: What is your question, request or bug?
+      description: Please provide clear details about what you are experiencing or requesting.
+      value: |
+        ### Description
+        <!-- Please write your question, feature request, or describe the bug here. -->
+
+        ### Steps to Reproduce (if it is a bug)
+        1. 
+        2. 
+        3. 
+
+        ### Additional Context
+        <!-- Add any other context, screenshots, or logs here. -->
+    validations:
+      required: true

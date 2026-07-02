@@ -8,6 +8,8 @@ if (!isset($_SESSION['id'])){
 }
 
 require("../dblogin.php");
+require_once("../functies.php");
+
 
 // Huidige gebruiker rechten ophalen
 $stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
