@@ -88,8 +88,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   $stmt->execute();
   $result = $stmt->get_result();
 
-  $vossen = array("alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", "hotel");
-  $colors = array("#9829FF", "#2F9CEB", "#2DFF69", "#F5F02C", "#FFA12E", "#F52E2B", "#FF00FF", "#00FFFF");
+  $vossen = $vossen_names;
 
   if ($result->num_rows > 0) {
       echo '<div class="w3-container">';
@@ -121,7 +120,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
             echo '
           <form action="hints.php" method="POST">
           <div class="w3-card w3-white w3-padding-small w3-display-container w3-margin-small" style="flex-grow: 1; display:flex; align-items: center; justify-content: space-between;">
-            <span style="width:80px; background-color:'.($colors[$key] ?? '#FFFFFF').'" class="w3-center">'.ucfirst(htmlspecialchars($subarea)).'</span>
+            <span style="width:80px; background-color:'.htmlspecialchars(getFoxColor($subarea)).'" class="w3-center">'.ucfirst(htmlspecialchars($subarea)).'</span>
             <div style="flex-shrink :1; max-width:75px"><input type="number" style="width:100%" id="rdX_'.$unique_id.'" name="rdX"></div>
             <div style="flex-shrink :1; max-width:75px"><input type="number" style="width:100%" id="rdY_'.$unique_id.'" name="rdY"></div>
             <input type="hidden" id="subarea_'.$unique_id.'" name="subarea" value="'.htmlspecialchars($subarea).'"> 

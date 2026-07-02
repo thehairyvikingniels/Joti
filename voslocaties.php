@@ -214,13 +214,11 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
               <label class="w3-text-grey"><b>Vossenteam (Deelgebied)</b></label>
               <select class="w3-select w3-border" name="deelgebied" required>
                 <option value="" disabled selected>Kies een team</option>
-                <option value="Alpha">Alpha</option>
-                <option value="Bravo">Bravo</option>
-                <option value="Charlie">Charlie</option>
-                <option value="Delta">Delta</option>
-                <option value="Echo">Echo</option>
-                <option value="Foxtrot">Foxtrot</option>
-                <option value="Golf">Golf</option>
+                <?php
+                foreach ($vossen_names as $fox) {
+                    echo "<option value=\"" . htmlspecialchars($fox) . "\">" . htmlspecialchars($fox) . "</option>\n";
+                }
+                ?>
               </select>
             </p>
             

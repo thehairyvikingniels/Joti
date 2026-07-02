@@ -84,16 +84,21 @@ $stmt->bind_param("ss", $start_fmt, $end_fmt);
 $stmt->execute();
 $result = $stmt->get_result();
 
-$voslog_data = [];
+$voslog_data_assoc = [];
 
 if ($result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
-        $voslog_data[] = $row;
+        $dt = $row['datumtijd'];
+        if (!isset($voslog_data_assoc[$dt])) {
+            $voslog_data_assoc[$dt] = ['datumtijd' => $dt];
+        }
+        $voslog_data_assoc[$dt][$row['vos']] = $row['status'];
     }
 }
+$voslog_data = array_values($voslog_data_assoc);
 $stmt->close();
 
-$fox_teams = ['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot', 'golf', 'hotel'];
+$fox_teams = $vossen_names;
 $status_colors = [
     0 => 'w3-red',    // Red
     1 => 'w3-orange', // Orange
@@ -146,19 +151,20 @@ foreach ($fox_teams as $team) {
             if ($segment_end_time > $spelhelft_end && $last_time < $spelhelft_end) {
                 $duration1 = $spelhelft_end->getTimestamp() - $last_time->getTimestamp();
                 $stats[$team][$spelhelft][$last_status] += $duration1;
+                $stats[$team][$spelhelft]['total'] += $duration1;
 
                 $spelhelft = 'spelhelft2'; // The rest is in the next half
                 $duration2 = $segment_end_time->getTimestamp() - $spelhelft_end->getTimestamp();
                  $stats[$team][$spelhelft][$last_status] += $duration2;
+                $stats[$team][$spelhelft]['total'] += $duration2;
             } else {
                 $stats[$team][$spelhelft][$last_status] += $duration;
+                $stats[$team][$spelhelft]['total'] += $duration;
             }
         }
         
-        $last_time = $event_time;
-        if (isset($log[$team])) {
-            $last_status = $log[$team];
-        }
+        $last_time = $segment_end_time;
+        $last_status = $log[$team] ?? $last_status; 
     }
 }
 

@@ -15,6 +15,7 @@ log2DB("-VOSSEN<br>");
 $sql = "Select datumtijd FROM Voslog ORDER BY datumtijd desc LIMIT 1";
 $result = mysqli_query($conn, $sql);
 
+$lastupdate = '2000-01-01 00:00:00';
 if (mysqli_num_rows($result) > 0) {
     // output data of each row
     $a = 0;
@@ -33,26 +34,24 @@ foreach($data["data"] as $value){
     $updatedAt = strtotime($value["updated_at"]);
     $statusChanged = 1;
   }
-  switch ((string)$value['status']) {
-    case 'red':
-      ${strtolower($value['name'])."_status"} = 0;
-      break;
-    case 'orange':
-      ${strtolower($value['name'])."_status"} = 1;
-      break;
-    case 'green':
-      ${strtolower($value['name'])."_status"} = 2;
-      break;
-  }
 }
-if ($statusChanged) {
 
-  $sql = "INSERT INTO Voslog (datumtijd, alpha, bravo, charlie, delta, echo, foxtrot, golf, hotel)
-  VALUES ('".date("Y-m-d H:i:s", $updatedAt)."','".$alpha_status."','".$bravo_status."','".$charlie_status."','".$delta_status."','".$echo_status."','".$foxtrot_status."','".$golf_status."','".$hotel_status."')";
+if ($statusChanged) {
+  $dt = date("Y-m-d H:i:s", $updatedAt);
+  $stmt = $conn->prepare("INSERT INTO Voslog (datumtijd, vos, status) VALUES (?, ?, ?)");
   
-  if (!mysqli_query($conn, $sql)) {
-    log2DB("Error: " . $sql . "<br>" . mysqli_error($conn));
+  foreach($data["data"] as $value) {
+      $foxName = ucfirst(strtolower($value['name']));
+      $status = 0;
+      if ($value['status'] == 'orange') $status = 1;
+      elseif ($value['status'] == 'green') $status = 2;
+      
+      $stmt->bind_param("ssi", $dt, $foxName, $status);
+      if (!$stmt->execute()) {
+          log2DB("Error inserting for {$foxName}: " . $stmt->error . "<br>");
+      }
   }
+  $stmt->close();
 } else {
     log2DB("No changes</br>");
 }

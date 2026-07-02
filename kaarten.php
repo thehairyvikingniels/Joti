@@ -193,7 +193,7 @@ input:disabled + .slider { background-color: #ddd; cursor: not-allowed; }
             <p><input class="w3-check" type="checkbox" id="helft2" onchange="kaartveranderen()" checked><label for="helft2" class="w3-check-label"> Tweede helft</label></p>
             <h5 class="w3-margin-top">Deelgebieden</h5>
             <?php
-              $teams = array("Alpha","Bravo","Charlie","Delta","Echo","Foxtrot", "Golf", "Hotel");
+              $teams = $vossen_names;
               foreach($teams as $team) {
                   echo "<p><input class='w3-check team-filter' type='checkbox' id='".strtolower($team)."' onchange='kaartveranderen()' checked><label for='".strtolower($team)."' class='w3-check-label'> ".ucfirst($team)."</label></p>";
               }
