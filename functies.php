@@ -385,40 +385,5 @@ if (isset($_GET['gebeurtenissen'])){
 }
 
 
-/**
- * Retrieves the short hash and last modification date of the current Git commit.
- * @return array Associative array with 'hash' and 'date' keys.
- */
-function getGitBuildInfo() {
-    $gitBasePath = __DIR__ . '/.git'; 
-    $headFile = $gitBasePath . '/HEAD';
-    
-    $info = ['hash' => 'unknown', 'date' => 'unknown'];
 
-    if (!file_exists($headFile)) {
-        return $info;
-    }
-
-    $headContents = trim(file_get_contents($headFile));
-
-    // Check if HEAD points to a branch (e.g., "ref: refs/heads/main")
-    if (strpos($headContents, 'ref:') === 0) {
-        $refParts = explode(' ', $headContents);
-        $refPath = $gitBasePath . '/' . $refParts[1];
-        
-        if (file_exists($refPath)) {
-            $hash = trim(file_get_contents($refPath));
-            $info['hash'] = substr($hash, 0, 7);
-            // Get the exact time the reference file was updated by the git sync
-            $info['date'] = date('d-m-Y H:i', filemtime($refPath)); 
-        }
-    } else {
-        // If it's a detached HEAD, the file contains the hash directly
-        $info['hash'] = substr($headContents, 0, 7);
-        $info['date'] = date('d-m-Y H:i', filemtime($headFile));
-    }
-    
-    return $info;
-}
-    
 ?>

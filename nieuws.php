@@ -48,7 +48,7 @@ $stmt->close();
 
 <html>
 
-<title>Jotihunt - De Geuzen</title>
+<title>Jotihunt - Nieuws</title>
 
 <meta charset="UTF-8">
 

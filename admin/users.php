@@ -93,7 +93,7 @@ $stmt_users->close();
 
 <!DOCTYPE html>
 <html>
-<title>Jotihunt - De Geuzen</title>
+<title>Jotihunt - Users</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
