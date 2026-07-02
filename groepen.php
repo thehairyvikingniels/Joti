@@ -37,18 +37,14 @@ $stmt->close();
 
 
 // Get global site settings
+$siteSettings = array();
 $stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {
-    $vn = $row['voornaam'];
-    $priv = $row['priv'];
-
-    if ($row['lat']) {
-      siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
+    $siteSettings[$row['Instelling']] = $row['Waarde'];
   }
 }
 $stmt->close();
