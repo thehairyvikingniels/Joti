@@ -1,7 +1,7 @@
-# Jotihunt — De Geuzen Arnhem
+# Jotihunt Web App
 
 ### Short description
-A small procedural PHP + MySQL web application used by the scout group "De Geuzen" to run a local Jotihunt. No framework; frontend uses W3.CSS, jQuery and FontAwesome; server side is plain PHP + mysqli.
+A small procedural PHP + MySQL web application used by your scout group to run a local Jotihunt. No framework; frontend uses W3.CSS, jQuery and FontAwesome; server side is plain PHP + mysqli.
 
 ### Contents (high-level)
 - File-based PHP endpoints: index.php, home.php, kaarten.php, functies.php, admin/, api/

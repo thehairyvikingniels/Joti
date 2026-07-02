@@ -157,6 +157,18 @@ if ($result_all->num_rows > 0) {
     }
 }
 $stmt_all->close();
+
+// Fetch groups for the GROUP_ID dropdown
+$stmt_groups = $conn->prepare("SELECT id, naam FROM Groepen ORDER BY naam ASC");
+$stmt_groups->execute();
+$result_groups = $stmt_groups->get_result();
+$groepen_options = [];
+if ($result_groups->num_rows > 0) {
+    while ($r = $result_groups->fetch_assoc()) {
+        $groepen_options[] = $r;
+    }
+}
+$stmt_groups->close();
 ?>
 <!DOCTYPE html>
 <html>
@@ -212,9 +224,29 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 <small><?php echo htmlspecialchars($setting['Omschrijving']); ?></small>
               </label>
               <div class="w3-row">
-                  <div class="w3-col" style="width:calc(100% - 60px)">
-                      <input class="w3-input w3-border w3-round-large" type="text" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" value="<?php echo htmlspecialchars($setting['Waarde']); ?>" required>
-                  </div>
+                  <?php if ($setting['Instelling'] === 'GROUP_ID'): ?>
+                      <div class="w3-col" style="width:calc(100% - 60px)">
+                          <?php if (empty($groepen_options)): ?>
+                              <select class="w3-select w3-border w3-round-large w3-padding" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" required>
+                                  <option value="0">Placeholder (No Groups Loaded)</option>
+                              </select>
+                              <a href="../cron/subscriptions.php" target="_blank" class="w3-text-blue w3-small"><i class="fas fa-sync"></i> Haal groepen op</a>
+                          <?php else: ?>
+                              <select class="w3-select w3-border w3-round-large w3-padding" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" required>
+                                  <option value="0" <?php echo ($setting['Waarde'] == '0') ? 'selected' : ''; ?>>Placeholder (No Groups Loaded)</option>
+                                  <?php foreach ($groepen_options as $groep): ?>
+                                      <option value="<?php echo htmlspecialchars($groep['id']); ?>" <?php echo ($setting['Waarde'] == $groep['id']) ? 'selected' : ''; ?>>
+                                          <?php echo htmlspecialchars($groep['naam']); ?>
+                                      </option>
+                                  <?php endforeach; ?>
+                              </select>
+                          <?php endif; ?>
+                      </div>
+                  <?php else: ?>
+                      <div class="w3-col" style="width:calc(100% - 60px)">
+                          <input class="w3-input w3-border w3-round-large" type="text" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" value="<?php echo htmlspecialchars($setting['Waarde']); ?>" required>
+                      </div>
+                  <?php endif; ?>
                   <div class="w3-rest w3-right-align">
                       <button type="button" onclick="confirmDelete('<?php echo htmlspecialchars($setting['Instelling']); ?>')" class="w3-button w3-red w3-round-large w3-margin-left" title="Verwijder instelling">
                           <i class="fas fa-trash"></i>

@@ -2,6 +2,21 @@
 $vossen = array("Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel");
 $vos = array();
 
+$topbarGroupName = 'Jotihunt';
+if (!empty($siteSettings['GROUP_ID'])) {
+    $stmt_gn = $conn->prepare("SELECT naam FROM Groepen WHERE id = ?");
+    $stmt_gn->bind_param("i", $siteSettings['GROUP_ID']);
+    $stmt_gn->execute();
+    $result_gn = $stmt_gn->get_result();
+    if ($result_gn->num_rows > 0) {
+        $row_gn = $result_gn->fetch_assoc();
+        if (!empty($row_gn['naam'])) {
+            $topbarGroupName = $row_gn['naam'];
+        }
+    }
+    $stmt_gn->close();
+}
+
 foreach ($vossen as $vosnaam) {
     $vos[$vosnaam]["Kleur"] = "grey"; // Standaard w3css kleur bij geen data
     $vos[$vosnaam]["duratie"] = "-";
@@ -80,7 +95,7 @@ $stmt->close();
     ?>
   </div>
 
-  <span class="w3-bar-item w3-right"><?= htmlspecialchars($siteSettings['GROUP_NAME'] ?? 'Jotihunt') ?></span>
+  <span class="w3-bar-item w3-right"><?= htmlspecialchars($topbarGroupName) ?></span>
 
 </div>
 

@@ -76,8 +76,9 @@ if ($result->num_rows > 0) {
 $stmt->close();
 
 
-// Get points for Geuzen
-$stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')");
+// Get points for your own group
+$stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = ?");
+$stmt->bind_param("i", $siteSettings['GROUP_ID']);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -94,7 +95,7 @@ $stmt->close();
 
 <html>
 
-<title>Jotihunt - De Geuzen</title>
+<title>Jotihunt - Home</title>
 
 <meta charset="UTF-8">
 
@@ -360,7 +361,7 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
   <div id="welcomeModal" class="w3-modal">
     <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width:600px">
       <header class="w3-container w3-theme-d1"> 
-        <h2>Welkom bij de Jotihunt van de Geuzen Arnhem!</h2>
+        <h2>Welkom bij de Jotihunt!</h2>
       </header>
       <div class="w3-container w3-padding">
         <p>

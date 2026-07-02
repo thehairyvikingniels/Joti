@@ -1,6 +1,41 @@
 <?php
 session_start();
 session_destroy();
+require_once("dblogin.php");
+
+$groupName = 'Jotihunt';
+$stmt = $conn->prepare("SELECT Waarde FROM Site_Instellingen WHERE Instelling = 'GROUP_ID'");
+$stmt->execute();
+$res = $stmt->get_result();
+if ($res->num_rows > 0) {
+    $row = $res->fetch_assoc();
+    $groupId = $row['Waarde'];
+    if (!empty($groupId)) {
+        $stmt2 = $conn->prepare("SELECT naam FROM Groepen WHERE id = ?");
+        $stmt2->bind_param("i", $groupId);
+        $stmt2->execute();
+        $res2 = $stmt2->get_result();
+        if ($res2->num_rows > 0) {
+            $row2 = $res2->fetch_assoc();
+            $groupName = $row2['naam'];
+        }
+        $stmt2->close();
+    }
+}
+
+// Fetch admins for the "Forgot Password" modal
+$admins = [];
+$stmt3 = $conn->prepare("SELECT voornaam FROM Gebruikers WHERE priv >= 3 ORDER BY voornaam ASC");
+$stmt3->execute();
+$res3 = $stmt3->get_result();
+if ($res3->num_rows > 0) {
+    while($row3 = $res3->fetch_assoc()) {
+        $admins[] = $row3['voornaam'];
+    }
+}
+$stmt3->close();
+
+$stmt->close();
 ?>
 
 <html>
@@ -30,6 +65,7 @@ session_destroy();
         <div class="w3-card w3-margin-top w3-round-xlarge">
             <header class="w3-container w3-theme-d1">
               <h1 class="w3-center">Login</h1>
+              <h5 class="w3-center w3-margin-bottom"><?= htmlspecialchars($groupName) ?></h5>
             </header>
             <div class="w3-container w3-theme-l4">
               <center><img class="w3-margin" src="media/geusje_bevosd.png" style="width:60%"></center>
@@ -52,12 +88,10 @@ session_destroy();
                 <input style="width:100%" class="w3-input w3-round-xlarge" id="pswd" type="password" name="pswd" placeholder="Wachtwoord">
                 <button class="w3-btn w3-theme-d4 w3-margin-top w3-center w3-round-xlarge" type="submit">Log In</button>
                 <span class="w3-btn w3-theme-d4 w3-margin-top w3-center w3-round-xlarge" onclick="document.getElementById('modal01').style.display='block'">Wordt lid</span>
-                <p style="cursor:pointer;" onclick="alert('stuur niels een appje :-)')"><u>Wachtwoord vergeten?</u></p>
+                <p style="cursor:pointer;" onclick="document.getElementById('adminModal').style.display='block'"><u>Wachtwoord vergeten?</u></p>
               </form>
             </div>
         </div>
-        <!-- Footer -->
-        <?php require_once('includes/footer.php') ?>
       </div>
       <div id="modal01" class="w3-modal">
           <div class="w3-modal-content w3-card-4 w3-animate-top" style="max-width:400px">
@@ -99,9 +133,31 @@ session_destroy();
                 <center><button class="w3-button w3-theme-d2 w3-round-xlarge" type="submit">Maak account aan</button></center>
               </form>
             </div>
-            <!-- Footer -->
-            <?php require_once('includes/footer.php') ?>
           </div>
         </div>
+
+      <div id="adminModal" class="w3-modal">
+        <div class="w3-modal-content w3-card-4 w3-animate-top" style="max-width:400px">
+          <header class="w3-container w3-theme-d1"> 
+            <span onclick="document.getElementById('adminModal').style.display='none'" class="w3-button w3-display-topright"><i class="fas fa-times"></i></span>
+            <h2>Wachtwoord vergeten?</h2>
+          </header>
+          <div class="w3-container w3-theme-l4 w3-padding">
+            <p>Neem contact op met een van de volgende admins om je wachtwoord te resetten:</p>
+            <ul>
+              <?php foreach($admins as $admin): ?>
+                <li><?= htmlspecialchars($admin) ?></li>
+              <?php endforeach; ?>
+              <?php if (empty($admins)): ?>
+                <li>Geen admins gevonden.</li>
+              <?php endif; ?>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <div class="w3-bottom">
+        <?php require_once('includes/footer.php') ?>
+      </div>
   </body>
 </html>
