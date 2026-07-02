@@ -59,8 +59,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
 .map-view-wrapper {
     position: relative;
-    width: 100%;
-    height: calc(100vh - 54px); /* Adjusted for actual topbar height */
+    height: calc(100vh - 43px); /* Full viewport height minus topbar */
 }
 #iframe01 {
     width: 100%;
@@ -149,7 +148,7 @@ input:disabled + .slider { background-color: #ddd; cursor: not-allowed; }
 <?php include_once('includes/sidebar.php') ?>
 
 <!-- !PAGE CONTENT! -->
-<div class="w3-main" style="margin-left:200px;margin-top:54px;">
+<div class="w3-main" style="margin-left:200px;margin-top:43px;">
 
   <div class="map-view-wrapper">
     <iframe id="iframe01" src=""></iframe>
@@ -194,7 +193,7 @@ input:disabled + .slider { background-color: #ddd; cursor: not-allowed; }
             <p><input class="w3-check" type="checkbox" id="helft2" onchange="kaartveranderen()" checked><label for="helft2" class="w3-check-label"> Tweede helft</label></p>
             <h5 class="w3-margin-top">Deelgebieden</h5>
             <?php
-              $teams = $vossen_names;
+              $teams = array("Alpha","Bravo","Charlie","Delta","Echo","Foxtrot", "Golf", "Hotel");
               foreach($teams as $team) {
                   echo "<p><input class='w3-check team-filter' type='checkbox' id='".strtolower($team)."' onchange='kaartveranderen()' checked><label for='".strtolower($team)."' class='w3-check-label'> ".ucfirst($team)."</label></p>";
               }
@@ -208,14 +207,43 @@ input:disabled + .slider { background-color: #ddd; cursor: not-allowed; }
 </div>
 
 <script>
-let lastKnownMapState = null;
+const savedMapSettings = <?php echo isset($_SESSION['map_settings']) ? json_encode($_SESSION['map_settings']) : 'null'; ?>;
+let lastKnownMapState = savedMapSettings && savedMapSettings.mapState ? savedMapSettings.mapState : null;
+let mapSaveTimeout;
 
 window.addEventListener("message", (event) => {
     // A security check for the origin of the message would be a good practice
     if (event.data && event.data.type === 'mapUpdate') {
         lastKnownMapState = event.data.state;
+        clearTimeout(mapSaveTimeout);
+        mapSaveTimeout = setTimeout(() => {
+            saveMapSettings();
+        }, 1000);
     }
 }, false);
+
+function saveMapSettings() {
+  const layers = ['groepen', 'personen', 'autos', 'hints', 'vossenpad', 'predicted_route', 'zoekcirkel'];
+  const teams = Array.from(document.querySelectorAll('.team-filter:checked')).map(el => el.id);
+  const savePayload = {
+      checkboxes: {
+          'helft1': document.getElementById('helft1').checked,
+          'helft2': document.getElementById('helft2').checked
+      },
+      teams: teams,
+      mapState: lastKnownMapState
+  };
+  layers.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) savePayload.checkboxes[id] = el.checked;
+  });
+  
+  fetch('functies.php?save_map_settings=1', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(savePayload)
+  }).catch(e => console.error(e));
+}
 
 function kaartveranderen() {
   const layers = ['groepen', 'personen', 'autos', 'hints', 'vossenpad', 'predicted_route', 'zoekcirkel'];
@@ -236,6 +264,7 @@ function kaartveranderen() {
   }
 
   document.getElementById('iframe01').src = `maps.php?${params.join('&')}`;
+  saveMapSettings();
 }
 
 function toggleCheckbox(id) {
@@ -278,6 +307,19 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 window.onload = function() {
+  if (savedMapSettings) {
+      if (savedMapSettings.checkboxes) {
+          Object.keys(savedMapSettings.checkboxes).forEach(id => {
+              const el = document.getElementById(id);
+              if (el) el.checked = savedMapSettings.checkboxes[id];
+          });
+      }
+      if (savedMapSettings.teams) {
+          document.querySelectorAll('.team-filter').forEach(el => {
+              el.checked = savedMapSettings.teams.includes(el.id);
+          });
+      }
+  }
   kaartveranderen();
 };
 

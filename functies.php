@@ -21,6 +21,14 @@ if (isset($_GET['gpstoggle'])){
   exit();
 }
 
+// Save Map Settings to Session
+if (isset($_GET['save_map_settings'])) {
+    $settings = json_decode(file_get_contents('php://input'), true);
+    if (is_array($settings)) {
+        $_SESSION['map_settings'] = $settings;
+    }
+    exit();
+}
 // Zet een tijd in een leesbare vorm
 function time2str($ts) {
     if(!ctype_digit($ts)) {
