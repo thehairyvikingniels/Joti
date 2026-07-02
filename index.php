@@ -1,6 +1,28 @@
 <?php
 session_start();
 session_destroy();
+require_once("dblogin.php");
+
+$groupName = 'Jotihunt';
+$stmt = $conn->prepare("SELECT Waarde FROM Site_Instellingen WHERE Instelling = 'GROUP_ID'");
+$stmt->execute();
+$res = $stmt->get_result();
+if ($res->num_rows > 0) {
+    $row = $res->fetch_assoc();
+    $groupId = $row['Waarde'];
+    if (!empty($groupId)) {
+        $stmt2 = $conn->prepare("SELECT naam FROM Groepen WHERE id = ?");
+        $stmt2->bind_param("i", $groupId);
+        $stmt2->execute();
+        $res2 = $stmt2->get_result();
+        if ($res2->num_rows > 0) {
+            $row2 = $res2->fetch_assoc();
+            $groupName = $row2['naam'];
+        }
+        $stmt2->close();
+    }
+}
+$stmt->close();
 ?>
 
 <html>
@@ -30,6 +52,7 @@ session_destroy();
         <div class="w3-card w3-margin-top w3-round-xlarge">
             <header class="w3-container w3-theme-d1">
               <h1 class="w3-center">Login</h1>
+              <h5 class="w3-center w3-margin-bottom"><?= htmlspecialchars($groupName) ?></h5>
             </header>
             <div class="w3-container w3-theme-l4">
               <center><img class="w3-margin" src="media/geusje_bevosd.png" style="width:60%"></center>
