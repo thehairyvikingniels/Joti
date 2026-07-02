@@ -141,35 +141,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     echo '<div class="w3-container w3-margin-top">';
     echo '<ul id="tableSearchTable" class="w3-ul w3-card-4 w3-white">';
     while($row = $result->fetch_assoc()) {
-      switch (ucfirst($row['deelgebied'])) {
-        case "Alpha":
-          $color = "#9829FF";
-          break;
-        case "Bravo":
-          $color = "#2F9CEB";
-          break;
-        case "Charlie":
-          $color = "#2DFF69";
-          break;
-        case "Delta":
-          $color = "#F5F02C";
-          break;
-        case "Echo":
-          $color = "#FFA12E";
-          break;
-        case "Foxtrot":
-          $color = "#F52E2B";
-          break;
-        case "Golf":
-          $color = "#FF6F6F";
-          break;
-        case "Hotel":
-          $color = "#00BFA5";
-          break;
-        default:
-          $color = "#000000";
-          break;
-      }
+      $color = getFoxColor(ucfirst($row['deelgebied']));
 
       echo '
 

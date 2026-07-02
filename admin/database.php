@@ -162,14 +162,11 @@ $result_voslocaties = $stmt_vos->get_result();
                 <p>
                     <label>Deelgebied</label>
                     <select class="w3-select w3-border" id="edit_deelgebied" name="deelgebied" required>
-                        <option value="Alpha">Alpha</option>
-                        <option value="Bravo">Bravo</option>
-                        <option value="Charlie">Charlie</option>
-                        <option value="Delta">Delta</option>
-                        <option value="Echo">Echo</option>
-                        <option value="Foxtrot">Foxtrot</option>
-                        <option value="Golf">Golf</option>
-                        <option value="Hotel">Hotel</option>
+                        <?php
+                        foreach ($vossen_names as $fox) {
+                            echo "<option value=\"" . htmlspecialchars($fox) . "\">" . htmlspecialchars($fox) . "</option>\n";
+                        }
+                        ?>
                     </select>
                 </p>
                 <p>

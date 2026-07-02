@@ -204,6 +204,8 @@ CREATE TABLE `Site_Instellingen` (
 --
 
 INSERT INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) VALUES
+('FOX_NAMES', 'Alpha,Bravo,Charlie,Delta,Echo,Foxtrot,Golf,Hotel,Oscar', 'Comma separated list of fox names'),
+('FOX_COLORS', '#9829FF,#36D12B,#FF8A00,#F5F02C,#FFA12E,#F52E2B,#FF6F6F,#00BFA5,#333333', 'Comma separated list of fox colors'),
 ('API_KEY_FIREBASE', 'jouw_firebase_api_key_hier', 'The API key for the Firebase configuration.'),
 ('API_KEY_MAPBOX', 'jouw_mapbox_api_key_hier', 'The public access token for Mapbox.'),
 ('FOXEXCHANGE_ENDDATE', '2025-10-12T23:15:00+02:00', 'Datumtijd van het einde van de vossenwissel in ISO 8601 met offset formaat. Bepaald ook wanneer de 2e speelhelft begint.'),
@@ -243,14 +245,8 @@ CREATE TABLE `Voslocaties` (
 CREATE TABLE `Voslog` (
   `id` int(11) NOT NULL,
   `datumtijd` datetime NOT NULL,
-  `alpha` tinyint(4) NOT NULL,
-  `bravo` tinyint(4) NOT NULL,
-  `charlie` tinyint(4) NOT NULL,
-  `delta` tinyint(4) NOT NULL,
-  `echo` tinyint(4) NOT NULL,
-  `foxtrot` tinyint(4) NOT NULL,
-  `golf` tinyint(4) NOT NULL,
-  `hotel` tinyint(4) NOT NULL
+  `vos` varchar(32) NOT NULL,
+  `status` tinyint(4) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

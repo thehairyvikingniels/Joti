@@ -139,7 +139,7 @@ function haversineGreatCircleDistance(
 }
 
 // --- Filter Logic ---
-$deelgebieden_all = array("Alpha","Bravo","Charlie","Delta","Echo","Foxtrot", "Golf", "Hotel");
+$deelgebieden_all = $vossen_names;
 $deelgebieden_filter = [];
 if (isset($_GET['teams']) && !empty($_GET['teams'])) {
     $teams_from_url = explode(',', $_GET['teams']);
@@ -404,18 +404,7 @@ if (!empty($deelgebieden_filter)) {
         if ($result && $result->num_rows > 0) {
             $i_hint = 0;
             while($row = $result->fetch_assoc()) {
-                switch (ucfirst($row['deelgebied'])) {
-                case "Alpha": $color = "#9829FF"; break;
-                case "Bravo": $color = "#2F9CEB"; break;
-                case "Charlie": $color = "#2DFF69"; break;
-                case "Delta": $color = "#F5F02C"; break;
-                case "Echo": $color = "#FFA12E"; break;
-                case "Foxtrot": $color = "#F52E2B"; break;
-                case "Golf": $color = "#FF6F6F"; break;
-                case "Hotel": $color = "#00BFA5"; break;
-                default: $color = "#000000"; break;
-                }
-
+                $color = getFoxColor(ucfirst($row['deelgebied']));
                 $loc_time = new DateTime($row['ingestuurd_op']);
                 $helft = ($loc_time <= $helft1_end) ? "Eerste helft" : "Tweede helft";
 
@@ -553,17 +542,7 @@ if (!empty($deelgebieden_filter)) {
             $avg_speed_kmh = ($total_hours > 0) ? ($total_distance_km / $total_hours) : 0;
             $coords = array_map(function($p) { return [$p['lon'], $p['lat']]; }, $points);
             
-            switch (ucfirst($deelgebied)) {
-                case "Alpha":   $color = "#9829FF"; break;
-                case "Bravo":   $color = "#2F9CEB"; break;
-                case "Charlie": $color = "#2DFF69"; break;
-                case "Delta":   $color = "#F5F02C"; break;
-                case "Echo":    $color = "#FFA12E"; break;
-                case "Foxtrot": $color = "#F52E2B"; break;
-                case "Golf":    $color = "#FF6F6F"; break;
-                case "Hotel":   $color = "#00BFA5"; break;
-                default:        $color = "#000000"; break;
-            }
+            $color = getFoxColor(ucfirst($deelgebied));
 
             $vossenpad_stats[$deelgebied] = [ 'speed' => number_format($avg_speed_kmh, 1) . " km/u", 'distance' => number_format($total_distance_km, 1) . " km", 'original_color' => $color ];
             $vossenpad_layers .=  " map.addLayer({ id: 'vossenpad_".$deelgebied."', type: 'line', source: { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: ".json_encode($coords)." } } }, layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '".$color."', 'line-width': 8, 'line-opacity': 0.75 } });";
