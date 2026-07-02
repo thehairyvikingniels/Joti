@@ -8,13 +8,16 @@ if (!isset($_SESSION['id'])){
 }
 
 require("dblogin.php");
-require_once("functies.php");
-
 
 // Auto verwijderen
 if (isset($_GET['delauto'])){
-  $stmt_del = $conn->prepare("DELETE FROM Auto WHERE kenteken=?");
-  $stmt_del->bind_param("s", $_GET['delauto']);
+  if ($_SESSION['priv'] > 1) {
+    $stmt_del = $conn->prepare("DELETE FROM Auto WHERE kenteken=?");
+    $stmt_del->bind_param("s", $_GET['delauto']);
+  } else {
+    $stmt_del = $conn->prepare("DELETE FROM Auto WHERE kenteken=? AND eigenaar=?");
+    $stmt_del->bind_param("si", $_GET['delauto'], $_SESSION['id']);
+  }
   
   if ($stmt_del->execute()) {
     $stmt_del->close();
@@ -91,7 +94,7 @@ if (isset($_POST['carid'])) {
 
 <!DOCTYPE html>
 <html>
-<title>Jotihunt - Auto's</title>
+<title>Jotihunt - De Geuzen</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
