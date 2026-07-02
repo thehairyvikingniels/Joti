@@ -55,8 +55,9 @@ if ($result->num_rows > 0) {
 $stmt->close();
 
 
-// Get score from points table for 'Geuzen'
-$stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')");
+// Get score from points table for your own group
+$stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = ?");
+$stmt->bind_param("i", $siteSettings['GROUP_ID']);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -91,7 +92,7 @@ $stmt->close();
 
 <html>
 
-<title>Jotihunt - De Geuzen</title>
+<title>Jotihunt - Punten</title>
 
 <meta charset="UTF-8">
 

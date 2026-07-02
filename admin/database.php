@@ -58,7 +58,7 @@ $result_voslocaties = $stmt_vos->get_result();
 ?>
 <!DOCTYPE html>
 <html>
-<title>Jotihunt - De Geuzen</title>
+<title>Jotihunt - Database</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>

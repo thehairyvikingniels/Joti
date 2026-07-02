@@ -212,8 +212,8 @@ INSERT INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) VALUES
 ('GAME_STARTDATE', '2025-10-11T10:00:00+02:00', 'Datumtijd van de start van de Jotihunt in ISO 8601 met offset formaat.'),
 ('GROUP_LOGO_LARGE_URL', 'media/geusje_bevosd.png', 'A local or external URL for the group logo.'),
 ('GROUP_LOGO_SMALL_URL', 'media/geusje_bevosd.png', 'A local or external URL for the group logo. '),
-('GROUP_NAME', 'De Geuzen Arnhem', 'The name of the scout group(s) using this website.'),
-('GROUP_URL', 'https://degeuzenarnhem.nl/', 'The URL of the scout group using this website. ');
+('GROUP_ID', '0', 'The ID of the scout group using this website. Used for point calculations.'),
+('GROUP_URL', 'https://example.com/', 'The URL of the scout group using this website. ');
 
 -- --------------------------------------------------------
 
