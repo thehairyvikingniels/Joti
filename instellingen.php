@@ -174,30 +174,6 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
     <div class="w3-third w3-padding">
 
-      <div id="api" class="w3-card w3-white w3-padding">
-
-        <?php if (isset($_GET['t'])){if($_GET['t'] == "api"){
-
-        echo '<div class="w3-panel w3-blue w3-display-container">
-
-              <span onclick="this.parentElement.style.display=\'none\'" class="w3-button w3-large w3-display-topright">&times;</span>
-
-              <p>'.$_GET['e'].'</p>
-
-              </div>'; }} ?>
-
-        <form method="POST" action="instellingen_helper.php">
-
-          <h3><a href="https://docs.google.com/document/d/1XO9K8cVwgysytti1LSQa2i3dpYmeWNQ8BS5sSwqNjgY/edit?usp=sharing">Api</a> key voor telegram</h3>
-
-          <h5>Key:</h5>
-
-          <input name="api" type="text" value="<?php echo $api;?>" readonly style="width:100%"><br><br>
-
-          <center><button type="submit" class="w3-button w3-blue-gray">Hergenereer</button></center>
-
-        </form>
-
       </div>
 
     </div>
