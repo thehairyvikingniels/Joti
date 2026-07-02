@@ -571,7 +571,7 @@ if (!empty($deelgebieden_filter)) {
     }
 
     if (isset($_GET['predicted_route']) && $_GET['predicted_route'] == "true"){
-        $pk = "pk.eyJ1IjoidGhlaGFpcnl2aWtpbmduaWVscyIsImEiOiJjam40YzI2eGEwMjh6M3hscGEweHpxYzg1In0.3obc3XmgMCZ-rY5LLzhW2A";
+        $pk = $mapbox_api_key;
         
         foreach ($all_fox_data as $deelgebied => $points) {
             if (count($points) < 2) continue;

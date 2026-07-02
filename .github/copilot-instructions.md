@@ -6,19 +6,16 @@
 
 ## Big-picture architecture & data flows
 
-- Routing: there is no router. Each file (for example `api/index.php`, `functies.php`, `home.php`) reads $_GET/$_POST and performs DB queries or renders HTML.
+- Routing: there is no router. Each file (for example `functies.php`, `home.php`) reads $_GET/$_POST and performs DB queries or renders HTML.
 - DB connection: every PHP page that uses DB `require("dblogin.php")` which creates `$conn` (mysqli) and exposes helpers like `time2str()` and `latlon_dist()`.
 - Sessions & auth: `session_start()` is used widely. Authentication state is via `$_SESSION['id']` and `$_SESSION['priv']` (priv: 0 = user, 1 = elevated, 2+ = admin). Admin pages check `priv` (see `admin/*.php`).
-- API: `api/index.php` is a lightweight JSON API that accepts `token` query param and other flags (e.g. `users`, `groups`, `vossen`). Token format and validation are implemented in `checkToken()` inside the same file.
-- Frontend <-> server: frontend JS calls file endpoints directly (examples: `XMLHttpRequest` to `functies.php?lat=...&lon=...`, and form posts to `login.php` or `api/index.php`).
-
+- Frontend <-> server: frontend JS calls file endpoints directly (examples: `XMLHttpRequest` to `functies.php?lat=...&lon=...`, and form posts to `login.php`).
 ## Project-specific conventions & patterns
 
 - Procedural, file-per-endpoint pattern. Expect logic and SQL mixed in the same file.
 - DB queries are built via string concatenation in many places. Example pattern: `$sql = "SELECT * FROM Gebruikers WHERE id='".$_SESSION['id']."'";` (see `admin/database.php`, `functies.php`).
-- Minimal input sanitization is present in a few places (e.g. `mysqli_real_escape_string()` used in `login.php`) but not consistent. API responses often use an `$output` array and `json_encode()` at the end (`api/index.php`).
-- Password/token handling: passwords are hashed with `sha1($pw . "niels als salt")` and API tokens are generated/stored in `Gebruikers.api`. `api/index.php::checkToken()` uses `substr(sha1($key0 . "salt"),0,7)` for a simple token check.
-- Time formatting & expected formats: many endpoints expect `Y-m-d H:i:s` (see `api/index.php` POST `hunt` validation — example error message: "Use '2019-10-15 23:00'").
+- Minimal input sanitization is present in a few places (e.g. `mysqli_real_escape_string()` used in `login.php`) but not consistent.
+- Password handling: passwords are hashed with `sha1($pw . "niels als salt")` in older code.
 
 ## Integration points & external deps
 
@@ -51,7 +48,6 @@ mysql -u root -p your_database_name < DB/maarleveld_one_joti.sql
 
 ## Quick examples of common edits
 
-- To add an API field: edit `api/index.php` — follow existing pattern of validating `token`, set `$output[...]` and `json_encode($output)` at end.
 - To change user privilege checks: update where `$_SESSION['priv']` is compared (see `admin/database.php`, `admin/index.php` and `login.php`).
 - To add a DB column: update `DB/maarleveld_one_joti.sql` (and run ALTER TABLE locally), then update queries that SELECT/INSERT that table.
 
@@ -59,7 +55,7 @@ mysql -u root -p your_database_name < DB/maarleveld_one_joti.sql
 
 - `dblogin.php` — DB connection, helper functions and timezone; essential to bootstrapping.
 - `index.php`, `login.php` — app entry and authentication.
-- `api/index.php` — JSON API behavior and token logic.
+- `functies.php` — core AJAX/utility endpoints used by the UI.
 - `functies.php` — central AJAX/utility actions used across pages.
 - `admin/` — admin flows and privilege checks.
 - `DB/maarleveld_one_joti.sql` — canonical DB schema.
