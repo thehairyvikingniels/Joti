@@ -496,14 +496,14 @@ if (!empty($deelgebieden_filter)) {
             $radius_km = null;
             if (count($points) == 1) {
                 $last_point = $points[0];
-                $time_diff_hours = ($now->getTimestamp() - $last_point['time']->getTimestamp()) / 3600;
+                $time_diff_hours = min(3, ($now->getTimestamp() - $last_point['time']->getTimestamp()) / 3600);
                 $radius_km = $time_diff_hours * 5.5;
             } elseif (count($points) >= 2) {
                 $last_point = end($points); $second_last_point = $points[count($points) - 2];
                 $dist_km = haversineGreatCircleDistance($second_last_point['lat'], $second_last_point['lon'], $last_point['lat'], $last_point['lon']);
                 $time_diff_hours_between = ($last_point['time']->getTimestamp() - $second_last_point['time']->getTimestamp()) / 3600;
                 $avg_speed = ($time_diff_hours_between > 0) ? ($dist_km / $time_diff_hours_between) : 5.5;
-                $time_diff_hours_from_now = ($now->getTimestamp() - $last_point['time']->getTimestamp()) / 3600;
+                $time_diff_hours_from_now = min(3, ($now->getTimestamp() - $last_point['time']->getTimestamp()) / 3600);
                 $radius_km = $time_diff_hours_from_now * $avg_speed;
             }
 
@@ -559,12 +559,7 @@ if (!empty($deelgebieden_filter)) {
                 $coords_for_api[] = $point['lon'] . "," . $point['lat'];
             }
             $api_url = "https://api.mapbox.com/directions/v5/mapbox/walking/" . implode(';', $coords_for_api) . "?steps=true&geometries=geojson&access_token=" . $pk;
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $api_url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            $api_response = curl_exec($ch);
-            curl_close($ch);
+            $api_response = @file_get_contents($api_url);
             $route_data = json_decode($api_response, true);
             
             if (isset($route_data['routes'][0])) {

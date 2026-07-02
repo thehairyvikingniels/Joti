@@ -59,7 +59,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
 .map-view-wrapper {
     position: relative;
-    height: calc(100vh - 43px); /* Full viewport height minus topbar */
+    width: 100%;
+    height: calc(100vh - 54px); /* Adjusted for actual topbar height */
 }
 #iframe01 {
     width: 100%;
@@ -148,7 +149,7 @@ input:disabled + .slider { background-color: #ddd; cursor: not-allowed; }
 <?php include_once('includes/sidebar.php') ?>
 
 <!-- !PAGE CONTENT! -->
-<div class="w3-main" style="margin-left:200px;margin-top:43px;">
+<div class="w3-main" style="margin-left:200px;margin-top:54px;">
 
   <div class="map-view-wrapper">
     <iframe id="iframe01" src=""></iframe>
