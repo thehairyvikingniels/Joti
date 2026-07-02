@@ -91,6 +91,17 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
     <div class="w3-col s8 w3-bar">
 
       <span>Welkom, <strong><?php echo ucfirst($vn); ?></strong></span><br>
+      <?php
+      $roleNames = [
+          0 => 'Gast (0)',
+          1 => 'Vossenjager (1)',
+          2 => 'Admin (2)',
+          3 => 'Superadmin (3)'
+      ];
+      $userPriv = $_SESSION['priv'] ?? 0;
+      $roleName = $roleNames[$userPriv] ?? "Onbekend ($userPriv)";
+      ?>
+      <span class="w3-small w3-text-grey" style="font-weight: 500;"><?php echo $roleName; ?></span><br>
 
       <a href="<?= $notInAdminfolder?>index" class="w3-bar-item w3-button"><i class="fas fa-sign-out-alt"></i></a>
 

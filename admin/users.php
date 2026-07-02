@@ -164,9 +164,9 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 echo '    <td>
                             <input type="hidden" value="'.htmlspecialchars($row['id']).'" name="user">
                             <select class="w3-select" name="priv">
-                              <option value="0" '.$priv0.'>0</option>
-                              <option value="1" '.$priv1.'>1</option>
-                              <option value="2" '.$priv2.'>2</option>
+                              <option value="0" '.$priv0.'>Gast (0)</option>
+                              <option value="1" '.$priv1.'>Vossenjager (1)</option>
+                              <option value="2" '.$priv2.'>Admin (2)</option>
                               <option value="3" class="w3-red">Verwijder</option>
                             </select>
                           </td>';
@@ -191,9 +191,9 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 echo '  <td style="width:15%">
                           <input type="hidden" value="'.htmlspecialchars($row['id']).'" name="user">
                           <select class="w3-select" name="priv">
-                            <option value="0" '.$priv0.'>0</option>
-                            <option value="1" '.$priv1.'>1</option>
-                            <option value="2" '.$priv2.'>2</option>
+                            <option value="0" '.$priv0.'>Gast (0)</option>
+                            <option value="1" '.$priv1.'>Vossenjager (1)</option>
+                            <option value="2" '.$priv2.'>Admin (2)</option>
                             <option value="3" class="w3-red">Verwijder</option>
                           </select>
                         </td>';
