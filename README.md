@@ -1,7 +1,7 @@
 # Jotihunt Web App
 
 ### Short description
-A small procedural PHP + MySQL web application used by your scout group to run a local Jotihunt. No framework; frontend uses W3.CSS, jQuery and FontAwesome; server side is plain PHP + mysqli.
+A small procedural PHP + MySQL web application used by a scout group to run a local Jotihunt helper site. No framework; frontend uses W3.CSS, jQuery and FontAwesome; server side is plain PHP + mysqli.
 
 ### Contents (high-level)
 - File-based PHP endpoints: index.php, home.php, kaarten.php, functies.php, admin/
@@ -10,7 +10,7 @@ A small procedural PHP + MySQL web application used by your scout group to run a
 - Helpers and DB connection: dblogin.php
 
 ### Intended audience
-For use by all members of the scout group. Other groups may fork the repo and adapt it, or even better, help make the repo .
+For use by all members of a scout group and associates. Groups may fork the repo and adapt it, or even better, help make this project better.
 
 ### Requirements
 - PHP 8.2 (other versions untested)
@@ -37,7 +37,6 @@ For use by all members of the scout group. Other groups may fork the repo and ad
 - The DB schema lives in DB/createDB.sql. Import that to create tables.
 - No automated seeding beyond the SQL file; create users and set priv manually as needed.
 
-
 ### Contributing
 - Owner is open to feedback and occasional contributions, but the project is not actively set up for outside contributors.
 - If you want to contribute, open an issue or create a PR and I will review.
@@ -46,13 +45,8 @@ For use by all members of the scout group. Other groups may fork the repo and ad
 - Licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0).
 - This means you can freely modify and host the project, but you cannot use it for commercial purposes (scout groups are fine!). Any modifications must also be released under the same license.
 
-### Security notes / known issues
-- Many SQL queries are built via string concatenation; input sanitization is not consistent.
-- Passwords and tokens use a simple sha1 salt-based scheme in the current codebase.
-- Treat credentials and tokens carefully; consider refactoring to prepared statements and modern password hashing for production.
-
 ### Useful files to inspect first
-- dblogin.php — DB connection, helpers (time2str, latlon_dist, rdtowgs)
+- dblogin.php — DB connection
 - index.php, login.php — entry & authentication
 - functies.php — core AJAX/utility endpoints used by the UI
 - admin/ — admin pages and privilege checks
