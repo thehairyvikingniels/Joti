@@ -6,10 +6,12 @@ if (!isset($_SESSION['id'])){
   header("Location: ../index");
   exit();
 }
+if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
+  header("Location: ../home");
+  exit();
+}
 
 require("../dblogin.php");
-require_once("../functies.php");
-
 
 // Huidige gebruiker rechten ophalen
 $stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
@@ -93,7 +95,7 @@ $stmt_users->close();
 
 <!DOCTYPE html>
 <html>
-<title>Jotihunt - Users</title>
+<title>Jotihunt - De Geuzen</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>

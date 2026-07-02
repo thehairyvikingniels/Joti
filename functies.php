@@ -8,8 +8,7 @@ if (empty($_SESSION['id'])){
   exit();
 }
 
-require_once("dblogin.php");
-
+require("dblogin.php");
 
 // GPS Toggle
 if (isset($_GET['gpstoggle'])){
@@ -193,6 +192,9 @@ if (isset($_GET['lat']) && isset($_GET['lon'])) {
 
 // Invulgegevens voor homebase (afvinken)
 if (isset($_GET['hunthintgedaan'])){
+    if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
+        exit();
+    }
     $stmt = $conn->prepare("UPDATE Voslocaties SET ingeleverd='1', ingeleverd_door=? WHERE id=?");
     $hunt_id = intval($_GET['hunthintgedaan']);
     $stmt->bind_param("ii", $_SESSION['id'], $hunt_id);
@@ -209,6 +211,9 @@ if (isset($_GET['hunthintgedaan'])){
 
 // Invulgegevens voor homebase (tabel tonen)
 if (isset($_GET['invulgegevens'])){
+    if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
+        exit();
+    }
     $stmt = $conn->prepare("SELECT * FROM Voslocaties WHERE ingeleverd='0' ORDER BY ingestuurd_op DESC");
     $stmt->execute();
     $result = $stmt->get_result();
@@ -384,7 +389,4 @@ if (isset($_GET['gebeurtenissen'])){
     echo "</table>";
     echo "<center><span id='meerknop' class='w3-button w3-green w3-round-xlarge' onclick='gebeurtenissen(". ($num+5) .")'>Meer resultaten</span></center>";
 }
-
-
-
 ?>
