@@ -1,3 +1,10 @@
+<?php
+session_start();
+if (!isset($_SESSION['id'])) {
+    header("Location: index.php");
+    exit();
+}
+?>
 <!DOCTYPE html>
 
 <html>
@@ -139,7 +146,7 @@ function haversineGreatCircleDistance(
 }
 
 // --- Filter Logic ---
-$deelgebieden_all = $vossen_names;
+$deelgebieden_all = array("Alpha","Bravo","Charlie","Delta","Echo","Foxtrot", "Golf", "Hotel");
 $deelgebieden_filter = [];
 if (isset($_GET['teams']) && !empty($_GET['teams'])) {
     $teams_from_url = explode(',', $_GET['teams']);
@@ -404,7 +411,18 @@ if (!empty($deelgebieden_filter)) {
         if ($result && $result->num_rows > 0) {
             $i_hint = 0;
             while($row = $result->fetch_assoc()) {
-                $color = getFoxColor(ucfirst($row['deelgebied']));
+                switch (ucfirst($row['deelgebied'])) {
+                case "Alpha": $color = "#9829FF"; break;
+                case "Bravo": $color = "#2F9CEB"; break;
+                case "Charlie": $color = "#2DFF69"; break;
+                case "Delta": $color = "#F5F02C"; break;
+                case "Echo": $color = "#FFA12E"; break;
+                case "Foxtrot": $color = "#F52E2B"; break;
+                case "Golf": $color = "#FF6F6F"; break;
+                case "Hotel": $color = "#00BFA5"; break;
+                default: $color = "#000000"; break;
+                }
+
                 $loc_time = new DateTime($row['ingestuurd_op']);
                 $helft = ($loc_time <= $helft1_end) ? "Eerste helft" : "Tweede helft";
 
@@ -496,14 +514,14 @@ if (!empty($deelgebieden_filter)) {
             $radius_km = null;
             if (count($points) == 1) {
                 $last_point = $points[0];
-                $time_diff_hours = min(3, ($now->getTimestamp() - $last_point['time']->getTimestamp()) / 3600);
+                $time_diff_hours = ($now->getTimestamp() - $last_point['time']->getTimestamp()) / 3600;
                 $radius_km = $time_diff_hours * 5.5;
             } elseif (count($points) >= 2) {
                 $last_point = end($points); $second_last_point = $points[count($points) - 2];
                 $dist_km = haversineGreatCircleDistance($second_last_point['lat'], $second_last_point['lon'], $last_point['lat'], $last_point['lon']);
                 $time_diff_hours_between = ($last_point['time']->getTimestamp() - $second_last_point['time']->getTimestamp()) / 3600;
                 $avg_speed = ($time_diff_hours_between > 0) ? ($dist_km / $time_diff_hours_between) : 5.5;
-                $time_diff_hours_from_now = min(3, ($now->getTimestamp() - $last_point['time']->getTimestamp()) / 3600);
+                $time_diff_hours_from_now = ($now->getTimestamp() - $last_point['time']->getTimestamp()) / 3600;
                 $radius_km = $time_diff_hours_from_now * $avg_speed;
             }
 
@@ -542,7 +560,17 @@ if (!empty($deelgebieden_filter)) {
             $avg_speed_kmh = ($total_hours > 0) ? ($total_distance_km / $total_hours) : 0;
             $coords = array_map(function($p) { return [$p['lon'], $p['lat']]; }, $points);
             
-            $color = getFoxColor(ucfirst($deelgebied));
+            switch (ucfirst($deelgebied)) {
+                case "Alpha":   $color = "#9829FF"; break;
+                case "Bravo":   $color = "#2F9CEB"; break;
+                case "Charlie": $color = "#2DFF69"; break;
+                case "Delta":   $color = "#F5F02C"; break;
+                case "Echo":    $color = "#FFA12E"; break;
+                case "Foxtrot": $color = "#F52E2B"; break;
+                case "Golf":    $color = "#FF6F6F"; break;
+                case "Hotel":   $color = "#00BFA5"; break;
+                default:        $color = "#000000"; break;
+            }
 
             $vossenpad_stats[$deelgebied] = [ 'speed' => number_format($avg_speed_kmh, 1) . " km/u", 'distance' => number_format($total_distance_km, 1) . " km", 'original_color' => $color ];
             $vossenpad_layers .=  " map.addLayer({ id: 'vossenpad_".$deelgebied."', type: 'line', source: { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: ".json_encode($coords)." } } }, layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '".$color."', 'line-width': 8, 'line-opacity': 0.75 } });";
@@ -550,7 +578,7 @@ if (!empty($deelgebieden_filter)) {
     }
 
     if (isset($_GET['predicted_route']) && $_GET['predicted_route'] == "true"){
-        $pk = $mapbox_api_key;
+        $pk = "pk.eyJ1IjoidGhlaGFpcnl2aWtpbmduaWVscyIsImEiOiJjam40YzI2eGEwMjh6M3hscGEweHpxYzg1In0.3obc3XmgMCZ-rY5LLzhW2A";
         
         foreach ($all_fox_data as $deelgebied => $points) {
             if (count($points) < 2) continue;
@@ -559,7 +587,12 @@ if (!empty($deelgebieden_filter)) {
                 $coords_for_api[] = $point['lon'] . "," . $point['lat'];
             }
             $api_url = "https://api.mapbox.com/directions/v5/mapbox/walking/" . implode(';', $coords_for_api) . "?steps=true&geometries=geojson&access_token=" . $pk;
-            $api_response = @file_get_contents($api_url);
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $api_url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            $api_response = curl_exec($ch);
+            curl_close($ch);
             $route_data = json_decode($api_response, true);
             
             if (isset($route_data['routes'][0])) {
