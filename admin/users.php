@@ -60,22 +60,47 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
     $target_user_id = intval($_POST['user']);
     $new_priv = intval($_POST['priv']);
 
-    if ($new_priv === 3) {
-        // Verwijder de gebruiker als optie 3 is geselecteerd
-        $stmt_update = $conn->prepare("DELETE FROM Gebruikers WHERE id=?");
-        $stmt_update->bind_param("i", $target_user_id);
-    } else {
-        // Update de privileges
-        $stmt_update = $conn->prepare("UPDATE Gebruikers SET priv=? WHERE id=?");
-        $stmt_update->bind_param("ii", $new_priv, $target_user_id);
+    // Fetch current priv of target
+    $stmt_current = $conn->prepare("SELECT priv FROM Gebruikers WHERE id=?");
+    $stmt_current->bind_param("i", $target_user_id);
+    $stmt_current->execute();
+    $result_current = $stmt_current->get_result();
+    $current_priv = 0;
+    if ($result_current->num_rows > 0) {
+        $row_current = $result_current->fetch_assoc();
+        $current_priv = $row_current['priv'];
+    }
+    $stmt_current->close();
+
+    $allowed = false;
+    if ($_SESSION['priv'] >= 3) {
+        $allowed = true;
+    } else if ($_SESSION['priv'] == 2) {
+        if ($current_priv <= 2 && ($new_priv <= 2 || $new_priv == 4)) {
+            $allowed = true;
+        }
     }
 
-    if ($stmt_update->execute()) {
-        $succes = true;
+    if ($allowed) {
+        if ($new_priv === 4) {
+            // Verwijder de gebruiker als optie 4 is geselecteerd
+            $stmt_update = $conn->prepare("DELETE FROM Gebruikers WHERE id=?");
+            $stmt_update->bind_param("i", $target_user_id);
+        } else {
+            // Update de privileges
+            $stmt_update = $conn->prepare("UPDATE Gebruikers SET priv=? WHERE id=?");
+            $stmt_update->bind_param("ii", $new_priv, $target_user_id);
+        }
+
+        if ($stmt_update->execute()) {
+            $succes = true;
+        } else {
+            $error_msg = "Error updating record: " . $stmt_update->error;
+        }
+        $stmt_update->close();
     } else {
-        $error_msg = "Error updating record: " . $stmt_update->error;
+        $error_msg = "Je hebt niet de juiste rechten om deze actie uit te voeren.";
     }
-    $stmt_update->close();
 }
 
 // Haal alle gebruikers op en sla ze op in een array (voorkomt 2x dezelfde query uitvoeren)
@@ -155,6 +180,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 $priv0 = ($row['priv'] == 0) ? "selected" : "";
                 $priv1 = ($row['priv'] == 1) ? "selected" : "";
                 $priv2 = ($row['priv'] == 2) ? "selected" : "";
+                $priv3 = ($row['priv'] == 3) ? "selected" : "";
                 
                 echo "<tr>";
                 echo "  <td>".htmlspecialchars($row["id"])."</td>";
@@ -164,10 +190,11 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 echo '    <td>
                             <input type="hidden" value="'.htmlspecialchars($row['id']).'" name="user">
                             <select class="w3-select" name="priv">
-                              <option value="0" '.$priv0.'>Gast (0)</option>
-                              <option value="1" '.$priv1.'>Vossenjager (1)</option>
-                              <option value="2" '.$priv2.'>Admin (2)</option>
-                              <option value="3" class="w3-red">Verwijder</option>
+                              <option value="0" '.$priv0.'>Gast</option>
+                              <option value="1" '.$priv1.'>Vossenjager</option>
+                              <option value="2" '.$priv2.'>Admin</option>
+                              <option value="3" '.$priv3.'>Superadmin</option>
+                              <option value="4" class="w3-red">Verwijder</option>
                             </select>
                           </td>';
                 echo "  <td><button class='w3-button w3-blue-gray'><i class=\"fas fa-check\"></i></button></td>";
@@ -184,6 +211,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 $priv0 = ($row['priv'] == 0) ? "selected" : "";
                 $priv1 = ($row['priv'] == 1) ? "selected" : "";
                 $priv2 = ($row['priv'] == 2) ? "selected" : "";
+                $priv3 = ($row['priv'] == 3) ? "selected" : "";
                 
                 echo "<tr>";
                 echo "  <td>".htmlspecialchars($row["voornaam"])." ".htmlspecialchars($row["achternaam"])."<span class=\"w3-right\"><b>Id:</b> ".htmlspecialchars($row["id"])."</span><br><span class=\"w3-tiny\">".htmlspecialchars($row["email"])."</span></td>";
@@ -191,10 +219,11 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 echo '  <td style="width:15%">
                           <input type="hidden" value="'.htmlspecialchars($row['id']).'" name="user">
                           <select class="w3-select" name="priv">
-                            <option value="0" '.$priv0.'>Gast (0)</option>
-                            <option value="1" '.$priv1.'>Vossenjager (1)</option>
-                            <option value="2" '.$priv2.'>Admin (2)</option>
-                            <option value="3" class="w3-red">Verwijder</option>
+                            <option value="0" '.$priv0.'>Gast</option>
+                            <option value="1" '.$priv1.'>Vossenjager</option>
+                            <option value="2" '.$priv2.'>Admin</option>
+                            <option value="3" '.$priv3.'>Superadmin</option>
+                            <option value="4" class="w3-red">Verwijder</option>
                           </select>
                         </td>';
                 echo "  <td><button class='w3-button w3-blue-gray' style=\"padding:2px;padding-top:5px;padding-bottom:5px;\"><i class=\"fas fa-check\"></i></button></td>";

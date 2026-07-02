@@ -93,13 +93,13 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
       <span>Welkom, <strong><?php echo ucfirst($vn); ?></strong></span><br>
       <?php
       $roleNames = [
-          0 => 'Gast (0)',
-          1 => 'Vossenjager (1)',
-          2 => 'Admin (2)',
-          3 => 'Superadmin (3)'
+          0 => 'Gast',
+          1 => 'Vossenjager',
+          2 => 'Admin',
+          3 => 'Superadmin'
       ];
       $userPriv = $_SESSION['priv'] ?? 0;
-      $roleName = $roleNames[$userPriv] ?? "Onbekend ($userPriv)";
+      $roleName = $roleNames[$userPriv] ?? "Onbekend";
       ?>
       <span class="w3-small w3-text-grey" style="font-weight: 500;"><?php echo $roleName; ?></span><br>
 
