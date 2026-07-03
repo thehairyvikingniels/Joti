@@ -204,7 +204,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
               <th>ID</th>
               <th>Naam</th>
               <th>Email</th>
-              <th>Priv</th>
+              <th>Rol</th>
               <th></th>
             </tr>
             <?php
@@ -231,7 +231,24 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                             </select>
                           </td>';
                 echo "  <td>";
-                echo "      <button class='w3-button w3-blue-gray' type='submit'><i class=\"fas fa-check\"></i></button>";
+                echo "      <button class='w3-button w3-blue-gray' type='button' onclick=\"document.getElementById('priv_modal_desk_".$row['id']."').style.display='block'\"><i class=\"fas fa-check\"></i></button>";
+                
+                echo "
+                <div id='priv_modal_desk_".$row['id']."' class='w3-modal'>
+                  <div class='w3-modal-content w3-card-4' style='max-width:500px'>
+                    <header class='w3-container w3-blue-gray'> 
+                      <span onclick=\"document.getElementById('priv_modal_desk_".$row['id']."').style.display='none'\" class='w3-button w3-display-topright'>&times;</span>
+                      <h2>Bevestiging</h2>
+                    </header>
+                    <div class='w3-container w3-padding-16'>
+                      <p>Weet je zeker dat je de rol/rechten van ".htmlspecialchars($row['voornaam'])." wilt wijzigen?</p>
+                      <button type='submit' class='w3-button w3-green'>Ja, wijzig</button>
+                      <button type='button' onclick=\"document.getElementById('priv_modal_desk_".$row['id']."').style.display='none'\" class='w3-button w3-red w3-right'>Annuleer</button>
+                    </div>
+                  </div>
+                </div>
+                ";
+                
                 $can_impersonate = false;
                 if ($_SESSION['priv'] >= 3 && $row['priv'] <= 2) $can_impersonate = true;
                 if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
@@ -268,7 +285,24 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                           </select>
                         </td>';
                 echo "  <td>";
-                echo "      <button class='w3-button w3-blue-gray' style=\"padding:2px;padding-top:5px;padding-bottom:5px;\" type='submit'><i class=\"fas fa-check\"></i></button><br>";
+                echo "      <button class='w3-button w3-blue-gray' style=\"padding:2px;padding-top:5px;padding-bottom:5px;\" type='button' onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').style.display='block'\"><i class=\"fas fa-check\"></i></button><br>";
+                
+                echo "
+                <div id='priv_modal_mob_".$row['id']."' class='w3-modal'>
+                  <div class='w3-modal-content w3-card-4' style='max-width:500px'>
+                    <header class='w3-container w3-blue-gray'> 
+                      <span onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').style.display='none'\" class='w3-button w3-display-topright'>&times;</span>
+                      <h2>Bevestiging</h2>
+                    </header>
+                    <div class='w3-container w3-padding-16'>
+                      <p>Weet je zeker dat je de rol/rechten van ".htmlspecialchars($row['voornaam'])." wilt wijzigen?</p>
+                      <button type='submit' class='w3-button w3-green'>Ja, wijzig</button>
+                      <button type='button' onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').style.display='none'\" class='w3-button w3-red w3-right'>Annuleer</button>
+                    </div>
+                  </div>
+                </div>
+                ";
+                
                 $can_impersonate = false;
                 if ($_SESSION['priv'] >= 3 && $row['priv'] <= 2) $can_impersonate = true;
                 if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
