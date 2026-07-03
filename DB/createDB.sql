@@ -103,6 +103,8 @@ CREATE TABLE `Gebruikers` (
   `telefoon` varchar(12) NOT NULL,
   `api` varchar(16) NOT NULL,
   `priv` int(1) NOT NULL,
+  `first_login` datetime DEFAULT NULL,
+  `last_login` datetime DEFAULT NULL,
   `lat` decimal(8,6) DEFAULT NULL,
   `lon` decimal(9,6) DEFAULT NULL,
   `geotijd` datetime DEFAULT NULL

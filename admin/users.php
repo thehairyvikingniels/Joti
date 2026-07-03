@@ -12,6 +12,7 @@ if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
 }
 
 require("../dblogin.php");
+require_once(__DIR__ . '/../includes/helpers.php');
 
 // Huidige gebruiker rechten ophalen
 $stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
@@ -176,7 +177,7 @@ if (isset($_POST['impersonate_user_id'])) {
 
 // Haal alle gebruikers op en sla ze op in een array (voorkomt 2x dezelfde query uitvoeren)
 $users_data = [];
-$stmt_users = $conn->prepare("SELECT id, voornaam, achternaam, email, priv FROM Gebruikers ORDER BY id ASC");
+$stmt_users = $conn->prepare("SELECT id, voornaam, achternaam, email, priv, first_login, last_login FROM Gebruikers ORDER BY id ASC");
 $stmt_users->execute();
 $result_users = $stmt_users->get_result();
 
@@ -200,6 +201,74 @@ $stmt_users->close();
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
 <style>
 html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
+.admin-user-table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+.admin-user-table {
+  width: 100%;
+  table-layout: fixed;
+  min-width: 900px;
+}
+.admin-user-table th,
+.admin-user-table td {
+  white-space: nowrap;
+}
+.admin-user-table td select {
+  width: 100%;
+  min-width: 140px;
+}
+.admin-user-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+.admin-user-actions form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+.admin-user-actions select {
+  flex: 1 1 220px;
+  min-width: 180px;
+  max-width: 320px;
+}
+.admin-user-actions button {
+  min-width: 38px;
+}
+.admin-role-select-mobile {
+  width: 100%;
+  max-width: 100%;
+}
+.admin-action-cell {
+  white-space: normal;
+}
+@media screen and (max-width: 992px) {
+  .admin-user-table {
+    min-width: 0;
+    table-layout: auto;
+  }
+  .admin-user-table td,
+  .admin-user-table th {
+    white-space: normal;
+  }
+  .admin-user-actions {
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+  .admin-user-actions select {
+    min-width: 160px;
+    flex: 1 1 100%;
+  }
+  .admin-user-actions button {
+    min-width: 42px;
+  }
+}
 </style>
 <body class="w3-light-grey">
 
@@ -214,7 +283,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
   </header>
   
   <div class="w3-row" style="margin-bottom:100px;">
-    <div class="w3-col l7 m12 s12 w3-padding">
+    <div class="w3-col l12 m12 s12 w3-padding">
       <div class="w3-card-4 w3-white">
         <div class="w3-blue-gray w3-padding" style="width:100%">
           <h5>Gebruikers</h5>
@@ -237,14 +306,16 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
           }
           ?>
           
-          <table class="w3-table-all w3-hide-small" style="width:100%">
-            <tr>
-              <th>ID</th>
-              <th>Naam</th>
-              <th>Email</th>
-              <th>Rol</th>
-              <th></th>
-            </tr>
+          <div style="overflow-x:auto; width:100%;">
+            <table class="w3-table-all w3-hide-small w3-hide-medium" style="width:100%; table-layout: fixed; min-width:900px;">
+              <tr>
+                <th style="width:5%; white-space: nowrap;">ID</th>
+                <th style="width:20%;">Naam</th>
+                <th style="width:22%;">Email</th>
+                <th style="width:16%; white-space: nowrap;">Laatste login</th>
+                <th style="width:16%; white-space: nowrap;">Eerste login</th>
+                <th style="width:21%; white-space: nowrap;">Acties</th>
+              </tr>
             <?php
             // Genereer de desktop tabel vanuit de vooraf geladen array
             foreach($users_data as $row) {
@@ -257,20 +328,31 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 echo "  <td>".htmlspecialchars($row["id"])."</td>";
                 echo "  <td>".htmlspecialchars($row["voornaam"])."<br>".htmlspecialchars($row["achternaam"])."</td>";
                 echo "  <td>".htmlspecialchars($row["email"])."</td>";
-                echo '  <form method="POST">';
-                echo '    <td>
-                            <input type="hidden" value="'.htmlspecialchars($row['id']).'" name="user">
-                            <select class="w3-select" name="priv">
-                              <option value="0" '.$priv0.'>Gast</option>
-                              <option value="1" '.$priv1.'>Vossenjager</option>
-                              <option value="2" '.$priv2.'>Admin</option>
-                              <option value="3" '.$priv3.'>Superadmin</option>
-                               <option value="4" class="w3-red">Verwijder</option>
-                            </select>
-                          </td>';
-                echo "  <td>";
-                echo "      <button class='w3-button w3-blue-gray' type='button' onclick=\"document.getElementById('priv_modal_desk_".$row['id']."').style.display='block'\"><i class=\"fas fa-check\"></i></button>";
-                
+                echo "  <td>".htmlspecialchars(time2str($row['last_login']))."</td>";
+                echo "  <td>".htmlspecialchars(time2str($row['first_login']))."</td>";
+                $can_impersonate = false;
+                if ($_SESSION['priv'] >= 3 && $row['priv'] <= 2) $can_impersonate = true;
+                if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
+                echo '    <td class="admin-user-actions">';
+                echo '      <form id="priv_form_desk_'.$row['id'].'" method="POST" style="display:flex; flex-wrap:nowrap; gap:0.25rem; align-items:center; justify-content:flex-end;">';
+                echo '        <input type="hidden" value="'.htmlspecialchars($row['id']).'" name="user">';
+                echo '        <select class="w3-select" name="priv" style="flex:0 1 auto; min-width:100px;">';
+                echo '          <option value="0" '.$priv0.'>Gast</option>';
+                echo '          <option value="1" '.$priv1.'>Vossenjager</option>';
+                echo '          <option value="2" '.$priv2.'>Admin</option>';
+                echo '          <option value="3" '.$priv3.'>Superadmin</option>';
+                echo '          <option value="4" class="w3-red">Verwijder</option>';
+                echo '        </select>';
+                echo '        <button class="w3-button w3-blue-gray" type="button" onclick="document.getElementById(\'priv_modal_desk_'.$row['id'].'\').style.display=\'block\'" style="flex:0 0 auto; padding:4px 8px;"><i class="fas fa-check"></i></button>';
+                if ($can_impersonate) {
+                    echo '        <button type="button" onclick="document.getElementById(\'imp_modal_'.$row['id'].'\').style.display=\'block\'" class="w3-button w3-dark-gray" style="flex:0 0 auto; padding:4px 8px;"><i class="fas fa-user-secret"></i></button>';
+                    echo '        <button type="button" onclick="document.getElementById(\'reset_modal_'.$row['id'].'\').style.display=\'block\'" class="w3-button w3-orange w3-text-white" style="flex:0 0 auto; padding:4px 8px;"><i class="fas fa-key"></i></button>';
+                } else {
+                    echo '        <button type="button" class="w3-button w3-grey w3-disabled" disabled style="flex:0 0 auto; padding:4px 8px;"><i class="fas fa-user-secret"></i></button>';
+                    echo '        <button type="button" class="w3-button w3-grey w3-disabled" disabled style="flex:0 0 auto; padding:4px 8px;"><i class="fas fa-key"></i></button>';
+                }
+                echo '      </form>';
+                echo '    </td>';
                 echo "
                 <div id='priv_modal_desk_".$row['id']."' class='w3-modal'>
                   <div class='w3-modal-content w3-card-4' style='max-width:500px'>
@@ -280,28 +362,19 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                     </header>
                     <div class='w3-container w3-padding-16'>
                       <p>Weet je zeker dat je de rol/rechten van ".htmlspecialchars($row['voornaam'])." wilt wijzigen?</p>
-                      <button type='submit' class='w3-button w3-green'>Ja, wijzig</button>
+                      <button type='submit' form='priv_form_desk_".$row['id']."' class='w3-button w3-green'>Ja, wijzig</button>
                       <button type='button' onclick=\"document.getElementById('priv_modal_desk_".$row['id']."').style.display='none'\" class='w3-button w3-red w3-right'>Annuleer</button>
                     </div>
                   </div>
                 </div>
                 ";
-                
-                $can_impersonate = false;
-                if ($_SESSION['priv'] >= 3 && $row['priv'] <= 2) $can_impersonate = true;
-                if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
-                if ($can_impersonate) {
-                    echo "      <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').style.display='block'\" class='w3-button w3-dark-gray w3-margin-left'><i class=\"fas fa-user-secret\"></i></button>";
-                    echo "      <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').style.display='block'\" class='w3-button w3-orange w3-text-white w3-margin-left'><i class=\"fas fa-key\"></i></button>";
-                }
-                echo "  </td>";
-                echo "  </form>";
                 echo "</tr>";
             }
             ?>
-          </table>
+            </table>
+          </div>
           
-          <table class="w3-table-all w3-hide-large w3-hide-medium" style="width:100%">
+          <table class="w3-table-all w3-hide-large" style="width:100%;">
             <?php
             // Genereer de mobiele tabel vanuit exact dezelfde array
             foreach($users_data as $row) {
@@ -311,21 +384,31 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 $priv3 = ($row['priv'] == 3) ? "selected" : "";
                 
                 echo "<tr>";
-                echo "  <td>".htmlspecialchars($row["voornaam"])." ".htmlspecialchars($row["achternaam"])."<span class=\"w3-right\"><b>Id:</b> ".htmlspecialchars($row["id"])."</span><br><span class=\"w3-tiny\">".htmlspecialchars($row["email"])."</span></td>";
-                echo '  <form method="POST">';
-                echo '  <td style="width:15%">
-                          <input type="hidden" value="'.htmlspecialchars($row['id']).'" name="user">
-                          <select class="w3-select" name="priv">
-                            <option value="0" '.$priv0.'>Gast</option>
-                            <option value="1" '.$priv1.'>Vossenjager</option>
-                            <option value="2" '.$priv2.'>Admin</option>
-                            <option value="3" '.$priv3.'>Superadmin</option>
-                            <option value="4" class="w3-red">Verwijder</option>
-                          </select>
-                        </td>';
-                echo "  <td>";
-                echo "      <button class='w3-button w3-blue-gray' style=\"padding:2px;padding-top:5px;padding-bottom:5px;\" type='button' onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').style.display='block'\"><i class=\"fas fa-check\"></i></button><br>";
+                echo "  <td>".htmlspecialchars($row["voornaam"])." ".htmlspecialchars($row["achternaam"])."<span class=\"w3-right\"><b>Id:</b> ".htmlspecialchars($row["id"])."</span><br><span class=\"w3-tiny\">".htmlspecialchars($row["email"])."</span><br><span class=\"w3-tiny\"><b>L:</b> ".htmlspecialchars(time2str($row['last_login']))."<br><b>E:</b> ".htmlspecialchars(time2str($row['first_login']))."</span></td>";
+                echo "  <td class=\"admin-user-actions\">";
+                echo "      <form id=\"priv_form_mob_".$row['id']."\" method=\"POST\" style=\"display:flex; flex-wrap:nowrap; gap:0.25rem; align-items:center; justify-content:flex-end; width:100%;\">";
+                echo "        <input type=\"hidden\" value=\"".htmlspecialchars($row['id'])."\" name=\"user\">";
+                echo "        <select class=\"w3-select\" name=\"priv\" style=\"flex:1 1 auto; min-width:100px;\">";
+                echo "          <option value=\"0\" ".$priv0." >Gast</option>";
+                echo "          <option value=\"1\" ".$priv1." >Vossenjager</option>";
+                echo "          <option value=\"2\" ".$priv2." >Admin</option>";
+                echo "          <option value=\"3\" ".$priv3." >Superadmin</option>";
+                echo "          <option value=\"4\" class=\"w3-red\">Verwijder</option>";
+                echo "        </select>";
+                echo "        <button class='w3-button w3-blue-gray' style=\"flex:0 0 auto; padding:2px 4px;\" type='button' onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').style.display='block'\"><i class=\"fas fa-check\"></i></button>";
                 
+                $can_impersonate = false;
+                if ($_SESSION['priv'] >= 3 && $row['priv'] <= 2) $can_impersonate = true;
+                if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
+                if ($can_impersonate) {
+                    echo "        <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').style.display='block'\" class='w3-button w3-dark-gray' style=\"flex:0 0 auto; padding:2px 4px;\"><i class=\"fas fa-user-secret\"></i></button>";
+                    echo "        <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').style.display='block'\" class='w3-button w3-orange w3-text-white' style=\"flex:0 0 auto; padding:2px 4px;\"><i class=\"fas fa-key\"></i></button>";
+                } else {
+                    echo "        <button type='button' class='w3-button w3-grey w3-disabled' disabled style=\"flex:0 0 auto; padding:2px 4px;\"><i class=\"fas fa-user-secret\"></i></button>";
+                    echo "        <button type='button' class='w3-button w3-grey w3-disabled' disabled style=\"flex:0 0 auto; padding:2px 4px;\"><i class=\"fas fa-key\"></i></button>";
+                }
+                echo "      </form>";
+                echo "  </td>";
                 echo "
                 <div id='priv_modal_mob_".$row['id']."' class='w3-modal'>
                   <div class='w3-modal-content w3-card-4' style='max-width:500px'>
@@ -335,22 +418,12 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                     </header>
                     <div class='w3-container w3-padding-16'>
                       <p>Weet je zeker dat je de rol/rechten van ".htmlspecialchars($row['voornaam'])." wilt wijzigen?</p>
-                      <button type='submit' class='w3-button w3-green'>Ja, wijzig</button>
+                      <button type='submit' form='priv_form_mob_".$row['id']."' class='w3-button w3-green'>Ja, wijzig</button>
                       <button type='button' onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').style.display='none'\" class='w3-button w3-red w3-right'>Annuleer</button>
                     </div>
                   </div>
                 </div>
                 ";
-                
-                $can_impersonate = false;
-                if ($_SESSION['priv'] >= 3 && $row['priv'] <= 2) $can_impersonate = true;
-                if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
-                if ($can_impersonate) {
-                    echo "      <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').style.display='block'\" class='w3-button w3-dark-gray' style=\"padding:2px;padding-top:5px;padding-bottom:5px;margin-top:5px;\"><i class=\"fas fa-user-secret\"></i></button>";
-                    echo "      <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').style.display='block'\" class='w3-button w3-orange w3-text-white' style=\"padding:2px;padding-top:5px;padding-bottom:5px;margin-top:5px;\"><i class=\"fas fa-key\"></i></button>";
-                }
-                echo "  </td>";
-                echo '  </form>';
                 echo "</tr>";
             }
             ?>
