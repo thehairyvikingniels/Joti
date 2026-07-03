@@ -103,6 +103,44 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
     }
 }
 
+// Reset Wachtwoord
+if (isset($_POST['reset_password_user_id']) && isset($_POST['new_password'])) {
+    $target_user_id = intval($_POST['reset_password_user_id']);
+    $new_password = $_POST['new_password'];
+    
+    $stmt_target = $conn->prepare("SELECT priv FROM Gebruikers WHERE id=?");
+    $stmt_target->bind_param("i", $target_user_id);
+    $stmt_target->execute();
+    $result_target = $stmt_target->get_result();
+    
+    if ($result_target->num_rows > 0) {
+        $row_target = $result_target->fetch_assoc();
+        $target_priv = $row_target['priv'];
+        
+        $allowed = false;
+        if ($_SESSION['priv'] >= 3 && $target_priv <= 2) {
+            $allowed = true;
+        } else if ($_SESSION['priv'] == 2 && $target_priv <= 1) {
+            $allowed = true;
+        }
+        
+        if ($allowed) {
+            $hashed = password_hash($new_password, PASSWORD_DEFAULT);
+            $stmt_reset = $conn->prepare("UPDATE Gebruikers SET wachtwoord=? WHERE id=?");
+            $stmt_reset->bind_param("si", $hashed, $target_user_id);
+            if ($stmt_reset->execute()) {
+                $succes = true;
+            } else {
+                $error_msg = "Error updating wachtwoord: " . $stmt_reset->error;
+            }
+            $stmt_reset->close();
+        } else {
+            $error_msg = "Je hebt niet de juiste rechten om dit wachtwoord te resetten.";
+        }
+    }
+    $stmt_target->close();
+}
+
 // Impersonate
 if (isset($_POST['impersonate_user_id'])) {
     $target_user_id = intval($_POST['impersonate_user_id']);
@@ -254,6 +292,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
                 if ($can_impersonate) {
                     echo "      <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').style.display='block'\" class='w3-button w3-dark-gray w3-margin-left'><i class=\"fas fa-user-secret\"></i></button>";
+                    echo "      <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').style.display='block'\" class='w3-button w3-orange w3-text-white w3-margin-left'><i class=\"fas fa-key\"></i></button>";
                 }
                 echo "  </td>";
                 echo "  </form>";
@@ -308,6 +347,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
                 if ($can_impersonate) {
                     echo "      <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').style.display='block'\" class='w3-button w3-dark-gray' style=\"padding:2px;padding-top:5px;padding-bottom:5px;margin-top:5px;\"><i class=\"fas fa-user-secret\"></i></button>";
+                    echo "      <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').style.display='block'\" class='w3-button w3-orange w3-text-white' style=\"padding:2px;padding-top:5px;padding-bottom:5px;margin-top:5px;\"><i class=\"fas fa-key\"></i></button>";
                 }
                 echo "  </td>";
                 echo '  </form>';
@@ -337,6 +377,26 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                           <input type='hidden' name='impersonate_user_id' value='".htmlspecialchars($row['id'])."'>
                           <button type='submit' class='w3-button w3-green'>Ja, log in</button>
                           <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').style.display='none'\" class='w3-button w3-red w3-right'>Annuleer</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                  ";
+                  
+                  echo "
+                  <div id='reset_modal_".$row['id']."' class='w3-modal'>
+                    <div class='w3-modal-content w3-card-4' style='max-width:500px'>
+                      <header class='w3-container w3-orange w3-text-white'> 
+                        <span onclick=\"document.getElementById('reset_modal_".$row['id']."').style.display='none'\" class='w3-button w3-display-topright'>&times;</span>
+                        <h2>Nieuw Wachtwoord</h2>
+                      </header>
+                      <div class='w3-container w3-padding-16'>
+                        <p>Vul een nieuw wachtwoord in voor ".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam']).":</p>
+                        <form method='POST'>
+                          <input type='hidden' name='reset_password_user_id' value='".htmlspecialchars($row['id'])."'>
+                          <input type='text' name='new_password' class='w3-input w3-border w3-margin-bottom' required placeholder='Nieuw wachtwoord'>
+                          <button type='submit' class='w3-button w3-green'>Reset Wachtwoord</button>
+                          <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').style.display='none'\" class='w3-button w3-red w3-right'>Annuleer</button>
                         </form>
                       </div>
                     </div>
