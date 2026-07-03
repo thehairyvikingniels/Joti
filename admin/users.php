@@ -103,6 +103,39 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
     }
 }
 
+// Impersonate
+if (isset($_POST['impersonate_user_id'])) {
+    $target_user_id = intval($_POST['impersonate_user_id']);
+    
+    $stmt_target = $conn->prepare("SELECT id, priv FROM Gebruikers WHERE id=?");
+    $stmt_target->bind_param("i", $target_user_id);
+    $stmt_target->execute();
+    $result_target = $stmt_target->get_result();
+    
+    if ($result_target->num_rows > 0) {
+        $row_target = $result_target->fetch_assoc();
+        $target_priv = $row_target['priv'];
+        
+        $allowed = false;
+        if ($_SESSION['priv'] >= 3 && $target_priv <= 2) {
+            $allowed = true;
+        } else if ($_SESSION['priv'] == 2 && $target_priv <= 1) {
+            $allowed = true;
+        }
+        
+        if ($allowed) {
+            $_SESSION['original_id'] = $_SESSION['id'];
+            $_SESSION['id'] = $row_target['id'];
+            $_SESSION['priv'] = $row_target['priv'];
+            header("Location: ../home");
+            exit();
+        } else {
+            $error_msg = "Je hebt niet de juiste rechten om deze gebruiker te imiteren.";
+        }
+    }
+    $stmt_target->close();
+}
+
 // Haal alle gebruikers op en sla ze op in een array (voorkomt 2x dezelfde query uitvoeren)
 $users_data = [];
 $stmt_users = $conn->prepare("SELECT id, voornaam, achternaam, email, priv FROM Gebruikers ORDER BY id ASC");
@@ -194,10 +227,18 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                               <option value="1" '.$priv1.'>Vossenjager</option>
                               <option value="2" '.$priv2.'>Admin</option>
                               <option value="3" '.$priv3.'>Superadmin</option>
-                              <option value="4" class="w3-red">Verwijder</option>
+                               <option value="4" class="w3-red">Verwijder</option>
                             </select>
                           </td>';
-                echo "  <td><button class='w3-button w3-blue-gray'><i class=\"fas fa-check\"></i></button></td>";
+                echo "  <td>";
+                echo "      <button class='w3-button w3-blue-gray' type='submit'><i class=\"fas fa-check\"></i></button>";
+                $can_impersonate = false;
+                if ($_SESSION['priv'] >= 3 && $row['priv'] <= 2) $can_impersonate = true;
+                if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
+                if ($can_impersonate) {
+                    echo "      <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').style.display='block'\" class='w3-button w3-dark-gray w3-margin-left'><i class=\"fas fa-user-secret\"></i></button>";
+                }
+                echo "  </td>";
                 echo "  </form>";
                 echo "</tr>";
             }
@@ -226,12 +267,50 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                             <option value="4" class="w3-red">Verwijder</option>
                           </select>
                         </td>';
-                echo "  <td><button class='w3-button w3-blue-gray' style=\"padding:2px;padding-top:5px;padding-bottom:5px;\"><i class=\"fas fa-check\"></i></button></td>";
+                echo "  <td>";
+                echo "      <button class='w3-button w3-blue-gray' style=\"padding:2px;padding-top:5px;padding-bottom:5px;\" type='submit'><i class=\"fas fa-check\"></i></button><br>";
+                $can_impersonate = false;
+                if ($_SESSION['priv'] >= 3 && $row['priv'] <= 2) $can_impersonate = true;
+                if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
+                if ($can_impersonate) {
+                    echo "      <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').style.display='block'\" class='w3-button w3-dark-gray' style=\"padding:2px;padding-top:5px;padding-bottom:5px;margin-top:5px;\"><i class=\"fas fa-user-secret\"></i></button>";
+                }
+                echo "  </td>";
                 echo '  </form>';
                 echo "</tr>";
             }
             ?>
           </table>
+
+          <?php
+          // Generate Modals once for all users
+          foreach($users_data as $row) {
+              $can_impersonate = false;
+              if ($_SESSION['priv'] >= 3 && $row['priv'] <= 2) $can_impersonate = true;
+              if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
+              
+              if ($can_impersonate) {
+                  echo "
+                  <div id='imp_modal_".$row['id']."' class='w3-modal'>
+                    <div class='w3-modal-content w3-card-4' style='max-width:500px'>
+                      <header class='w3-container w3-blue-gray'> 
+                        <span onclick=\"document.getElementById('imp_modal_".$row['id']."').style.display='none'\" class='w3-button w3-display-topright'>&times;</span>
+                        <h2>Bevestiging</h2>
+                      </header>
+                      <div class='w3-container w3-padding-16'>
+                        <p>Weet je zeker dat je wilt inloggen als ".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."?</p>
+                        <form method='POST'>
+                          <input type='hidden' name='impersonate_user_id' value='".htmlspecialchars($row['id'])."'>
+                          <button type='submit' class='w3-button w3-green'>Ja, log in</button>
+                          <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').style.display='none'\" class='w3-button w3-red w3-right'>Annuleer</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                  ";
+              }
+          }
+          ?>
         </div>
       </div>
     </div>
