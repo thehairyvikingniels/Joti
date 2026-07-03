@@ -11,24 +11,37 @@ $output = "";
 require_once("../dblogin.php");
 
 $sql = "SELECT 
-*,
+  cj.*,
   (SELECT MAX(cl.exec_time) FROM Cronlogs cl WHERE cl.name = cj.name) as lastcron,
-  UNIX_TIMESTAMP((SELECT MAX(cl.exec_time) FROM Cronlogs cl WHERE cl.name = cj.name)) + cj.interval as nextcron,
-  FROM_UNIXTIME((UNIX_TIMESTAMP(now()) + 3600 + 3600)) as now
+  UNIX_TIMESTAMP((SELECT MAX(cl.exec_time) FROM Cronlogs cl WHERE cl.name = cj.name)) + cj.interval as nextcron
 FROM 
-`Cronjobs` cj
+  `Cronjobs` cj
 WHERE
-  enabled = 1
+  cj.enabled = 1
 GROUP BY
-cj.name
+  cj.name
 HAVING
-(UNIX_TIMESTAMP(now()) + 3600 + 3600) >= nextcron - 12 # added 2x 3600s for timezone correction. added 12 seconds overlap through execution
-  ";
+  nextcron IS NULL OR (UNIX_TIMESTAMP(now()) + 7200) >= nextcron - 12"; 
+
 $result = $conn->query($sql);
 
 if ($result->num_rows > 0) {
-  // output data of each row
   while($row = $result->fetch_assoc()) {
-    file_get_contents($row['URL']);
+    $target = $row['URL'];
+    
+    // Execute as an isolated CLI process if it's a local file path (e.g., /var/www/...)
+    if (strpos($target, '/') === 0) {
+        exec("php " . escapeshellarg($target) . " > /dev/null 2>&1 &");
+    } 
+    // Execute as an isolated HTTP request if it's a web URL (e.g., http://...)
+    else if (strpos($target, 'http') === 0) {
+        $ch = curl_init($target);
+        // Set a 1-second timeout so the main index.php loop doesn't hang waiting for a response
+        curl_setopt($ch, CURLOPT_TIMEOUT, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_exec($ch);
+        curl_close($ch);
+    }
   }
 }
+$conn->close();

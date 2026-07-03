@@ -97,7 +97,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <div class="w3-col l12 m12 s12 w3-padding">
       <div class="w3-card-4 w3-white">
         <div class="w3-blue-gray w3-padding" style="width:100%">
-          <h5>Cronjobs [WIP]</h5>
+          <h5>Cronjobs</h5>
         </div>
         <ul class="w3-ul">
         <?php
@@ -160,7 +160,6 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                       <div><i class='far fa-clock'></i> <b>Next exec.:</b><br><span id='cron_exec_next_".$i."'>".$exec_next."</span></div>
                       <div><i class='fas fa-history'></i> <b>Last exec.:</b><br><span id='cron_exec_time_".$i."'>".$exec_time."</span></div>
                       <div><i class='fas fa-hourglass-half'></i> <b>Prev. Dur.:</b><br><span id='cron_exec_length_".$i."'>".$exec_length."</span></div>
-                      <div><h4><i id='cron_start_".$i."' class='fas fa-play'></i></h4></div>
                     </li>";
               $i++;
             }
@@ -211,22 +210,17 @@ function toggleCron(name) {
 function TimerRefresh() {
   for (let i = 0; i < countAmont; i++) {
     var timer = document.getElementById("cron_exec_next_" + i);
-    var cron_start = document.getElementById("cron_start_" + i);
     var cron_enabled = document.getElementById("cron_enabled_" + i);
 
     if (cron_enabled.innerHTML.includes("off")) {
       timer.innerHTML = " - disabled - ";
-      cron_start.className = "fas fa-stop";
     } else {
       if (timer.innerHTML !== "executing..." && timer.innerHTML !== "Onbekend") {
         let currentSecs = parseInt(timer.innerHTML);
         currentSecs--;
         
-        cron_start.className = "fas fa-play";
-        
         if (currentSecs <= 0) {
           timer.innerHTML = "executing...";
-          cron_start.className = "fas fa-sync-alt fa-spin";
         } else {
           timer.innerHTML = currentSecs + " sec";
         }        
@@ -257,7 +251,6 @@ function CronRefresh() {
               var cron_exec_time = document.getElementById("cron_exec_time_" + i);
               var cron_exec_length = document.getElementById("cron_exec_length_" + i);
               var cron_exec_next = document.getElementById("cron_exec_next_" + i);
-              var cron_start = document.getElementById("cron_start_" + i);
 
               cron_enabled.innerHTML = json[i]['enabled'];
               cron_status.className = json[i]['stat_color'];
@@ -269,11 +262,6 @@ function CronRefresh() {
               cron_exec_length.innerHTML = json[i]['exec_length'];
               cron_exec_next.innerHTML = json[i]['exec_next'];
               
-              if (parseInt(json[i]['exec_next']) <= 0) {
-                cron_start.className = 'fas fa-sync-alt fa-spin';
-              } else {
-                cron_start.className = 'fas fa-play';
-              }
             }
         } catch (e) {
             console.error("Ongeldige JSON ontvangen van cronjobs_helper.php");
