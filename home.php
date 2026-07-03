@@ -141,12 +141,14 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <!-- Mobile / small: show only on small screens; items wrap (two per row) -->
     <div class="w3-hide-large w3-row w3-padding-small">
       <?php
-        foreach ($names as $n) {
-          echo '<div class="w3-col s6" style="box-sizing:border-box; padding:4px;">';
-          // match the desktop height/centering so thickness is the same visually
-          echo '<div class="w3-card-2 w3-'.$vos[$n]["Kleur"].' w3-padding-small w3-center" style="height:42px; display:flex; align-items:center; justify-content:center; gap:6px;">';
-          echo '<span style="font-weight:700;">'.substr($n,0,1).'</span><span style="font-size:0.95rem;">'.$vos[$n]["duratie"].'</span>';
-          echo '</div></div>';
+        if (!empty($vossen_names) && is_array($vossen_names)) {
+          foreach ($vossen_names as $n) {
+            echo '<div class="w3-col s6" style="box-sizing:border-box; padding:4px;">';
+            // match the desktop height/centering so thickness is the same visually
+            echo '<div class="w3-card-2 w3-'.$vos[$n]["Kleur"].' w3-padding-small w3-center" style="height:42px; display:flex; align-items:center; justify-content:center; gap:6px;">';
+            echo '<span style="font-weight:700;">'.substr($n,0,1).'</span><span style="font-size:0.95rem;">'.$vos[$n]["duratie"].'</span>';
+            echo '</div></div>';
+          }
         }
       ?>
     </div>
