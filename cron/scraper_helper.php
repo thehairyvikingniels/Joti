@@ -106,6 +106,11 @@ if ($json_start !== false && $json_end !== false && $status_code === 200) {
                     $hunttijd_str = $hunt['hunttijd'] ?? ''; 
                     $pt = isset($hunt['punten']) ? intval($hunt['punten']) : 0;
                     
+                    $status = $hunt['status'] ?? null;
+                    if ($status && stripos($status, 'HAPPY HOUR') !== false) {
+                        $status = null;
+                    }
+                    
                     $ingestuurd_op = date('Y-m-d H:i:s');
                     if (strpos($hunttijd_str, ':') !== false) {
                         $date1 = $start_date . ' ' . $hunttijd_str . ':00';
@@ -149,16 +154,16 @@ if ($json_start !== false && $json_end !== false && $status_code === 200) {
                     }
 
                     if ($hunt_id) {
-                        $stmt_update_hunt = $conn->prepare("UPDATE Voslocaties SET ingeleverd = 1, toegekende_punten = ?, code = ? WHERE id = ?");
+                        $stmt_update_hunt = $conn->prepare("UPDATE Voslocaties SET ingeleverd = 1, toegekende_punten = ?, code = ?, status = ? WHERE id = ?");
                         if ($stmt_update_hunt) {
-                            $stmt_update_hunt->bind_param("isi", $pt, $hc, $hunt_id);
+                            $stmt_update_hunt->bind_param("issi", $pt, $hc, $status, $hunt_id);
                             $stmt_update_hunt->execute();
                             $stmt_update_hunt->close();
                         }
                     } else {
-                        $stmt_insert_hunt = $conn->prepare("INSERT INTO Voslocaties (type, deelgebied, code, ingeleverd, toegekende_punten, ingestuurd_op, coordinaat_x, coordinaat_y) VALUES ('Hunt', ?, ?, 1, ?, ?, 0.0, 0.0)");
+                        $stmt_insert_hunt = $conn->prepare("INSERT INTO Voslocaties (type, deelgebied, code, ingeleverd, toegekende_punten, ingestuurd_op, coordinaat_x, coordinaat_y, status) VALUES ('Hunt', ?, ?, 1, ?, ?, 0.0, 0.0, ?)");
                         if ($stmt_insert_hunt) {
-                            $stmt_insert_hunt->bind_param("ssis", $deelgebied, $hc, $pt, $ingestuurd_op);
+                            $stmt_insert_hunt->bind_param("ssiss", $deelgebied, $hc, $pt, $ingestuurd_op, $status);
                             $stmt_insert_hunt->execute();
                             $stmt_insert_hunt->close();
                         }
