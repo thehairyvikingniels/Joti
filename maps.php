@@ -387,9 +387,8 @@ if (isset($_GET['personen']) && $_GET['personen'] == "true"){
 
 if (!empty($deelgebieden_filter)) {
     if (isset($_GET['hints']) && $_GET['hints'] == "true"){
-        
-        $sql = "SELECT v.*, g.voornaam FROM Voslocaties v LEFT JOIN Gebruikers g ON v.ingeleverd_door = g.id WHERE 1=1 " . $time_filter_sql;
-        
+        $sql = "SELECT v.*, g.voornaam FROM Voslocaties v LEFT JOIN Gebruikers g ON v.ingeleverd_door = g.id WHERE coordinaat_x BETWEEN 51.5 AND 52.6 AND coordinaat_y BETWEEN 5.0 AND 6.8 " . $time_filter_sql;
+
         $params = $time_filter_params;
         $types = $time_filter_types;
 
@@ -438,6 +437,9 @@ if (!empty($deelgebieden_filter)) {
                 if($row['opmerking']) {
                     $popup_html .= "<p><strong>Opmerking:</strong> ".htmlspecialchars($row['opmerking'], ENT_QUOTES)."</p>";
                 }
+                if(isset($row['status']) && $row['status']) {
+                    $popup_html .= "<p><strong>Status:</strong> ".htmlspecialchars($row['status'], ENT_QUOTES)."</p>";
+                }
                 $popup_html .= "<a href=\'https://www.google.com/maps/dir/?api=1&destination=".$row['coordinaat_x'].",".$row['coordinaat_y']."\' target=\'_blank\'>Navigeer</a>";
                 
                 echo "
@@ -455,7 +457,7 @@ if (!empty($deelgebieden_filter)) {
     function buildVosQuery($conn, $time_filter_sql, $time_filter_types, $time_filter_params, $deelgebieden_filter) {
         $results = [];
         foreach ($deelgebieden_filter as $deelgebied) {
-            $sql = "SELECT coordinaat_x, coordinaat_y, ingestuurd_op FROM Voslocaties WHERE deelgebied = ? " . $time_filter_sql . " ORDER BY ingestuurd_op ASC";
+            $sql = "SELECT coordinaat_x, coordinaat_y, ingestuurd_op FROM Voslocaties WHERE deelgebied = ? AND coordinaat_x BETWEEN 51.5 AND 52.6 AND coordinaat_y BETWEEN 5.0 AND 6.8 " . $time_filter_sql . " ORDER BY ingestuurd_op ASC";
             $stmt = $conn->prepare($sql);
             if ($stmt) {
                 // Prepend the deelgebied 's' to the time filter types
