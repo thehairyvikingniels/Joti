@@ -7,7 +7,6 @@ if (!isset($_SESSION['id'])){
 }
 
 require("dblogin.php");
-require_once("functies.php");
 
 
 // Get userdata
@@ -55,23 +54,22 @@ if ($result->num_rows > 0) {
 $stmt->close();
 
 
-// Get score from points table for your own group
-$stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = ?");
-$stmt->bind_param("i", $siteSettings['GROUP_ID']);
+// Get score from points table for 'Geuzen'
+$stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')");
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {
-      $plaats = $row['plaats'];
-      $hunts = $row['hunts'];
-      $tegenhunts = $row['tegenhunts'];
-      $opdrachten = $row['opdrachten'];
-      $fotoopdrachten = $row['fotoopdrachten'];
-      $hints = $row['hints'];
-      $bonus = $row['bonus'];
-      $penalties = $row['penalties'];
-      $puntentotaal = $row['totaal'];
+      $plaats = $row['plaats'] ?? '?';
+      $hunts = $row['hunts'] ?? 0;
+      $tegenhunts = $row['tegenhunts'] ?? 0;
+      $opdrachten = $row['opdrachten'] ?? 0;
+      $fotoopdrachten = $row['foto_opdrachten'] ?? 0;
+      $hints = $row['hints'] ?? 0;
+      $bonus = $row['bonus'] ?? 0;
+      $penalties = $row['strafpunten'] ?? 0;
+      $puntentotaal = $hunts + $tegenhunts + $opdrachten + $fotoopdrachten + $hints + $bonus - $penalties;
   }
 } else {
   $plaats = 0;
@@ -92,7 +90,7 @@ $stmt->close();
 
 <html>
 
-<title>Jotihunt - Punten</title>
+<title>Jotihunt - De Geuzen</title>
 
 <meta charset="UTF-8">
 
@@ -244,15 +242,15 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
             while($row = $result->fetch_assoc()) {
               echo '
               <tr>
-                <td>'.$row['id'].'</td>
-                <td>'.$row['hunts'].'</td>
-                <td>'.$row['tegenhunts'].'</td>
-                <td>'.$row['opdrachten'].'</td>
-                <td>'.$row['fotoopdrachten'].'</td>
-                <td>'.$row['hints'].'</td>
-                <td>'.$row['bonus'].'</td>
-                <td>'.$row['penalties'].'</td>
-                <td>'.$row['totaal'].'</td>
+                <td>'.($row['plaats'] ?? "?").'</td>
+                <td>'.($row['hunts'] ?? 0).'</td>
+                <td>'.($row['tegenhunts'] ?? 0).'</td>
+                <td>'.($row['opdrachten'] ?? 0).'</td>
+                <td>'.($row['foto_opdrachten'] ?? 0).'</td>
+                <td>'.($row['hints'] ?? 0).'</td>
+                <td>'.($row['bonus'] ?? 0).'</td>
+                <td>'.($row['strafpunten'] ?? 0).'</td>
+                <td>'.( ($row['hunts'] ?? 0) + ($row['tegenhunts'] ?? 0) + ($row['opdrachten'] ?? 0) + ($row['foto_opdrachten'] ?? 0) + ($row['hints'] ?? 0) + ($row['bonus'] ?? 0) - ($row['strafpunten'] ?? 0) ).'</td>
               </tr>
               ';
             }
