@@ -16,7 +16,7 @@ For use by all members of a scout group and associates. Groups may fork the repo
 - PHP 8.2 (other versions untested)
 - MySQL / MariaDB
 - Webserver or PHP built-in server
-- Enable required PHP extensions for mysqli and DOM (used in templates)
+- Enable required PHP extensions for mysqli, DOM (used in templates), and cURL (used for Mapbox routing APIs in maps.php)
 
 ### Quick start (local dev)
 1. Create the database from the SQL file:
