@@ -2,6 +2,7 @@
 define("NAME", "jotiPortal"); 
 define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');
+set_time_limit(120); // scraper needs time to log in and scrape
 $output = "";
 
 require_once("../dblogin.php");
@@ -9,7 +10,7 @@ require_once("../dblogin.php");
 $datumtijd = date('Y-m-d H:i:s');
 
 // 1. Voer de Python scraper uit
-$command = "python3 /var/www/Joti/cron/scraper.py 2>&1";
+$command = "/usr/bin/python3 /var/www/Joti/cron/scraper.py 2>&1";
 $script_output = shell_exec($command);
 $output .= $script_output;
 
