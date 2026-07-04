@@ -76,16 +76,15 @@ if ($result->num_rows > 0) {
 $stmt->close();
 
 
-// Get points for your own group
-$stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = ?");
-$stmt->bind_param("i", $siteSettings['GROUP_ID']);
+// Get points for Geuzen
+$stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')");
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {
-    $puntentotaal = $row['totaal'];
-    $plaats = $row['plaats'];
+    $puntentotaal = ($row['hunts'] ?? 0) + ($row['tegenhunts'] ?? 0) + ($row['opdrachten'] ?? 0) + ($row['foto_opdrachten'] ?? 0) + ($row['hints'] ?? 0) - ($row['strafpunten'] ?? 0);
+    $plaats = $row['plaats'] ?? "?";
   }
 }
 $stmt->close();
@@ -95,7 +94,7 @@ $stmt->close();
 
 <html>
 
-<title>Jotihunt - Home</title>
+<title>Jotihunt - De Geuzen</title>
 
 <meta charset="UTF-8">
 
@@ -141,14 +140,12 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <!-- Mobile / small: show only on small screens; items wrap (two per row) -->
     <div class="w3-hide-large w3-row w3-padding-small">
       <?php
-        if (!empty($vossen_names) && is_array($vossen_names)) {
-          foreach ($vossen_names as $n) {
-            echo '<div class="w3-col s6" style="box-sizing:border-box; padding:4px;">';
-            // match the desktop height/centering so thickness is the same visually
-            echo '<div class="w3-card-2 w3-'.$vos[$n]["Kleur"].' w3-padding-small w3-center" style="height:42px; display:flex; align-items:center; justify-content:center; gap:6px;">';
-            echo '<span style="font-weight:700;">'.substr($n,0,1).'</span><span style="font-size:0.95rem;">'.$vos[$n]["duratie"].'</span>';
-            echo '</div></div>';
-          }
+        foreach ($names as $n) {
+          echo '<div class="w3-col s6" style="box-sizing:border-box; padding:4px;">';
+          // match the desktop height/centering so thickness is the same visually
+          echo '<div class="w3-card-2 w3-'.$vos[$n]["Kleur"].' w3-padding-small w3-center" style="height:42px; display:flex; align-items:center; justify-content:center; gap:6px;">';
+          echo '<span style="font-weight:700;">'.substr($n,0,1).'</span><span style="font-size:0.95rem;">'.$vos[$n]["duratie"].'</span>';
+          echo '</div></div>';
         }
       ?>
     </div>
@@ -363,7 +360,7 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
   <div id="welcomeModal" class="w3-modal">
     <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width:600px">
       <header class="w3-container w3-theme-d1"> 
-        <h2>Welkom bij de Jotihunt!</h2>
+        <h2>Welkom bij de Jotihunt van de Geuzen Arnhem!</h2>
       </header>
       <div class="w3-container w3-padding">
         <p>
