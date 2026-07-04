@@ -83,18 +83,87 @@ if ($json_start !== false && $json_end !== false && $status_code === 200) {
             }
         }
 
-        // UPDATE HUNTS (VOSLOCATIES)
+        // UPDATE OR INSERT HUNTS (VOSLOCATIES)
         if (isset($data['hunts']) && is_array($data['hunts'])) {
-            $stmt_hunt = $conn->prepare("UPDATE Voslocaties SET ingeleverd = 1, toegekende_punten = ? WHERE code = ? AND type = 'Hunt'");
-            if ($stmt_hunt) {
-                foreach ($data['hunts'] as $hunt) {
-                    if (isset($hunt['huntcode'])) {
-                        $pt = isset($hunt['punten']) ? intval($hunt['punten']) : 0;
-                        $stmt_hunt->bind_param("is", $pt, $hunt['huntcode']);
-                        $stmt_hunt->execute();
+            
+            $start_date = date('Y-m-d');
+            $end_date = date('Y-m-d');
+            $stmt_dates = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen WHERE Instelling IN ('GAME_STARTDATE', 'GAME_ENDDATE')");
+            if ($stmt_dates) {
+                $stmt_dates->execute();
+                $res_dates = $stmt_dates->get_result();
+                while($r = $res_dates->fetch_assoc()){
+                    if($r['Instelling'] == 'GAME_STARTDATE') $start_date = date('Y-m-d', strtotime($r['Waarde']));
+                    if($r['Instelling'] == 'GAME_ENDDATE') $end_date = date('Y-m-d', strtotime($r['Waarde']));
+                }
+                $stmt_dates->close();
+            }
+
+            foreach ($data['hunts'] as $hunt) {
+                if (isset($hunt['huntcode'])) {
+                    $hc = $hunt['huntcode'];
+                    $deelgebied = $hunt['deelgebied'] ?? '';
+                    $hunttijd_str = $hunt['hunttijd'] ?? ''; 
+                    $pt = isset($hunt['punten']) ? intval($hunt['punten']) : 0;
+                    
+                    $ingestuurd_op = date('Y-m-d H:i:s');
+                    if (strpos($hunttijd_str, ':') !== false) {
+                        $date1 = $start_date . ' ' . $hunttijd_str . ':00';
+                        $date2 = $end_date . ' ' . $hunttijd_str . ':00';
+                        
+                        $ts1 = strtotime($date1);
+                        $ts2 = strtotime($date2);
+                        
+                        $now = time();
+                        if (abs($now - $ts1) < abs($now - $ts2)) {
+                            $ingestuurd_op = $date1;
+                        } else {
+                            $ingestuurd_op = $date2;
+                        }
+                    }
+
+                    $hunt_id = null;
+                    
+                    $stmt_check = $conn->prepare("SELECT id FROM Voslocaties WHERE type='Hunt' AND code = ?");
+                    if ($stmt_check) {
+                        $stmt_check->bind_param("s", $hc);
+                        $stmt_check->execute();
+                        $res_check = $stmt_check->get_result();
+                        if ($row_check = $res_check->fetch_assoc()) {
+                            $hunt_id = $row_check['id'];
+                        }
+                        $stmt_check->close();
+                    }
+                    
+                    if (!$hunt_id && $deelgebied != '' && $hunttijd_str != '') {
+                        $stmt_check2 = $conn->prepare("SELECT id FROM Voslocaties WHERE type='Hunt' AND deelgebied = ? AND DATE_FORMAT(ingestuurd_op, '%H:%i') = ? LIMIT 1");
+                        if ($stmt_check2) {
+                            $stmt_check2->bind_param("ss", $deelgebied, $hunttijd_str);
+                            $stmt_check2->execute();
+                            $res_check2 = $stmt_check2->get_result();
+                            if ($row_check2 = $res_check2->fetch_assoc()) {
+                                $hunt_id = $row_check2['id'];
+                            }
+                            $stmt_check2->close();
+                        }
+                    }
+
+                    if ($hunt_id) {
+                        $stmt_update_hunt = $conn->prepare("UPDATE Voslocaties SET ingeleverd = 1, toegekende_punten = ?, code = ? WHERE id = ?");
+                        if ($stmt_update_hunt) {
+                            $stmt_update_hunt->bind_param("isi", $pt, $hc, $hunt_id);
+                            $stmt_update_hunt->execute();
+                            $stmt_update_hunt->close();
+                        }
+                    } else {
+                        $stmt_insert_hunt = $conn->prepare("INSERT INTO Voslocaties (type, deelgebied, code, ingeleverd, toegekende_punten, ingestuurd_op, coordinaat_x, coordinaat_y) VALUES ('Hunt', ?, ?, 1, ?, ?, 0.0, 0.0)");
+                        if ($stmt_insert_hunt) {
+                            $stmt_insert_hunt->bind_param("ssis", $deelgebied, $hc, $pt, $ingestuurd_op);
+                            $stmt_insert_hunt->execute();
+                            $stmt_insert_hunt->close();
+                        }
                     }
                 }
-                $stmt_hunt->close();
             }
         }
         
