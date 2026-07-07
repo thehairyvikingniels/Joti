@@ -235,9 +235,9 @@ $stmt_groups->close();
                   <p class="text-sm opacity-60"><?php echo htmlspecialchars($setting['Omschrijving']); ?></p>
                 </div>
                 
-                <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div class="flex flex-row gap-2 sm:gap-4 items-center">
                     <?php if ($setting['Instelling'] === 'GROUP_ID'): ?>
-                        <div class="flex-1 w-full">
+                        <div class="flex-1 min-w-0">
                             <?php if (empty($groepen_options)): ?>
                                 <select class="w-full border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white text-gray-800" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" required>
                                     <option value="0">Placeholder (No Groups Loaded)</option>
@@ -255,12 +255,12 @@ $stmt_groups->close();
                             <?php endif; ?>
                         </div>
                     <?php else: ?>
-                        <div class="flex-1 w-full">
+                        <div class="flex-1 min-w-0">
                             <input class="w-full border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white text-gray-800" type="text" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" value="<?php echo htmlspecialchars($setting['Waarde']); ?>" required>
                         </div>
                     <?php endif; ?>
                     
-                    <button type="button" onclick="confirmDelete('<?php echo htmlspecialchars($setting['Instelling']); ?>')" class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition shadow-sm w-full sm:w-auto flex justify-center" title="Verwijder instelling">
+                    <button type="button" onclick="confirmDelete('<?php echo htmlspecialchars($setting['Instelling']); ?>')" class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition shadow-sm flex-shrink-0 w-10 h-10 flex justify-center items-center" title="Verwijder instelling">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>

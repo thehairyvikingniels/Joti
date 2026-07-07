@@ -76,11 +76,11 @@ foreach ($vossen_names as $vosnaam) {
 <header class="h-14 theme-card flex items-center justify-between px-6 sticky top-0 z-30 border-b shadow-sm flex-shrink-0">
   <div class="flex items-center">
     <button class="md:hidden opacity-60 hover:opacity-100 mr-3 transition" onclick="w3_open()"><i class="fas fa-bars"></i></button>
-    <h2 class="text-base sm:text-lg font-semibold whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px] sm:max-w-none"><?= htmlspecialchars(ucfirst(PAGE_NAME)) ?></h2>
-    <span class="ml-2 sm:ml-4 text-xs sm:text-sm font-medium opacity-60 border-l pl-2 sm:pl-4 whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px] sm:max-w-none" style="border-color: var(--theme-card-border);"><?= htmlspecialchars($topbarGroupName) ?></span>
+    <h2 class="text-base sm:text-lg font-semibold whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer md:cursor-auto" onclick="if(window.innerWidth < 768) w3_open()"><?= htmlspecialchars(ucfirst(PAGE_NAME)) ?></h2>
+    <span class="ml-2 sm:ml-4 text-xs sm:text-sm font-medium opacity-60 border-l pl-2 sm:pl-4 whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px] sm:max-w-none" style="border-color: var(--theme-card-border);"><?= htmlspecialchars($topbarGroupName) ?></span>
   </div>
 
-  <div class="hidden md:flex items-center space-x-2 mx-4 flex-1 justify-center max-w-2xl overflow-x-auto whitespace-nowrap">
+  <div class="hidden lg:flex items-center space-x-2 mx-4 flex-1 justify-center max-w-2xl overflow-hidden whitespace-nowrap">
     <?php
       if (isset($vossen_names)) {
           foreach ($vossen_names as $n) {
@@ -100,9 +100,9 @@ foreach ($vossen_names as $vosnaam) {
   <div class="flex items-center space-x-3 sm:space-x-4">
     <?php 
     $gps_active = (isset($_SESSION['gps']) && $_SESSION['gps'] == "true");
-    $gps_color = $gps_active ? "text-green-500 opacity-100" : "opacity-60";
+    $gps_color = $gps_active ? "text-green-500 opacity-100" : "opacity-60 hover:opacity-100";
     ?>
-    <button class="<?= $gps_color ?> hover:opacity-100 transition-colors" onclick="GPSrefresh()" title="Location sharing is <?= $gps_active ? 'ON' : 'OFF' ?>"><i class="fas fa-crosshairs text-lg"></i></button>
+    <a href="<?= $notInAdminfolder ?? '' ?>functies.php?gpstoggle=1&return=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="<?= $gps_color ?> transition-colors" title="Location sharing is <?= $gps_active ? 'ON' : 'OFF' ?>"><i class="fas fa-crosshairs text-lg"></i></a>
     <a href="<?= $notInAdminfolder ?? '' ?>instellingen" class="flex items-center space-x-2 border-l pl-3 sm:pl-4 hover:opacity-80 transition" style="border-color: var(--theme-card-border);">
       <div class="w-8 h-8 rounded theme-bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
          <?php echo strtoupper(substr($vn ?? 'U', 0, 1)); ?>

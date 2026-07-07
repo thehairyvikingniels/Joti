@@ -63,7 +63,9 @@ $stmt->close();
             
             <div class="p-6">
               <div class="flex justify-center mb-6">
-                <img src="media/geusje_bevosd.png" class="w-32 h-auto drop-shadow-md rounded-full border-4 border-white shadow-lg">
+                <div class="w-32 h-32 bg-white rounded-full border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
+                  <img src="media/geusje_bevosd.png" class="w-full h-full object-contain p-2">
+                </div>
               </div>
               
               <?php if (isset($_GET['error'])): ?>
