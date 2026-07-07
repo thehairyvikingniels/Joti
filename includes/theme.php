@@ -10,7 +10,7 @@ if (isset($_SESSION['theme'])) {
 }
 
 // Ensure theme is valid
-$valid_themes = ['light', 'dark', 'pink', 'cyber', 'nature', 'red-orange'];
+$valid_themes = ['light', 'dark', 'rose-gold', 'cyber', 'nature', 'coral'];
 if (!in_array($theme, $valid_themes)) {
     $theme = 'light';
 }
@@ -28,18 +28,18 @@ function getThemeConfig($theme) {
             $config['card_bg'] = '#1F2937';
             $config['card_border'] = '#374151';
             $config['primary'] = '#3B82F6';
-            $config['font'] = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            $config['font'] = "'Inter', sans-serif";
             break;
-        case 'pink':
-            $config['bg'] = '#FDF2F8';
-            $config['text'] = '#831843';
-            $config['sidebar_bg'] = '#FCE7F3';
-            $config['sidebar_text'] = '#9D174D';
-            $config['sidebar_active'] = '#FBCFE8';
+        case 'rose-gold':
+            $config['bg'] = '#FFF5F7';
+            $config['text'] = '#702459';
+            $config['sidebar_bg'] = '#FFE4E6';
+            $config['sidebar_text'] = '#831843';
+            $config['sidebar_active'] = '#FCC2D7';
             $config['card_bg'] = '#FFFFFF';
             $config['card_border'] = '#FBCFE8';
-            $config['primary'] = '#EC4899';
-            $config['font'] = "'Nunito', 'Segoe UI', Tahoma, sans-serif";
+            $config['primary'] = '#D53F8C';
+            $config['font'] = "'Quicksand', sans-serif";
             break;
         case 'cyber':
             $config['bg'] = '#000000';
@@ -50,7 +50,7 @@ function getThemeConfig($theme) {
             $config['card_bg'] = '#050505';
             $config['card_border'] = '#22C55E';
             $config['primary'] = '#4ADE80';
-            $config['font'] = "'Courier New', Courier, monospace";
+            $config['font'] = "'JetBrains Mono', monospace";
             break;
         case 'nature':
             $config['bg'] = '#F0FDF4';
@@ -61,9 +61,9 @@ function getThemeConfig($theme) {
             $config['card_bg'] = '#FFFFFF';
             $config['card_border'] = '#BBF7D0';
             $config['primary'] = '#16A34A';
-            $config['font'] = "'Georgia', serif";
+            $config['font'] = "'Merriweather', serif";
             break;
-        case 'red-orange':
+        case 'coral':
             $config['bg'] = '#FFF7ED';
             $config['text'] = '#7C2D12';
             $config['sidebar_bg'] = '#9A3412';
@@ -72,7 +72,7 @@ function getThemeConfig($theme) {
             $config['card_bg'] = '#FFFFFF';
             $config['card_border'] = '#FED7AA';
             $config['primary'] = '#EA580C';
-            $config['font'] = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            $config['font'] = "'Outfit', sans-serif";
             break;
         case 'light':
         default:
@@ -84,7 +84,7 @@ function getThemeConfig($theme) {
             $config['card_bg'] = '#FFFFFF';
             $config['card_border'] = '#E5E7EB';
             $config['primary'] = '#3B82F6';
-            $config['font'] = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+            $config['font'] = "'Inter', sans-serif";
             break;
     }
     return $config;
@@ -92,6 +92,11 @@ function getThemeConfig($theme) {
 
 $themeConfig = getThemeConfig($theme);
 ?>
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Merriweather:wght@400;700&family=Outfit:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
     :root {
         --theme-bg: <?php echo $themeConfig['bg']; ?>;
@@ -118,6 +123,11 @@ $themeConfig = getThemeConfig($theme);
     .theme-card {
         background-color: var(--theme-card-bg);
         border-color: var(--theme-card-border);
+        color: var(--theme-text);
+    }
+    .theme-card-header {
+        background-color: rgba(0,0,0,0.05);
+        border-bottom-color: var(--theme-card-border);
     }
     .theme-primary {
         color: var(--theme-primary);
@@ -130,6 +140,14 @@ $themeConfig = getThemeConfig($theme);
     }
     .hover-theme-border-primary:hover {
         border-color: var(--theme-primary);
+    }
+    
+    /* Utility for overriding Tailwind bg-white in dark mode */
+    .theme-override-bg {
+        background-color: var(--theme-card-bg) !important;
+    }
+    .theme-override-text {
+        color: var(--theme-text) !important;
     }
 </style>
 <script>

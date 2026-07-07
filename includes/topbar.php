@@ -73,56 +73,37 @@ foreach ($vossen_names as $vosnaam) {
 }
 ?>
 
-<header class="h-14 bg-white flex items-center justify-between px-6 sticky top-0 z-30 border-b border-gray-200 shadow-sm flex-shrink-0">
+<header class="h-14 theme-card flex items-center justify-between px-6 sticky top-0 z-30 border-b shadow-sm flex-shrink-0">
   <div class="flex items-center">
-    <button class="md:hidden text-gray-500 hover:text-gray-700 mr-4" onclick="w3_open()"><i class="fas fa-bars"></i></button>
-    <h2 class="text-lg font-semibold text-gray-800 hidden sm:block"><?= htmlspecialchars(ucfirst(PAGE_NAME)) ?></h2>
+    <button class="md:hidden opacity-60 hover:opacity-100 mr-4 transition" onclick="w3_open()"><i class="fas fa-bars"></i></button>
+    <h2 class="text-lg font-semibold hidden sm:block"><?= htmlspecialchars(ucfirst(PAGE_NAME)) ?></h2>
+    <span class="ml-4 text-sm font-medium opacity-60 hidden md:block border-l pl-4" style="border-color: var(--theme-card-border);"><?= htmlspecialchars($topbarGroupName) ?></span>
   </div>
 
   <div class="hidden md:flex items-center space-x-2 mx-4 flex-1 justify-center max-w-2xl">
     <?php
-      foreach ($vossen_names as $n) {
-        $tw_color = 'bg-gray-200 text-gray-700';
-        if ($vos[$n]['Kleur'] == 'red') $tw_color = 'bg-red-500 text-white';
-        elseif ($vos[$n]['Kleur'] == 'orange') $tw_color = 'bg-orange-500 text-white';
-        elseif ($vos[$n]['Kleur'] == 'green') $tw_color = 'bg-green-500 text-white';
-        
-        echo '<div class="px-2 py-1 rounded text-xs font-bold flex items-center shadow-sm '.$tw_color.'">';
-        echo '<span class="mr-1">'.htmlspecialchars(substr($n,0,1)).'</span><span>'.htmlspecialchars($vos[$n]["duratie"]).'</span>';
-        echo '</div>';
+      if (isset($vossen_names)) {
+          foreach ($vossen_names as $n) {
+            $tw_color = 'bg-gray-200 text-gray-700';
+            if ($vos[$n]['Kleur'] == 'red') $tw_color = 'bg-red-500 text-white';
+            elseif ($vos[$n]['Kleur'] == 'orange') $tw_color = 'bg-orange-500 text-white';
+            elseif ($vos[$n]['Kleur'] == 'green') $tw_color = 'bg-green-500 text-white';
+            
+            echo '<div class="px-2 py-1 rounded text-xs font-bold flex items-center shadow-sm '.$tw_color.'">';
+            echo '<span class="mr-1">'.htmlspecialchars(substr($n,0,1)).'</span><span>'.htmlspecialchars($vos[$n]["duratie"]).'</span>';
+            echo '</div>';
+          }
       }
     ?>
   </div>
 
   <div class="flex items-center space-x-4">
-    <select onchange="changeTheme(this.value)" class="text-xs bg-gray-50 border border-gray-200 rounded px-2 py-1 outline-none focus:border-blue-500 text-gray-600 hidden sm:block">
-      <option value="light" <?= $theme == 'light' ? 'selected' : '' ?>>Light</option>
-      <option value="dark" <?= $theme == 'dark' ? 'selected' : '' ?>>Dark</option>
-      <option value="pink" <?= $theme == 'pink' ? 'selected' : '' ?>>Pink</option>
-      <option value="cyber" <?= $theme == 'cyber' ? 'selected' : '' ?>>Cyber</option>
-      <option value="nature" <?= $theme == 'nature' ? 'selected' : '' ?>>Nature</option>
-      <option value="red-orange" <?= $theme == 'red-orange' ? 'selected' : '' ?>>Red-Orange</option>
-    </select>
-    
-    <button class="text-gray-400 hover:theme-primary transition-colors" onclick="GPSrefresh()"><i class="fas fa-crosshairs text-lg"></i></button>
-    <div class="flex items-center space-x-2 border-l pl-4 border-gray-200">
+    <button class="opacity-60 hover:theme-primary transition-colors" onclick="GPSrefresh()"><i class="fas fa-crosshairs text-lg"></i></button>
+    <div class="flex items-center space-x-2 border-l pl-4" style="border-color: var(--theme-card-border);">
       <div class="w-8 h-8 rounded theme-bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm">
          <?php echo strtoupper(substr($vn ?? 'U', 0, 1)); ?>
       </div>
-      <span class="text-sm font-medium text-gray-700 hidden sm:block"><?php echo htmlspecialchars(ucfirst($vn ?? 'User')); ?></span>
+      <span class="text-sm font-medium hidden sm:block"><?php echo htmlspecialchars(ucfirst($vn ?? 'User')); ?></span>
     </div>
   </div>
 </header>
-
-<script>
-function changeTheme(newTheme) {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-            location.reload();
-        }
-    };
-    xhttp.open("GET", "<?= $notInAdminfolder ?>functies.php?set_theme=" + newTheme, true);
-    xhttp.send();
-}
-</script>

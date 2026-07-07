@@ -46,147 +46,135 @@ $stmt->close();
 ?>
 
 <!DOCTYPE html>
-
-<html>
-
+<html lang="nl">
+<head>
 <title>Jotihunt - Instellingen</title>
-
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
-
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
-
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
-
-<style>
-
-html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
-
-</style>
-
-<body class="w3-light-grey">
-
-
-<!-- Topbar -->
-<?php include_once('includes/topbar.php') ?>
-
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<?php include_once('includes/theme.php'); ?>
+</head>
+<body class="flex h-screen overflow-hidden">
 
 <!-- Sidebar -->
 <?php include_once('includes/sidebar.php') ?>
 
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+  <!-- Topbar -->
+  <?php include_once('includes/topbar.php') ?>
 
-<!-- !PAGE CONTENT! -->
+  <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
+    <!-- Header -->
+    <header class="mb-6">
+      <h2 class="text-2xl font-bold"><i class="fas fa-cog opacity-70 mr-2"></i>Instellingen</h2>
+    </header>
 
-<div class="w3-main" style="margin-left:200px;margin-top:43px;">
-
-
-
-  <!-- Header -->
-
-  <header class="w3-container" style="padding-top:22px">
-
-    <h5><b><i class="fas fa-cog"></i> Instellingen</b></h5>
-
-  </header>
-
-  <div class="w3-row w3-margin">
-
-    <div class="w3-third w3-padding">
-
-      <div id="gegevens" class="w3-card w3-white w3-padding">
-
-        <?php if (isset($_GET['t'])){if($_GET['t'] == "gegevens"){
-
-        echo '<div class="w3-panel w3-blue w3-display-container">
-
-              <span onclick="this.parentElement.style.display=\'none\'" class="w3-button w3-large w3-display-topright">&times;</span>
-
-              <p>'.$_GET['e'].'</p>
-
-              </div>'; }} ?>
-
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      
+      <!-- Gegevens Wijzigen -->
+      <div class="theme-card rounded border shadow-sm p-5">
+        <?php if (isset($_GET['t']) && $_GET['t'] == "gegevens"): ?>
+          <div class="bg-blue-100 text-blue-800 p-3 rounded mb-4 flex justify-between items-start">
+            <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
+            <button onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
+          </div>
+        <?php endif; ?>
         <form method="POST" action="instellingen_helper.php">
-
-          <h3>Gegevens wijzigen</h3>
-
-          <h5>Gebruikersnaam:</h5>
-
-          <input name="username" type="text" value="<?php echo $username;?>" required minlength="5" maxlength="32" style="width:100%">
-
-          <h5>Voornaam:</h5>
-
-          <input name="firstname" type="text" value="<?php echo ucfirst($vn);?>" required style="width:100%">
-
-          <h5>Achternaam:</h5>
-
-          <input name="lastname" type="text" value="<?php echo ucfirst($an);?>" required style="width:100%">
-
-          <h5>Email:</h5>
-
-          <input name="email" type="email" value="<?php echo $email;?>" required style="width:100%"><br><br>
-
-          <center><button type="submit" class="w3-button w3-blue-gray">Verander</button></center>
-
+          <h3 class="text-lg font-bold mb-4">Gegevens wijzigen</h3>
+          
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-semibold mb-1 opacity-80">Gebruikersnaam</label>
+              <input name="username" type="text" value="<?= htmlspecialchars($username) ?>" required minlength="5" maxlength="32" class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1 opacity-80">Voornaam</label>
+              <input name="firstname" type="text" value="<?= htmlspecialchars(ucfirst($vn)) ?>" required class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1 opacity-80">Achternaam</label>
+              <input name="lastname" type="text" value="<?= htmlspecialchars(ucfirst($an)) ?>" required class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1 opacity-80">Email</label>
+              <input name="email" type="email" value="<?= htmlspecialchars($email) ?>" required class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+          </div>
+          
+          <div class="mt-5 text-center">
+            <button type="submit" class="theme-bg-primary text-white font-bold py-2 px-6 rounded hover:opacity-90 transition shadow-sm">Verander</button>
+          </div>
         </form>
-
       </div>
 
-    </div>
-
-    <div class="w3-third w3-padding">
-
-      <div id="wachtwoord" class="w3-card w3-white w3-padding">
-
-        <?php if (isset($_GET['t'])){if($_GET['t'] == "wachtwoord"){
-
-        echo '<div class="w3-panel w3-blue w3-display-container">
-
-              <span onclick="this.parentElement.style.display=\'none\'" class="w3-button w3-large w3-display-topright">&times;</span>
-
-              <p>'.$_GET['e'].'</p>
-
-              </div>'; }} ?>
-
+      <!-- Wachtwoord Wijzigen -->
+      <div class="theme-card rounded border shadow-sm p-5">
+        <?php if (isset($_GET['t']) && $_GET['t'] == "wachtwoord"): ?>
+          <div class="bg-blue-100 text-blue-800 p-3 rounded mb-4 flex justify-between items-start">
+            <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
+            <button onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
+          </div>
+        <?php endif; ?>
         <form method="POST" action="instellingen_helper.php">
-
-          <h3>Wachtwoord wijzigen</h3>
-
-          <h5>Wachtwoord:</h5>
-
-          <input name="pswd0" type="password" placeholder="Wachtwoord" required minlength="8" style="width:100%">
-
-          <h5>Herhaal Wachtwoord:</h5>
-
-          <input name="pswd1" type="password" placeholder="Wachtwoord" required minlength="8" style="width:100%"><br><br>
-
-          <center><button type="submit" class="w3-button w3-blue-gray">Verander</button></center>
-
+          <h3 class="text-lg font-bold mb-4">Wachtwoord wijzigen</h3>
+          
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-semibold mb-1 opacity-80">Wachtwoord</label>
+              <input name="pswd0" type="password" placeholder="Nieuw Wachtwoord" required minlength="8" class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1 opacity-80">Herhaal Wachtwoord</label>
+              <input name="pswd1" type="password" placeholder="Herhaal Wachtwoord" required minlength="8" class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+          </div>
+          
+          <div class="mt-5 text-center">
+            <button type="submit" class="theme-bg-primary text-white font-bold py-2 px-6 rounded hover:opacity-90 transition shadow-sm">Verander</button>
+          </div>
         </form>
+      </div>
 
+      <!-- Theme Switcher -->
+      <div class="theme-card rounded border shadow-sm p-5">
+        <h3 class="text-lg font-bold mb-4">Thema Voorkeur</h3>
+        <p class="text-sm opacity-80 mb-4">Kies je favoriete kleurenschema. Deze wordt opgeslagen in je profiel en geladen op alle apparaten.</p>
+        
+        <div class="space-y-3">
+          <select onchange="changeTheme(this.value)" class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm cursor-pointer">
+            <option value="light" <?= $theme == 'light' ? 'selected' : '' ?>>Light</option>
+            <option value="dark" <?= $theme == 'dark' ? 'selected' : '' ?>>Dark</option>
+            <option value="rose-gold" <?= $theme == 'rose-gold' ? 'selected' : '' ?>>Rose Gold</option>
+            <option value="cyber" <?= $theme == 'cyber' ? 'selected' : '' ?>>Cyber</option>
+            <option value="nature" <?= $theme == 'nature' ? 'selected' : '' ?>>Nature</option>
+            <option value="coral" <?= $theme == 'coral' ? 'selected' : '' ?>>Coral</option>
+          </select>
+        </div>
+        
+        <script>
+        function changeTheme(newTheme) {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    location.reload();
+                }
+            };
+            xhttp.open("GET", "<?= $notInAdminfolder ?>functies.php?set_theme=" + newTheme, true);
+            xhttp.send();
+        }
+        </script>
       </div>
 
     </div>
-
-    <div class="w3-third w3-padding">
-
-      </div>
-
-    </div>
-
-  </div>
+  </main>
 
   <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
-
-
-
-  <!-- End page content -->
-
 </div>
 
 <script>

@@ -243,8 +243,8 @@ if (isset($_GET['invulgegevens'])){
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
-        echo "<table class='w-full text-sm text-left text-gray-500'>";
-        echo "<thead class='text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-100'>";
+        echo "<table class='w-full text-sm text-left theme-text'>";
+        echo "<thead class='text-xs uppercase theme-card-header opacity-80'>";
         echo "<tr>";
         echo "  <th class='px-4 py-2'>Code</th>";
         echo "  <th class='px-4 py-2'>Type</th>";
@@ -252,7 +252,7 @@ if (isset($_GET['invulgegevens'])){
         echo "  <th class='px-4 py-2'></th>";
         echo "</tr></thead><tbody>";
         while($row = $result->fetch_assoc()) {
-            echo "<tr class='bg-white border-b border-gray-50 hover:bg-gray-50 theme-card theme-text'>";
+            echo "<tr class='border-b hover:opacity-80 transition-opacity' style='border-color: var(--theme-card-border);'>";
             echo "  <td class='px-4 py-2 font-medium'>".htmlspecialchars($row['code'])."</td>";
             echo "  <td class='px-4 py-2'>".htmlspecialchars($row['type'])."</td>";
             echo "  <td class='px-4 py-2'>".date("H:i",strtotime($row['ingestuurd_op']))."</td>";
@@ -310,9 +310,9 @@ if (isset($_GET['autos'])){
           
             if($minutes_since < 15){ // Show cars active in last 15 minutes
                 $cars_found = true;
-                echo '<div class="flex items-center justify-between p-3 border border-gray-100 rounded bg-white theme-card">';
+                echo '<div class="flex items-center justify-between p-3 border rounded theme-card" style="border-color: var(--theme-card-border);">';
                 echo '  <span class="font-semibold text-sm theme-text"><i class="fas fa-car-side opacity-70 mr-1"></i> '.htmlspecialchars($row['kenteken']).' <span class="text-xs font-normal opacity-70 ml-2">('.htmlspecialchars($row['bijrijders']).')</span></span>';
-                echo '  <span class="text-[10px] uppercase tracking-wider bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-sm font-bold">Actief <span class="font-normal lowercase">('.time2str($row['geotijd']).')</span></span>';
+                echo '  <span class="text-[10px] uppercase tracking-wider bg-green-500/10 text-green-600 border border-green-500/20 px-2 py-0.5 rounded-sm font-bold">Actief <span class="font-normal lowercase">('.time2str($row['geotijd']).')</span></span>';
                 echo '</div>';
             }
         }
@@ -381,7 +381,7 @@ if (isset($_GET['gebeurtenissen'])){
     $num = intval($_GET['gebeurtenissen']);
     $data = array_slice($data, 0, $num);
     
-    echo '<table class="w-full text-sm text-left text-gray-500" id="gebeurtenissentabel"><tbody>';
+    echo '<table class="w-full text-sm text-left theme-text" id="gebeurtenissentabel"><tbody>';
     
     // In tabel zetten
     foreach($data as $element){
@@ -404,10 +404,10 @@ if (isset($_GET['gebeurtenissen'])){
                 $url = "kaarten"; 
                 break; 
         }
-        echo '<tr class="bg-white border-b border-gray-50 hover:bg-gray-50 cursor-pointer theme-card" onclick="location.href=\''.$url.'\'">';
+        echo '<tr class="border-b hover:opacity-80 cursor-pointer transition-opacity" style="border-color: var(--theme-card-border);" onclick="location.href=\''.$url.'\'">';
         echo '<td class="px-5 py-4 w-12"><i class="'.$fa.'"></i></td>';
-        echo '<td class="px-5 py-4 font-medium theme-text">'.htmlspecialchars($element['type']).': '.htmlspecialchars($element['titel']).'</td>';
-        echo '<td class="px-5 py-4 text-right text-xs text-gray-400 whitespace-nowrap">'.time2str($element['datum']).'</td>';
+        echo '<td class="px-5 py-4 font-medium">'.htmlspecialchars($element['type']).': '.htmlspecialchars($element['titel']).'</td>';
+        echo '<td class="px-5 py-4 text-right text-xs opacity-60 whitespace-nowrap">'.time2str($element['datum']).'</td>';
         echo '</tr>';
     }
     echo "</tbody></table>";
