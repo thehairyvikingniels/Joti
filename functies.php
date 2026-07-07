@@ -24,7 +24,7 @@ if (isset($_GET['gpstoggle'])){
 // Theme Switcher
 if (isset($_GET['set_theme'])) {
     $newTheme = $_GET['set_theme'];
-    $valid_themes = ['light', 'dark', 'pink', 'cyber', 'nature', 'red-orange'];
+    $valid_themes = ['light', 'dark', 'rose-gold', 'cyber', 'nature', 'coral'];
     if (in_array($newTheme, $valid_themes)) {
         $_SESSION['theme'] = $newTheme;
         if (isset($_SESSION['id'])) {

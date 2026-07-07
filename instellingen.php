@@ -161,7 +161,7 @@ $stmt->close();
             var xhttp = new XMLHttpRequest();
             xhttp.onreadystatechange = function() {
                 if (this.readyState == 4 && this.status == 200) {
-                    location.reload();
+                    window.location.href = window.location.pathname + window.location.search;
                 }
             };
             xhttp.open("GET", "<?= $notInAdminfolder ?>functies.php?set_theme=" + newTheme, true);

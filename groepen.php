@@ -142,7 +142,7 @@ $stmt->close();
       echo "</ul>";
       echo "</div>";
     } else {
-        echo "<div class="theme-card rounded border p-6 text-center opacity-70">Geen groepen gevonden.</div>";
+        echo "<div class='theme-card rounded border p-6 text-center opacity-70'>Geen groepen gevonden.</div>";
     }
     $stmt->close();
     ?>

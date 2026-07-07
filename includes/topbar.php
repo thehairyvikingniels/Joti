@@ -55,7 +55,7 @@ foreach ($vossen_names as $vosnaam) {
                 } elseif ($diff < 86400) {
                     $vos[$vosnaam]["duratie"] = round($diff / 3600, 1) . " uur";
                 } else {
-                    $vos[$vosnaam]["duratie"] = "24 uur +";
+                    $vos[$vosnaam]["duratie"] = ">24u";
                 }
             }
         }
@@ -75,12 +75,12 @@ foreach ($vossen_names as $vosnaam) {
 
 <header class="h-14 theme-card flex items-center justify-between px-6 sticky top-0 z-30 border-b shadow-sm flex-shrink-0">
   <div class="flex items-center">
-    <button class="md:hidden opacity-60 hover:opacity-100 mr-4 transition" onclick="w3_open()"><i class="fas fa-bars"></i></button>
-    <h2 class="text-lg font-semibold hidden sm:block"><?= htmlspecialchars(ucfirst(PAGE_NAME)) ?></h2>
-    <span class="ml-4 text-sm font-medium opacity-60 hidden md:block border-l pl-4" style="border-color: var(--theme-card-border);"><?= htmlspecialchars($topbarGroupName) ?></span>
+    <button class="md:hidden opacity-60 hover:opacity-100 mr-3 transition" onclick="w3_open()"><i class="fas fa-bars"></i></button>
+    <h2 class="text-base sm:text-lg font-semibold whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px] sm:max-w-none"><?= htmlspecialchars(ucfirst(PAGE_NAME)) ?></h2>
+    <span class="ml-2 sm:ml-4 text-xs sm:text-sm font-medium opacity-60 border-l pl-2 sm:pl-4 whitespace-nowrap overflow-hidden text-ellipsis max-w-[100px] sm:max-w-none" style="border-color: var(--theme-card-border);"><?= htmlspecialchars($topbarGroupName) ?></span>
   </div>
 
-  <div class="hidden md:flex items-center space-x-2 mx-4 flex-1 justify-center max-w-2xl">
+  <div class="hidden md:flex items-center space-x-2 mx-4 flex-1 justify-center max-w-2xl overflow-x-auto whitespace-nowrap">
     <?php
       if (isset($vossen_names)) {
           foreach ($vossen_names as $n) {
@@ -89,7 +89,7 @@ foreach ($vossen_names as $vosnaam) {
             elseif ($vos[$n]['Kleur'] == 'orange') $tw_color = 'bg-orange-500 text-white';
             elseif ($vos[$n]['Kleur'] == 'green') $tw_color = 'bg-green-500 text-white';
             
-            echo '<div class="px-2 py-1 rounded text-xs font-bold flex items-center shadow-sm '.$tw_color.'">';
+            echo '<div class="px-2 py-1 rounded text-xs font-bold flex items-center shadow-sm '.$tw_color.' whitespace-nowrap">';
             echo '<span class="mr-1">'.htmlspecialchars(substr($n,0,1)).'</span><span>'.htmlspecialchars($vos[$n]["duratie"]).'</span>';
             echo '</div>';
           }
@@ -97,13 +97,17 @@ foreach ($vossen_names as $vosnaam) {
     ?>
   </div>
 
-  <div class="flex items-center space-x-4">
-    <button class="opacity-60 hover:theme-primary transition-colors" onclick="GPSrefresh()"><i class="fas fa-crosshairs text-lg"></i></button>
-    <div class="flex items-center space-x-2 border-l pl-4" style="border-color: var(--theme-card-border);">
-      <div class="w-8 h-8 rounded theme-bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm">
+  <div class="flex items-center space-x-3 sm:space-x-4">
+    <?php 
+    $gps_active = (isset($_SESSION['gps']) && $_SESSION['gps'] == "true");
+    $gps_color = $gps_active ? "text-green-500 opacity-100" : "opacity-60";
+    ?>
+    <button class="<?= $gps_color ?> hover:opacity-100 transition-colors" onclick="GPSrefresh()" title="Location sharing is <?= $gps_active ? 'ON' : 'OFF' ?>"><i class="fas fa-crosshairs text-lg"></i></button>
+    <a href="<?= $notInAdminfolder ?? '' ?>instellingen" class="flex items-center space-x-2 border-l pl-3 sm:pl-4 hover:opacity-80 transition" style="border-color: var(--theme-card-border);">
+      <div class="w-8 h-8 rounded theme-bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
          <?php echo strtoupper(substr($vn ?? 'U', 0, 1)); ?>
       </div>
       <span class="text-sm font-medium hidden sm:block"><?php echo htmlspecialchars(ucfirst($vn ?? 'User')); ?></span>
-    </div>
+    </a>
   </div>
 </header>
