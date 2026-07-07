@@ -92,7 +92,9 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
   </div>
   
   <div class="px-5 py-4 flex items-center space-x-3 border-b border-black/10">
-    <img src="<?= $notInAdminfolder.$siteSettings['GROUP_LOGO_SMALL_URL']?>" class="w-10 h-10 object-contain">
+    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 border shadow-sm" style="border-color: var(--theme-card-border);">
+      <img src="<?= $notInAdminfolder.$siteSettings['GROUP_LOGO_SMALL_URL']?>" class="w-full h-full object-contain p-1">
+    </div>
     <div>
         <p class="text-sm font-semibold">Welkom, <strong><?php echo ucfirst($vn); ?></strong></p>
         <?php

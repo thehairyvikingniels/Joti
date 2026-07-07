@@ -80,7 +80,7 @@ foreach ($vossen_names as $vosnaam) {
     <span class="ml-2 sm:ml-4 text-xs sm:text-sm font-medium opacity-60 border-l pl-2 sm:pl-4 whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px] sm:max-w-none" style="border-color: var(--theme-card-border);"><?= htmlspecialchars($topbarGroupName) ?></span>
   </div>
 
-  <div class="hidden lg:flex items-center space-x-2 mx-4 flex-1 justify-center max-w-2xl overflow-hidden whitespace-nowrap">
+  <div class="hidden xl:flex items-center space-x-2 mx-4 flex-1 justify-center max-w-2xl overflow-hidden whitespace-nowrap">
     <?php
       if (isset($vossen_names)) {
           foreach ($vossen_names as $n) {

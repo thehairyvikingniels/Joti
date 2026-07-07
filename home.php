@@ -173,8 +173,8 @@ $stmt->close();
 
 
       <!-- Panels -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div class="lg:col-span-1 space-y-6">
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+        <div class="xl:col-span-1 space-y-6">
           <div class="theme-card rounded border shadow-sm">
             <div class="px-5 py-3 border-b flex justify-between items-center rounded-t" style="border-color: var(--theme-card-border); background: rgba(0,0,0,0.02);">
               <h4 class="font-semibold text-sm">Invulgegevens</h4>
@@ -192,7 +192,7 @@ $stmt->close();
             </div>
           </div>
         </div>
-        <div class="lg:col-span-2">
+        <div class="xl:col-span-2">
           <div class="theme-card rounded border shadow-sm h-full flex flex-col">
             <div class="px-5 py-3 border-b flex justify-between items-center rounded-t" style="border-color: var(--theme-card-border); background: rgba(0,0,0,0.02);">
               <h4 class="font-semibold text-sm">Recente Gebeurtenissen</h4>

@@ -196,8 +196,8 @@ $stmt->close();
         </div>
       </div>
       
-      <div class="absolute bottom-0 w-full text-center p-2 text-white/50 text-xs">
-         &copy; <?= date("Y") ?> Jotihunt
+      <div class="absolute bottom-0 w-full">
+        <?php require_once('includes/footer.php') ?>
       </div>
   </body>
 </html>
