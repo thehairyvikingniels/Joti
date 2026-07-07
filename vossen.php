@@ -171,25 +171,27 @@ foreach ($fox_teams as $team) {
 
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="nl">
+<head>
 <title>Jotihunt - Vossen</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<?php include_once('includes/theme.php'); ?>
 <style>
-html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 .timeline-container {
     display: flex;
     width: 100%;
     height: 30px;
-    background-color: #f1f1f1;
+    background-color: var(--theme-card-bg);
     border-radius: 4px;
     overflow: hidden;
     position: relative;
-    border: 1px solid #ccc;
+    border: 1px solid var(--theme-card-border);
 }
 .timeline-segment {
     height: 100%;
@@ -204,18 +206,20 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 .timeline-segment .tooltiptext {
     visibility: hidden;
     width: 160px;
-    background-color: #555;
+    background-color: #334155;
     color: #fff;
     text-align: center;
     border-radius: 6px;
     padding: 5px 0;
     position: absolute;
-    z-index: 1;
+    z-index: 10;
     bottom: 125%;
     left: 50%;
     margin-left: -80px;
     opacity: 0;
     transition: opacity 0.3s;
+    font-size: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 .timeline-segment .tooltiptext::after {
     content: "";
@@ -225,7 +229,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: #555 transparent transparent transparent;
+    border-color: #334155 transparent transparent transparent;
 }
 .timeline-segment:hover .tooltiptext {
     visibility: visible;
@@ -236,14 +240,14 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     top: 0;
     bottom: 0;
     width: 3px;
-    background-color: #0000ff;
+    background-color: #3b82f6; /* Tailwind blue-500 */
     z-index: 1;
     /* Responsive position calculated using a CSS variable set in PHP */
-    /* Mobile-first: for s2/m2 columns (16.667%) */
+    /* Mobile-first: for 1/6 columns (16.667%) */
     left: calc(16.66667% + (83.33333% / 100 * var(--now-percentage)));
 }
-/* For large screens, override with l1 column width (8.333%) */
-@media (min-width: 993px) {
+/* For large screens, override with 1/12 column width (8.333%) */
+@media (min-width: 1024px) {
     .now-indicator {
         left: calc(8.33333% + (91.66667% / 100 * var(--now-percentage)));
     }
@@ -251,56 +255,74 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 .now-indicator .tooltiptext {
     visibility: hidden;
     width: 100px;
-    background-color: #555;
+    background-color: #334155;
     color: #fff;
     text-align: center;
     border-radius: 6px;
     padding: 5px;
     position: absolute;
-    z-index: 1;
+    z-index: 10;
     bottom: 100%;
     left: 50%;
     margin-left: -50px;
     margin-bottom: 5px;
     opacity: 0;
     transition: opacity 0.3s;
+    font-size: 0.75rem;
 }
 .now-indicator:hover .tooltiptext {
     visibility: visible;
     opacity: 1;
 }
-</style>
-<body class="w3-light-grey">
 
-<!-- Topbar -->
-<?php include_once('includes/topbar.php') ?>
+/* Custom Status Colors for Timeline */
+.status-red { background-color: #ef4444; }
+.status-orange { background-color: #f97316; }
+.status-green { background-color: #22c55e; }
+.status-future { background-color: #e2e8f0; opacity: 0.5; }
+</style>
+</head>
+<body class="flex h-screen overflow-hidden">
 
 <!-- Sidebar -->
 <?php include_once('includes/sidebar.php') ?>
 
-<!-- !PAGE CONTENT! -->
-<div class="w3-main" style="margin-left:200px;margin-top:43px;">
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+  <!-- Topbar -->
+  <?php include_once('includes/topbar.php') ?>
 
-  <!-- Header -->
-  <header class="w3-container" style="padding-top:22px">
-    <h5><b><i class="fas fa-bullseye"></i> Vossen</b></h5>
-  </header>
+  <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
+    <!-- Header -->
+    <header class="mb-6">
+      <h2 class="text-2xl font-bold"><i class="fas fa-bullseye opacity-70 mr-2"></i>Vossen</h2>
+    </header>
 
-  <div class="w3-container w3-padding">
-    <div class="w3-card-4 w3-white">
-        <div class="w3-container w3-blue-gray">
-            <h5>Vossen Status Tijdlijn</h5>
+    <div class="space-y-6">
+      
+      <!-- Timeline Card -->
+      <div class="theme-card rounded border shadow-sm overflow-hidden">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h5 class="text-lg font-bold">Vossen Status Tijdlijn</h5>
         </div>
-        <div class="w3-container w3-padding">
-            <div style="position: relative;"> <!-- Parent container for rows and the absolute indicator -->
-                <?php foreach ($fox_teams as $team): ?>
-                    <div class="w3-row" style="height: 46px; display: flex; align-items: center;">
+        <div class="p-4 md:p-6">
+            <div class="relative space-y-2"> <!-- Parent container for rows and the absolute indicator -->
+                <?php 
+                $status_tailwind_colors = [
+                    0 => 'status-red',
+                    1 => 'status-orange',
+                    2 => 'status-green'
+                ];
+                $future_tailwind_color = 'status-future';
+
+                foreach ($fox_teams as $team): ?>
+                    <div class="flex items-center h-10 w-full">
                         <!-- Column for Team Name -->
-                        <div class="w3-col s2 m2 l1 w3-right-align" style="padding-right: 8px;">
-                            <b><?php echo ucfirst($team); ?></b>
+                        <div class="w-1/6 lg:w-1/12 text-right pr-3 sm:pr-4">
+                            <b class="text-sm md:text-base"><?php echo ucfirst($team); ?></b>
                         </div>
                         <!-- Column for Timeline -->
-                        <div class="w3-col s10 m10 l11">
+                        <div class="w-5/6 lg:w-11/12">
                             <div class="timeline-container">
                                 <?php
                                 $last_time = clone $game_start_time;
@@ -320,7 +342,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                                     $duration_seconds = $segment_end_time->getTimestamp() - $last_time->getTimestamp();
                                     if ($duration_seconds > 0) {
                                         $width_percentage = ($duration_seconds / $total_duration_seconds) * 100;
-                                        $color = $status_colors[$last_status] ?? 'w3-grey';
+                                        $color = $status_tailwind_colors[$last_status] ?? 'bg-gray-400';
                                         $tooltip = 'Status: ' . $last_status . ' | Van: ' . $last_time->format('H:i') . ' tot ' . $segment_end_time->format('H:i');
                                         echo "<div class='timeline-segment $color' style='width: $width_percentage%;'><span class='tooltiptext'>$tooltip</span></div>";
                                     }
@@ -336,7 +358,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                                     if($future_start_time < $game_end_time) {
                                         $future_duration_seconds = $game_end_time->getTimestamp() - $future_start_time->getTimestamp();
                                         $width_percentage = ($future_duration_seconds / $total_duration_seconds) * 100;
-                                        echo "<div class='timeline-segment $future_color' style='width: $width_percentage%;'></div>";
+                                        echo "<div class='timeline-segment $future_tailwind_color' style='width: $width_percentage%;'></div>";
                                     }
                                 }
                                 ?>
@@ -350,118 +372,112 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 if ($now > $game_start_time && $now < $game_end_time) {
                     $now_offset_seconds = $now->getTimestamp() - $game_start_time->getTimestamp();
                     $left_percentage = ($now_offset_seconds / $total_duration_seconds) * 100;
-                    // Set a CSS variable for the percentage. The actual position is calculated in the <style> block using media queries.
                     echo "<div class='now-indicator' style='--now-percentage: {$left_percentage};'><span class='tooltiptext'>Nu: ".$now->format('H:i')."</span></div>";
                 }
                 ?>
             </div>
-             <div class="w3-container w3-padding w3-margin-top">
-                <span class="w3-tag w3-green w3-margin-left">Lopend</span>
-                <span class="w3-tag w3-orange  w3-margin-left">Kleine verplaatsing</span>
-                <span class="w3-tag w3-red w3-margin-left">Grote verplaatsing</span>
-                <span style="display: inline-block; width: 3px; height: 22.5px; background-color: blue; vertical-align: middle;" class="w3-margin-left"></span> Nu
+             <div class="mt-8 flex flex-wrap items-center gap-3 text-sm font-medium">
+                <span class="bg-green-500 text-white px-2 py-1 rounded shadow-sm">Lopend</span>
+                <span class="bg-orange-500 text-white px-2 py-1 rounded shadow-sm">Kleine verplaatsing</span>
+                <span class="bg-red-500 text-white px-2 py-1 rounded shadow-sm">Grote verplaatsing</span>
+                <div class="flex items-center gap-2 ml-4">
+                  <span class="inline-block w-1 h-6 bg-blue-500 shadow-sm rounded-full"></span> <span>Nu</span>
+                </div>
             </div>
         </div>
-    </div>
-  </div>
+      </div>
 
-  <div class="w3-container w3-padding">
-    <div class="w3-card-4 w3-white">
-        <div class="w3-container w3-blue-gray">
-            <h5>Vossen Statistieken</h5>
+      <!-- Statistics Card -->
+      <div class="theme-card rounded border shadow-sm overflow-hidden">
+        <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h5 class="text-lg font-bold">Vossen Statistieken</h5>
         </div>
-        <div class="w3-container w3-padding w3-responsive">
-            <table class="w3-table-all">
-                <thead>
-                    <tr class="w3-light-grey">
-                        <th>Vos</th>
-                        <th class="w3-center">Spelhelft</th>
-                        <th class="w3-center w3-green">Lopend</th>
-                        <th class="w3-center w3-orange">Kleine Verpl.</th>
-                        <th class="w3-center w3-red">Grote Verpl.</th>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead class="text-xs uppercase opacity-80" style="background-color: var(--theme-card-header);">
+                    <tr>
+                        <th class="px-4 py-3">Vos</th>
+                        <th class="px-4 py-3 text-center">Spelhelft</th>
+                        <th class="px-4 py-3 text-center text-green-600 dark:text-green-400">Lopend</th>
+                        <th class="px-4 py-3 text-center text-orange-600 dark:text-orange-400">Kleine Verpl.</th>
+                        <th class="px-4 py-3 text-center text-red-600 dark:text-red-400">Grote Verpl.</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="divide-y" style="border-color: var(--theme-card-border);">
                     <?php foreach ($fox_teams as $team): ?>
-                        <tr>
-                            <td rowspan="2" style="vertical-align: middle;"><b><?php echo ucfirst($team); ?></b></td>
-                            <td class="w3-center">Spelhelft 1</td>
-                            <td class="w3-center">
-                                <?php echo format_seconds($stats[$team]['spelhelft1'][2]); ?><br>
-                                <small>(<?php echo $stats[$team]['spelhelft1']['total'] > 0 ? round($stats[$team]['spelhelft1'][2] / $stats[$team]['spelhelft1']['total'] * 100, 1) : 0; ?>%)</small>
+                        <tr class="hover:bg-black/5 transition">
+                            <td rowspan="2" class="px-4 py-3 font-bold border-b align-middle border-r" style="border-color: var(--theme-card-border);"><?php echo ucfirst($team); ?></td>
+                            <td class="px-4 py-3 text-center border-b font-medium" style="border-color: var(--theme-card-border);">Spelhelft 1</td>
+                            <td class="px-4 py-3 text-center border-b" style="border-color: var(--theme-card-border);">
+                                <span class="font-semibold"><?php echo format_seconds($stats[$team]['spelhelft1'][2]); ?></span><br>
+                                <span class="text-xs opacity-70">(<?php echo $stats[$team]['spelhelft1']['total'] > 0 ? round($stats[$team]['spelhelft1'][2] / $stats[$team]['spelhelft1']['total'] * 100, 1) : 0; ?>%)</span>
                             </td>
-                            <td class="w3-center">
-                                <?php echo format_seconds($stats[$team]['spelhelft1'][1]); ?><br>
-                                <small>(<?php echo $stats[$team]['spelhelft1']['total'] > 0 ? round($stats[$team]['spelhelft1'][1] / $stats[$team]['spelhelft1']['total'] * 100, 1) : 0; ?>%)</small>
+                            <td class="px-4 py-3 text-center border-b" style="border-color: var(--theme-card-border);">
+                                <span class="font-semibold"><?php echo format_seconds($stats[$team]['spelhelft1'][1]); ?></span><br>
+                                <span class="text-xs opacity-70">(<?php echo $stats[$team]['spelhelft1']['total'] > 0 ? round($stats[$team]['spelhelft1'][1] / $stats[$team]['spelhelft1']['total'] * 100, 1) : 0; ?>%)</span>
                             </td>
-                            <td class="w3-center">
-                                <?php echo format_seconds($stats[$team]['spelhelft1'][0]); ?><br>
-                                <small>(<?php echo $stats[$team]['spelhelft1']['total'] > 0 ? round($stats[$team]['spelhelft1'][0] / $stats[$team]['spelhelft1']['total'] * 100, 1) : 0; ?>%)</small>
+                            <td class="px-4 py-3 text-center border-b" style="border-color: var(--theme-card-border);">
+                                <span class="font-semibold"><?php echo format_seconds($stats[$team]['spelhelft1'][0]); ?></span><br>
+                                <span class="text-xs opacity-70">(<?php echo $stats[$team]['spelhelft1']['total'] > 0 ? round($stats[$team]['spelhelft1'][0] / $stats[$team]['spelhelft1']['total'] * 100, 1) : 0; ?>%)</span>
                             </td>
                         </tr>
-                        <tr>
-                            <td class="w3-center">Spelhelft 2</td>
-                            <td class="w3-center">
-                                <?php echo format_seconds($stats[$team]['spelhelft2'][2]); ?><br>
-                                <small>(<?php echo $stats[$team]['spelhelft2']['total'] > 0 ? round($stats[$team]['spelhelft2'][2] / $stats[$team]['spelhelft2']['total'] * 100, 1) : 0; ?>%)</small>
+                        <tr class="hover:bg-black/5 transition">
+                            <td class="px-4 py-3 text-center font-medium">Spelhelft 2</td>
+                            <td class="px-4 py-3 text-center">
+                                <span class="font-semibold"><?php echo format_seconds($stats[$team]['spelhelft2'][2]); ?></span><br>
+                                <span class="text-xs opacity-70">(<?php echo $stats[$team]['spelhelft2']['total'] > 0 ? round($stats[$team]['spelhelft2'][2] / $stats[$team]['spelhelft2']['total'] * 100, 1) : 0; ?>%)</span>
                             </td>
-                            <td class="w3-center">
-                                <?php echo format_seconds($stats[$team]['spelhelft2'][1]); ?><br>
-                                <small>(<?php echo $stats[$team]['spelhelft2']['total'] > 0 ? round($stats[$team]['spelhelft2'][1] / $stats[$team]['spelhelft2']['total'] * 100, 1) : 0; ?>%)</small>
+                            <td class="px-4 py-3 text-center">
+                                <span class="font-semibold"><?php echo format_seconds($stats[$team]['spelhelft2'][1]); ?></span><br>
+                                <span class="text-xs opacity-70">(<?php echo $stats[$team]['spelhelft2']['total'] > 0 ? round($stats[$team]['spelhelft2'][1] / $stats[$team]['spelhelft2']['total'] * 100, 1) : 0; ?>%)</span>
                             </td>
-                            <td class="w3-center">
-                                <?php echo format_seconds($stats[$team]['spelhelft2'][0]); ?><br>
-                                <small>(<?php echo $stats[$team]['spelhelft2']['total'] > 0 ? round($stats[$team]['spelhelft2'][0] / $stats[$team]['spelhelft2']['total'] * 100, 1) : 0; ?>%)</small>
+                            <td class="px-4 py-3 text-center">
+                                <span class="font-semibold"><?php echo format_seconds($stats[$team]['spelhelft2'][0]); ?></span><br>
+                                <span class="text-xs opacity-70">(<?php echo $stats[$team]['spelhelft2']['total'] > 0 ? round($stats[$team]['spelhelft2'][0] / $stats[$team]['spelhelft2']['total'] * 100, 1) : 0; ?>%)</span>
                             </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
+      </div>
     </div>
-  </div>
+  </main>
 
   <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
+</div>
 
-  <!-- End page content -->
-  </div>
-
-  <script>
-
+<script>
 if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
   setInterval(function() {
     GPSrefresh();
   }, 5555);
 }
  
- function GPSrefresh() {
+function GPSrefresh() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(showPosition);
     } else {
         console.log("Geolocation is not supported by this browser.");
     }
     function showPosition(position) {
-     console.log("Latitude: " + position.coords.latitude + 
-      "<br>Longitude: " . position.coords.longitude);
+      console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
       
       var xmlhttp;
       if (window.XMLHttpRequest) {
-            // code for IE7+, Firefox, Chrome, Opera, Safari
             xmlhttp = new XMLHttpRequest();
-        } else {
-            // code for IE6, IE5
+      } else {
             xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-        xmlhttp.onreadystatechange = function() {
+      }
+      xmlhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
-                // optional: handle response
             }
-        };
-        xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-        xmlhttp.send();
+      };
+      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
+      xmlhttp.send();
     }
- } 
+} 
 </script>
 </body>
 </html>

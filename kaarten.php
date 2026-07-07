@@ -46,20 +46,22 @@ $stmt->close();
 
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="nl">
+<head>
 <title>Jotihunt - Kaarten</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<?php include_once('includes/theme.php'); ?>
 <style>
-html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
-
 .map-view-wrapper {
     position: relative;
-    height: calc(100vh - 43px); /* Full viewport height minus topbar */
+    height: calc(100vh - 64px); /* Full viewport height minus topbar */
+    width: 100%;
 }
 #iframe01 {
     width: 100%;
@@ -81,55 +83,37 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     z-index: 10;
     display: flex;
     flex-direction: column;
-}
-
-.menu-trigger {
-    background-color: rgba(255, 255, 255, 0.9);
-    border-radius: 8px;
-    margin-bottom: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    gap: 8px;
 }
 
 .floating-panel {
     position: absolute;
     top: 10px;
-    left: 70px; /* Position next to the trigger icons */
+    left: 70px;
     z-index: 9;
-    width: 300px;
+    width: 320px;
     max-height: calc(100% - 20px);
     overflow-y: auto;
-    background-color: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(5px);
-    display: none; /* Hidden by default */
-    border-radius: 8px;
+    display: none;
 }
 
 /* Modern Toggle Switch Styles */
-.switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
 .switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
-.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-input:checked + .slider { background-color: #2196F3; }
-input:focus + .slider { box-shadow: 0 0 1px #2196F3; }
-input:checked + .slider:before { transform: translateX(26px); }
-.control-label { cursor: pointer; flex-grow: 1; }
-input:disabled + .slider { background-color: #ddd; cursor: not-allowed; }
-.w3-ul li { cursor: pointer; }
-.w3-check-label { cursor: pointer; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+input:checked + .slider { background-color: #3b82f6; }
+input:focus + .slider { box-shadow: 0 0 1px #3b82f6; }
+input:checked + .slider:before { transform: translateX(20px); }
+.control-label { cursor: pointer; flex-grow: 1; font-size: 0.9rem; font-weight: 500; }
+input:disabled + .slider { background-color: #e2e8f0; cursor: not-allowed; }
 
 /* Mobile adjustments */
 @media (max-width: 992px) {
-    .w3-main {
-        margin-left: 0 !important;
-    }
     .menu-trigger-bar {
         flex-direction: row;
         left: 50%;
         transform: translateX(-50%);
-    }
-    .menu-trigger {
-        margin-bottom: 0;
-        margin-right: 8px;
     }
     .floating-panel {
         top: 60px;
@@ -139,69 +123,107 @@ input:disabled + .slider { background-color: #ddd; cursor: not-allowed; }
     }
 }
 </style>
-<body class="w3-light-grey">
-
-<!-- Topbar -->
-<?php include_once('includes/topbar.php') ?>
+</head>
+<body class="flex h-screen overflow-hidden">
 
 <!-- Sidebar -->
 <?php include_once('includes/sidebar.php') ?>
 
-<!-- !PAGE CONTENT! -->
-<div class="w3-main" style="margin-left:200px;margin-top:43px;">
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-screen overflow-hidden w-full relative">
+  <!-- Topbar -->
+  <?php include_once('includes/topbar.php') ?>
 
-  <div class="map-view-wrapper">
+  <div class="map-view-wrapper flex-1">
     <iframe id="iframe01" src=""></iframe>
     
     <div class="menu-trigger-bar">
         <!-- Layers Menu Trigger -->
-        <button class="w3-button w3-round-large menu-trigger" onclick="togglePanel('layers-panel')"><i class="fa fa-layer-group"></i></button>
+        <button class="bg-white/90 backdrop-blur text-gray-800 hover:text-blue-600 p-3 rounded shadow-md transition" onclick="togglePanel('layers-panel')"><i class="fa fa-layer-group text-xl"></i></button>
         <!-- Filters Menu Trigger -->
-        <button class="w3-button w3-round-large menu-trigger" onclick="togglePanel('filters-panel')"><i class="fa fa-filter"></i></button>
+        <button class="bg-white/90 backdrop-blur text-gray-800 hover:text-blue-600 p-3 rounded shadow-md transition" onclick="togglePanel('filters-panel')"><i class="fa fa-filter text-xl"></i></button>
     </div>
 
     <!-- Layers Panel -->
-    <div id="layers-panel" class="w3-card-4 floating-panel">
-        <header class="w3-container w3-blue">
-            <h4 class="w3-display-container">Kaart Lagen <span onclick="togglePanel('layers-panel')" class="w3-button w3-display-right">&times;</span></h4>
+    <div id="layers-panel" class="theme-card rounded border shadow-lg floating-panel overflow-hidden">
+        <header class="px-4 py-3 flex justify-between items-center text-white" style="background-color: var(--theme-sidebar-active);">
+            <h4 class="font-bold">Kaart Lagen</h4>
+            <button onclick="togglePanel('layers-panel')" class="text-white hover:opacity-80 transition text-xl leading-none">&times;</button>
         </header>
-        <div class="w3-container w3-padding">
-            <h5>Algemeen</h5>
-            <ul class="w3-ul w3-border-0">
-                <li class="w3-padding-small" onclick="toggleCheckbox('groepen');"><div class="w3-cell-row"><div class="w3-cell w3-cell-middle control-label">Groepen</div><div class="w3-cell w3-cell-middle w3-right-align"><label class="switch"><input type="checkbox" id="groepen" onchange="kaartveranderen()"><span class="slider"></span></label></div></div></li>
-                <li class="w3-padding-small" onclick="toggleCheckbox('personen');"><div class="w3-cell-row"><div class="w3-cell w3-cell-middle control-label">Personen</div><div class="w3-cell w3-cell-middle w3-right-align"><label class="switch"><input type="checkbox" id="personen" onchange="kaartveranderen()"><span class="slider"></span></label></div></div></li>
-                <li class="w3-padding-small" onclick="toggleCheckbox('autos');"><div class="w3-cell-row"><div class="w3-cell w3-cell-middle control-label">Auto's</div><div class="w3-cell w3-cell-middle w3-right-align"><label class="switch"><input type="checkbox" id="autos" onchange="kaartveranderen()"><span class="slider"></span></label></div></div></li>
+        <div class="p-4">
+            <h5 class="text-sm font-bold uppercase tracking-wider opacity-60 mb-3">Algemeen</h5>
+            <ul class="space-y-3 mb-6">
+                <li class="flex justify-between items-center cursor-pointer hover:bg-black/5 p-2 rounded -mx-2 transition" onclick="toggleCheckbox('groepen');">
+                  <span class="control-label">Groepen</span>
+                  <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" id="groepen" onchange="kaartveranderen()"><span class="slider"></span></label>
+                </li>
+                <li class="flex justify-between items-center cursor-pointer hover:bg-black/5 p-2 rounded -mx-2 transition" onclick="toggleCheckbox('personen');">
+                  <span class="control-label">Personen</span>
+                  <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" id="personen" onchange="kaartveranderen()"><span class="slider"></span></label>
+                </li>
+                <li class="flex justify-between items-center cursor-pointer hover:bg-black/5 p-2 rounded -mx-2 transition" onclick="toggleCheckbox('autos');">
+                  <span class="control-label">Auto's</span>
+                  <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" id="autos" onchange="kaartveranderen()"><span class="slider"></span></label>
+                </li>
             </ul>
-            <h5 class="w3-margin-top">Vossen</h5>
-            <ul class="w3-ul w3-border-0">
-                <li class="w3-padding-small" onclick="toggleCheckbox('hints');"><div class="w3-cell-row"><div class="w3-cell w3-cell-middle control-label">Vossen (locaties)</div><div class="w3-cell w3-cell-middle w3-right-align"><label class="switch"><input type="checkbox" id="hints" onchange="kaartveranderen()" checked><span class="slider"></span></label></div></div></li>
-                <li class="w3-padding-small" onclick="toggleCheckbox('vossenpad');"><div class="w3-cell-row"><div class="w3-cell w3-cell-middle control-label">Vossenpad</div><div class="w3-cell w3-cell-middle w3-right-align"><label class="switch"><input type="checkbox" id="vossenpad" onchange="kaartveranderen()"><span class="slider"></span></label></div></div></li>
-                <li class="w3-padding-small" onclick="toggleCheckbox('predicted_route');"><div class="w3-cell-row"><div class="w3-cell w3-cell-middle control-label">Voorspelde Route</div><div class="w3-cell w3-cell-middle w3-right-align"><label class="switch"><input type="checkbox" id="predicted_route" onchange="kaartveranderen()"><span class="slider"></span></label></div></div></li>
-                <li class="w3-padding-small" <?php if (!$hasVoslocaties) echo 'style="cursor:not-allowed;color:#aaa;"'; ?> onclick="toggleCheckbox('zoekcirkel');"><div class="w3-cell-row"><div class="w3-cell w3-cell-middle control-label">Zoekcirkel</div><div class="w3-cell w3-cell-middle w3-right-align"><label class="switch"><input type="checkbox" id="zoekcirkel" onchange="kaartveranderen()" <?php if (!$hasVoslocaties) echo 'disabled'; ?>><span class="slider"></span></label></div></div></li>
+            
+            <h5 class="text-sm font-bold uppercase tracking-wider opacity-60 mb-3">Vossen</h5>
+            <ul class="space-y-3">
+                <li class="flex justify-between items-center cursor-pointer hover:bg-black/5 p-2 rounded -mx-2 transition" onclick="toggleCheckbox('hints');">
+                  <span class="control-label">Vossen (locaties)</span>
+                  <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" id="hints" onchange="kaartveranderen()" checked><span class="slider"></span></label>
+                </li>
+                <li class="flex justify-between items-center cursor-pointer hover:bg-black/5 p-2 rounded -mx-2 transition" onclick="toggleCheckbox('vossenpad');">
+                  <span class="control-label">Vossenpad</span>
+                  <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" id="vossenpad" onchange="kaartveranderen()"><span class="slider"></span></label>
+                </li>
+                <li class="flex justify-between items-center cursor-pointer hover:bg-black/5 p-2 rounded -mx-2 transition" onclick="toggleCheckbox('predicted_route');">
+                  <span class="control-label">Voorspelde Route</span>
+                  <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" id="predicted_route" onchange="kaartveranderen()"><span class="slider"></span></label>
+                </li>
+                <li class="flex justify-between items-center cursor-pointer hover:bg-black/5 p-2 rounded -mx-2 transition" <?php if (!$hasVoslocaties) echo 'style="cursor:not-allowed;opacity:0.5;"'; ?> onclick="toggleCheckbox('zoekcirkel');">
+                  <span class="control-label">Zoekcirkel</span>
+                  <label class="switch" onclick="event.stopPropagation()"><input type="checkbox" id="zoekcirkel" onchange="kaartveranderen()" <?php if (!$hasVoslocaties) echo 'disabled'; ?>><span class="slider"></span></label>
+                </li>
             </ul>
         </div>
     </div>
     
     <!-- Filters Panel -->
-    <div id="filters-panel" class="w3-card-4 floating-panel">
-        <header class="w3-container w3-blue-grey">
-            <h4 class="w3-display-container">Filters <span onclick="togglePanel('filters-panel')" class="w3-button w3-display-right">&times;</span></h4>
+    <div id="filters-panel" class="theme-card rounded border shadow-lg floating-panel overflow-hidden">
+        <header class="px-4 py-3 flex justify-between items-center bg-gray-600 text-white">
+            <h4 class="font-bold">Filters</h4>
+            <button onclick="togglePanel('filters-panel')" class="text-white hover:opacity-80 transition text-xl leading-none">&times;</button>
         </header>
-        <div class="w3-container w3-padding">
-            <h5>Spelhelft</h5>
-            <p><input class="w3-check" type="checkbox" id="helft1" onchange="kaartveranderen()" checked><label for="helft1" class="w3-check-label"> Eerste helft</label></p>
-            <p><input class="w3-check" type="checkbox" id="helft2" onchange="kaartveranderen()" checked><label for="helft2" class="w3-check-label"> Tweede helft</label></p>
-            <h5 class="w3-margin-top">Deelgebieden</h5>
+        <div class="p-4">
+            <h5 class="text-sm font-bold uppercase tracking-wider opacity-60 mb-3">Spelhelft</h5>
+            <div class="space-y-2 mb-6">
+              <label class="flex items-center space-x-3 cursor-pointer">
+                <input type="checkbox" id="helft1" onchange="kaartveranderen()" checked class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                <span class="font-medium text-sm">Eerste helft</span>
+              </label>
+              <label class="flex items-center space-x-3 cursor-pointer">
+                <input type="checkbox" id="helft2" onchange="kaartveranderen()" checked class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                <span class="font-medium text-sm">Tweede helft</span>
+              </label>
+            </div>
+
+            <h5 class="text-sm font-bold uppercase tracking-wider opacity-60 mb-3">Deelgebieden</h5>
+            <div class="space-y-2">
             <?php
               $teams = array("Alpha","Bravo","Charlie","Delta","Echo","Foxtrot", "Golf", "Hotel");
               foreach($teams as $team) {
-                  echo "<p><input class='w3-check team-filter' type='checkbox' id='".strtolower($team)."' onchange='kaartveranderen()' checked><label for='".strtolower($team)."' class='w3-check-label'> ".ucfirst($team)."</label></p>";
+                  echo '<label class="flex items-center space-x-3 cursor-pointer">';
+                  echo '<input type="checkbox" id="'.strtolower($team).'" onchange="kaartveranderen()" checked class="w-4 h-4 team-filter rounded text-blue-600 focus:ring-blue-500">';
+                  echo '<span class="font-medium text-sm">'.ucfirst($team).'</span>';
+                  echo '</label>';
               }
             ?>
+            </div>
         </div>
     </div>
 
-    <button id="fullscreen-button" class="w3-button w3-white w3-card-4 w3-round-large" onclick="toggleFullScreen()"><i id="fullscreen-icon" class="fa fa-expand"></i></button>
+    <button id="fullscreen-button" class="bg-white/90 backdrop-blur text-gray-800 hover:text-blue-600 w-10 h-10 flex items-center justify-center rounded shadow-md transition" onclick="toggleFullScreen()"><i id="fullscreen-icon" class="fa fa-expand"></i></button>
   </div>
 
 </div>
@@ -212,7 +234,6 @@ let lastKnownMapState = savedMapSettings && savedMapSettings.mapState ? savedMap
 let mapSaveTimeout;
 
 window.addEventListener("message", (event) => {
-    // A security check for the origin of the message would be a good practice
     if (event.data && event.data.type === 'mapUpdate') {
         lastKnownMapState = event.data.state;
         clearTimeout(mapSaveTimeout);

@@ -191,304 +191,286 @@ $stmt_users->close();
 ?>
 
 <!DOCTYPE html>
-<html>
-<title>Jotihunt - De Geuzen</title>
+<html lang="nl">
+<head>
+<title>Jotihunt - Gebruikers Beheer</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<link rel="shortcut icon" type="image/png" href="../media/geusje.png"/>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
-<style>
-html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
-.admin-user-table-wrapper {
-  overflow-x: auto;
-  width: 100%;
-}
-.admin-user-table {
-  width: 100%;
-  table-layout: fixed;
-  min-width: 900px;
-}
-.admin-user-table th,
-.admin-user-table td {
-  white-space: nowrap;
-}
-.admin-user-table td select {
-  width: 100%;
-  min-width: 140px;
-}
-.admin-user-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  align-items: center;
-  justify-content: flex-end;
-}
-.admin-user-actions form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  align-items: center;
-  justify-content: flex-end;
-  width: 100%;
-}
-.admin-user-actions select {
-  flex: 1 1 220px;
-  min-width: 180px;
-  max-width: 320px;
-}
-.admin-user-actions button {
-  min-width: 38px;
-}
-.admin-role-select-mobile {
-  width: 100%;
-  max-width: 100%;
-}
-.admin-action-cell {
-  white-space: normal;
-}
-@media screen and (max-width: 992px) {
-  .admin-user-table {
-    min-width: 0;
-    table-layout: auto;
-  }
-  .admin-user-table td,
-  .admin-user-table th {
-    white-space: normal;
-  }
-  .admin-user-actions {
-    justify-content: flex-start;
-    gap: 0.5rem;
-  }
-  .admin-user-actions select {
-    min-width: 160px;
-    flex: 1 1 100%;
-  }
-  .admin-user-actions button {
-    min-width: 42px;
-  }
-}
-</style>
-<body class="w3-light-grey">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<?php include_once('../includes/theme.php'); ?>
+</head>
+<body class="flex h-screen overflow-hidden">
 
-<?php include_once('../includes/topbar.php') ?>
-
+<!-- Sidebar -->
 <?php include_once('../includes/sidebar.php') ?>
 
-<div class="w3-main" style="margin-left:200px;margin-top:43px;">
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+  <!-- Topbar -->
+  <?php include_once('../includes/topbar.php') ?>
 
-  <header class="w3-container" style="padding-top:22px">
-    <h5><b><i class="fas fa-cogs"></i> Admin</b></h5>
-  </header>
-  
-  <div class="w3-row" style="margin-bottom:100px;">
-    <div class="w3-col l12 m12 s12 w3-padding">
-      <div class="w3-card-4 w3-white">
-        <div class="w3-blue-gray w3-padding" style="width:100%">
-          <h5>Gebruikers</h5>
+  <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
+    <!-- Header -->
+    <header class="mb-6">
+      <h2 class="text-2xl font-bold"><i class="fas fa-cogs opacity-70 mr-2"></i>Admin</h2>
+    </header>
+
+    <div class="space-y-6 mb-24">
+      
+      <!-- Users Table Card -->
+      <div class="theme-card rounded border shadow-sm overflow-hidden w-full">
+        <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold">Gebruikers</h3>
         </div>
-        <div class="">
+        <div class="p-0">
           <?php if (isset($succes)){
             echo "
-            <div class='w3-green w3-card w3-padding w3-margin w3-display-container'>
-              <span onclick=\"this.parentElement.style.display='none'\" class=\"w3-button w3-display-topright\">X</span>
-              Succes!
+            <div class='bg-green-100 border border-green-400 text-green-700 px-4 py-3 m-4 rounded relative shadow-sm'>
+              <span onclick=\"this.parentElement.style.display='none'\" class=\"absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer\">
+                <i class=\"fas fa-times opacity-70 hover:opacity-100 transition\"></i>
+              </span>
+              <p class='font-bold'>Succes!</p>
             </div>
             ";
           } elseif (isset($error_msg)) {
             echo "
-            <div class='w3-red w3-card w3-padding w3-margin w3-display-container'>
-              <span onclick=\"this.parentElement.style.display='none'\" class=\"w3-button w3-display-topright\">X</span>
-              ".htmlspecialchars($error_msg)."
+            <div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 m-4 rounded relative shadow-sm'>
+              <span onclick=\"this.parentElement.style.display='none'\" class=\"absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer\">
+                <i class=\"fas fa-times opacity-70 hover:opacity-100 transition\"></i>
+              </span>
+              <p>".htmlspecialchars($error_msg)."</p>
             </div>
             ";
           }
           ?>
           
-          <div style="overflow-x:auto; width:100%;">
-            <table class="w3-table-all w3-hide-small w3-hide-medium" style="width:100%; table-layout: fixed; min-width:900px;">
-              <tr>
-                <th style="width:5%; white-space: nowrap;">ID</th>
-                <th style="width:20%;">Naam</th>
-                <th style="width:22%;">Email</th>
-                <th style="width:16%; white-space: nowrap;">Laatste login</th>
-                <th style="width:16%; white-space: nowrap;">Eerste login</th>
-                <th style="width:21%; white-space: nowrap;">Acties</th>
-              </tr>
-            <?php
-            // Genereer de desktop tabel vanuit de vooraf geladen array
-            foreach($users_data as $row) {
-                $priv0 = ($row['priv'] == 0) ? "selected" : "";
-                $priv1 = ($row['priv'] == 1) ? "selected" : "";
-                $priv2 = ($row['priv'] == 2) ? "selected" : "";
-                $priv3 = ($row['priv'] == 3) ? "selected" : "";
-                
-                echo "<tr>";
-                echo "  <td>".htmlspecialchars($row["id"])."</td>";
-                echo "  <td>".htmlspecialchars($row["voornaam"])."<br>".htmlspecialchars($row["achternaam"])."</td>";
-                echo "  <td>".htmlspecialchars($row["email"])."</td>";
-                echo "  <td>".htmlspecialchars(time2str($row['last_login']))."</td>";
-                echo "  <td>".htmlspecialchars(time2str($row['first_login']))."</td>";
-                $can_impersonate = false;
-                if ($_SESSION['priv'] >= 3 && $row['priv'] <= 2) $can_impersonate = true;
-                if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
-                echo '    <td class="admin-user-actions">';
-                echo '      <form id="priv_form_desk_'.$row['id'].'" method="POST" style="display:flex; flex-wrap:nowrap; gap:0.25rem; align-items:center; justify-content:flex-end;">';
-                echo '        <input type="hidden" value="'.htmlspecialchars($row['id']).'" name="user">';
-                echo '        <select class="w3-select" name="priv" style="flex:0 1 auto; min-width:100px;">';
-                echo '          <option value="0" '.$priv0.'>Gast</option>';
-                echo '          <option value="1" '.$priv1.'>Vossenjager</option>';
-                echo '          <option value="2" '.$priv2.'>Admin</option>';
-                echo '          <option value="3" '.$priv3.'>Superadmin</option>';
-                echo '          <option value="4" class="w3-red">Verwijder</option>';
-                echo '        </select>';
-                echo '        <button class="w3-button w3-blue-gray" type="button" onclick="document.getElementById(\'priv_modal_desk_'.$row['id'].'\').style.display=\'block\'" style="flex:0 0 auto; padding:4px 8px;"><i class="fas fa-check"></i></button>';
-                if ($can_impersonate) {
-                    echo '        <button type="button" onclick="document.getElementById(\'imp_modal_'.$row['id'].'\').style.display=\'block\'" class="w3-button w3-dark-gray" style="flex:0 0 auto; padding:4px 8px;"><i class="fas fa-user-secret"></i></button>';
-                    echo '        <button type="button" onclick="document.getElementById(\'reset_modal_'.$row['id'].'\').style.display=\'block\'" class="w3-button w3-orange w3-text-white" style="flex:0 0 auto; padding:4px 8px;"><i class="fas fa-key"></i></button>';
-                } else {
-                    echo '        <button type="button" class="w3-button w3-grey w3-disabled" disabled style="flex:0 0 auto; padding:4px 8px;"><i class="fas fa-user-secret"></i></button>';
-                    echo '        <button type="button" class="w3-button w3-grey w3-disabled" disabled style="flex:0 0 auto; padding:4px 8px;"><i class="fas fa-key"></i></button>';
-                }
-                echo '      </form>';
-                echo '    </td>';
-                echo "
-                <div id='priv_modal_desk_".$row['id']."' class='w3-modal'>
-                  <div class='w3-modal-content w3-card-4' style='max-width:500px'>
-                    <header class='w3-container w3-blue-gray'> 
-                      <span onclick=\"document.getElementById('priv_modal_desk_".$row['id']."').style.display='none'\" class='w3-button w3-display-topright'>&times;</span>
-                      <h2>Bevestiging</h2>
-                    </header>
-                    <div class='w3-container w3-padding-16'>
-                      <p>Weet je zeker dat je de rol/rechten van ".htmlspecialchars($row['voornaam'])." wilt wijzigen?</p>
-                      <button type='submit' form='priv_form_desk_".$row['id']."' class='w3-button w3-green'>Ja, wijzig</button>
-                      <button type='button' onclick=\"document.getElementById('priv_modal_desk_".$row['id']."').style.display='none'\" class='w3-button w3-red w3-right'>Annuleer</button>
+          <!-- Desktop Table -->
+          <div class="hidden md:block overflow-x-auto">
+            <table class="w-full text-sm text-left whitespace-nowrap">
+              <thead class="text-xs uppercase bg-black/5 border-b" style="border-color: var(--theme-card-border);">
+                <tr>
+                  <th class="px-6 py-3 font-bold">ID</th>
+                  <th class="px-6 py-3 font-bold">Naam</th>
+                  <th class="px-6 py-3 font-bold">Email</th>
+                  <th class="px-6 py-3 font-bold">Laatste login</th>
+                  <th class="px-6 py-3 font-bold">Eerste login</th>
+                  <th class="px-6 py-3 font-bold text-right">Acties</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y" style="border-color: var(--theme-card-border);">
+              <?php
+              foreach($users_data as $row) {
+                  $priv0 = ($row['priv'] == 0) ? "selected" : "";
+                  $priv1 = ($row['priv'] == 1) ? "selected" : "";
+                  $priv2 = ($row['priv'] == 2) ? "selected" : "";
+                  $priv3 = ($row['priv'] == 3) ? "selected" : "";
+                  
+                  $can_impersonate = false;
+                  if ($_SESSION['priv'] >= 3 && $row['priv'] <= 2) $can_impersonate = true;
+                  if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
+
+                  echo "<tr class='hover:bg-black/5 transition'>";
+                  echo "  <td class='px-6 py-4 font-bold opacity-70'>".htmlspecialchars($row["id"])."</td>";
+                  echo "  <td class='px-6 py-4 font-medium'>".htmlspecialchars($row["voornaam"])."<br><span class='opacity-70 text-xs'>".htmlspecialchars($row["achternaam"])."</span></td>";
+                  echo "  <td class='px-6 py-4 opacity-80'>".htmlspecialchars($row["email"])."</td>";
+                  echo "  <td class='px-6 py-4 opacity-80'>".htmlspecialchars(time2str($row['last_login']))."</td>";
+                  echo "  <td class='px-6 py-4 opacity-80'>".htmlspecialchars(time2str($row['first_login']))."</td>";
+                  
+                  echo "  <td class='px-6 py-4 text-right'>";
+                  echo "    <form id='priv_form_desk_".$row['id']."' method='POST' class='flex items-center justify-end gap-2'>";
+                  echo "      <input type='hidden' value='".htmlspecialchars($row['id'])."' name='user'>";
+                  echo "      <select class='border rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white text-gray-800' name='priv'>";
+                  echo "        <option value='0' ".$priv0.">Gast</option>";
+                  echo "        <option value='1' ".$priv1.">Vossenjager</option>";
+                  echo "        <option value='2' ".$priv2.">Admin</option>";
+                  echo "        <option value='3' ".$priv3.">Superadmin</option>";
+                  echo "        <option value='4' class='text-red-500 font-bold'>Verwijder</option>";
+                  echo "      </select>";
+                  echo "      <button type='button' class='theme-bg-primary hover:opacity-80 text-white p-2 rounded shadow-sm transition' onclick=\"document.getElementById('priv_modal_desk_".$row['id']."').classList.remove('hidden')\" title='Opslaan'><i class='fas fa-check'></i></button>";
+                  
+                  if ($can_impersonate) {
+                      echo "  <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').classList.remove('hidden')\" class='bg-gray-700 hover:bg-gray-800 text-white p-2 rounded shadow-sm transition' title='Imiteren'><i class='fas fa-user-secret'></i></button>";
+                      echo "  <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').classList.remove('hidden')\" class='bg-orange-500 hover:bg-orange-600 text-white p-2 rounded shadow-sm transition' title='Wachtwoord reset'><i class='fas fa-key'></i></button>";
+                  } else {
+                      echo "  <button type='button' class='bg-gray-300 text-gray-500 p-2 rounded cursor-not-allowed opacity-50'><i class='fas fa-user-secret'></i></button>";
+                      echo "  <button type='button' class='bg-gray-300 text-gray-500 p-2 rounded cursor-not-allowed opacity-50'><i class='fas fa-key'></i></button>";
+                  }
+                  echo "    </form>";
+                  echo "  </td>";
+                  echo "</tr>";
+                  
+                  // Desktop Role Change Modal
+                  echo "
+                  <div id='priv_modal_desk_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm' aria-labelledby='modal-title' role='dialog' aria-modal='true'>
+                    <div class='flex items-center justify-center min-h-screen px-4 text-center'>
+                      <div class='relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full'>
+                        <div class='theme-bg-primary px-4 py-3 sm:px-6 flex justify-between items-center text-white'>
+                          <h3 class='text-lg font-bold'><i class='fas fa-question-circle mr-2'></i>Bevestiging</h3>
+                          <button type='button' onclick=\"document.getElementById('priv_modal_desk_".$row['id']."').classList.add('hidden')\" class='hover:text-gray-200 transition'><i class='fas fa-times text-xl'></i></button>
+                        </div>
+                        <div class='bg-white px-4 pt-5 pb-4 sm:p-6 text-gray-800'>
+                          <p>Weet je zeker dat je de rol/rechten van <strong>".htmlspecialchars($row['voornaam'])."</strong> wilt wijzigen?</p>
+                        </div>
+                        <div class='bg-gray-50 px-4 py-3 sm:px-6 flex flex-row-reverse gap-3'>
+                          <button type='submit' form='priv_form_desk_".$row['id']."' class='bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Ja, wijzig</button>
+                          <button type='button' onclick=\"document.getElementById('priv_modal_desk_".$row['id']."').classList.add('hidden')\" class='bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Annuleer</button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                ";
-                echo "</tr>";
-            }
-            ?>
+                  </div>";
+              }
+              ?>
+              </tbody>
             </table>
           </div>
           
-          <table class="w3-table-all w3-hide-large" style="width:100%;">
+          <!-- Mobile Table -->
+          <div class="block md:hidden">
+            <ul class="divide-y" style="border-color: var(--theme-card-border);">
             <?php
-            // Genereer de mobiele tabel vanuit exact dezelfde array
             foreach($users_data as $row) {
                 $priv0 = ($row['priv'] == 0) ? "selected" : "";
                 $priv1 = ($row['priv'] == 1) ? "selected" : "";
                 $priv2 = ($row['priv'] == 2) ? "selected" : "";
                 $priv3 = ($row['priv'] == 3) ? "selected" : "";
                 
-                echo "<tr>";
-                echo "  <td>".htmlspecialchars($row["voornaam"])." ".htmlspecialchars($row["achternaam"])."<span class=\"w3-right\"><b>Id:</b> ".htmlspecialchars($row["id"])."</span><br><span class=\"w3-tiny\">".htmlspecialchars($row["email"])."</span><br><span class=\"w3-tiny\"><b>L:</b> ".htmlspecialchars(time2str($row['last_login']))."<br><b>E:</b> ".htmlspecialchars(time2str($row['first_login']))."</span></td>";
-                echo "  <td class=\"admin-user-actions\">";
-                echo "      <form id=\"priv_form_mob_".$row['id']."\" method=\"POST\" style=\"display:flex; flex-wrap:nowrap; gap:0.25rem; align-items:center; justify-content:flex-end; width:100%;\">";
-                echo "        <input type=\"hidden\" value=\"".htmlspecialchars($row['id'])."\" name=\"user\">";
-                echo "        <select class=\"w3-select\" name=\"priv\" style=\"flex:1 1 auto; min-width:100px;\">";
-                echo "          <option value=\"0\" ".$priv0." >Gast</option>";
-                echo "          <option value=\"1\" ".$priv1." >Vossenjager</option>";
-                echo "          <option value=\"2\" ".$priv2." >Admin</option>";
-                echo "          <option value=\"3\" ".$priv3." >Superadmin</option>";
-                echo "          <option value=\"4\" class=\"w3-red\">Verwijder</option>";
-                echo "        </select>";
-                echo "        <button class='w3-button w3-blue-gray' style=\"flex:0 0 auto; padding:2px 4px;\" type='button' onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').style.display='block'\"><i class=\"fas fa-check\"></i></button>";
-                
                 $can_impersonate = false;
                 if ($_SESSION['priv'] >= 3 && $row['priv'] <= 2) $can_impersonate = true;
                 if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
+
+                echo "<li class='p-4 hover:bg-black/5 transition'>";
+                echo "  <div class='flex justify-between items-start mb-2'>";
+                echo "    <div>";
+                echo "      <p class='font-bold'>".htmlspecialchars($row["voornaam"])." ".htmlspecialchars($row["achternaam"])."</p>";
+                echo "      <p class='text-sm opacity-80'>".htmlspecialchars($row["email"])."</p>";
+                echo "    </div>";
+                echo "    <div class='text-right text-sm opacity-70'>";
+                echo "      <p><b>ID:</b> ".htmlspecialchars($row["id"])."</p>";
+                echo "    </div>";
+                echo "  </div>";
+                
+                echo "  <div class='text-xs opacity-70 mb-4 bg-black/5 p-2 rounded'>";
+                echo "    <p><b>Laatste:</b> ".htmlspecialchars(time2str($row['last_login']))."</p>";
+                echo "    <p><b>Eerste:</b> ".htmlspecialchars(time2str($row['first_login']))."</p>";
+                echo "  </div>";
+                
+                echo "  <form id='priv_form_mob_".$row['id']."' method='POST' class='flex items-center gap-2 w-full'>";
+                echo "    <input type='hidden' value='".htmlspecialchars($row['id'])."' name='user'>";
+                echo "    <select class='flex-1 border rounded px-2 py-2 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white text-gray-800' name='priv'>";
+                echo "      <option value='0' ".$priv0.">Gast</option>";
+                echo "      <option value='1' ".$priv1.">Vossenjager</option>";
+                echo "      <option value='2' ".$priv2.">Admin</option>";
+                echo "      <option value='3' ".$priv3.">Superadmin</option>";
+                echo "      <option value='4' class='text-red-500 font-bold'>Verwijder</option>";
+                echo "    </select>";
+                echo "    <button type='button' class='theme-bg-primary hover:opacity-80 text-white p-2 rounded shadow-sm transition' onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').classList.remove('hidden')\"><i class='fas fa-check'></i></button>";
+                
                 if ($can_impersonate) {
-                    echo "        <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').style.display='block'\" class='w3-button w3-dark-gray' style=\"flex:0 0 auto; padding:2px 4px;\"><i class=\"fas fa-user-secret\"></i></button>";
-                    echo "        <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').style.display='block'\" class='w3-button w3-orange w3-text-white' style=\"flex:0 0 auto; padding:2px 4px;\"><i class=\"fas fa-key\"></i></button>";
+                    echo "  <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').classList.remove('hidden')\" class='bg-gray-700 hover:bg-gray-800 text-white p-2 rounded shadow-sm transition'><i class='fas fa-user-secret'></i></button>";
+                    echo "  <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').classList.remove('hidden')\" class='bg-orange-500 hover:bg-orange-600 text-white p-2 rounded shadow-sm transition'><i class='fas fa-key'></i></button>";
                 } else {
-                    echo "        <button type='button' class='w3-button w3-grey w3-disabled' disabled style=\"flex:0 0 auto; padding:2px 4px;\"><i class=\"fas fa-user-secret\"></i></button>";
-                    echo "        <button type='button' class='w3-button w3-grey w3-disabled' disabled style=\"flex:0 0 auto; padding:2px 4px;\"><i class=\"fas fa-key\"></i></button>";
+                    echo "  <button type='button' class='bg-gray-300 text-gray-500 p-2 rounded cursor-not-allowed opacity-50'><i class='fas fa-user-secret'></i></button>";
+                    echo "  <button type='button' class='bg-gray-300 text-gray-500 p-2 rounded cursor-not-allowed opacity-50'><i class='fas fa-key'></i></button>";
                 }
-                echo "      </form>";
-                echo "  </td>";
+                echo "  </form>";
+                echo "</li>";
+                
+                // Mobile Role Change Modal
                 echo "
-                <div id='priv_modal_mob_".$row['id']."' class='w3-modal'>
-                  <div class='w3-modal-content w3-card-4' style='max-width:500px'>
-                    <header class='w3-container w3-blue-gray'> 
-                      <span onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').style.display='none'\" class='w3-button w3-display-topright'>&times;</span>
-                      <h2>Bevestiging</h2>
-                    </header>
-                    <div class='w3-container w3-padding-16'>
-                      <p>Weet je zeker dat je de rol/rechten van ".htmlspecialchars($row['voornaam'])." wilt wijzigen?</p>
-                      <button type='submit' form='priv_form_mob_".$row['id']."' class='w3-button w3-green'>Ja, wijzig</button>
-                      <button type='button' onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').style.display='none'\" class='w3-button w3-red w3-right'>Annuleer</button>
+                <div id='priv_modal_mob_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm' aria-labelledby='modal-title' role='dialog' aria-modal='true'>
+                  <div class='flex items-center justify-center min-h-screen px-4 text-center'>
+                    <div class='relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 w-full max-w-sm'>
+                      <div class='theme-bg-primary px-4 py-3 flex justify-between items-center text-white'>
+                        <h3 class='text-lg font-bold'><i class='fas fa-question-circle mr-2'></i>Bevestiging</h3>
+                        <button type='button' onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').classList.add('hidden')\" class='hover:text-gray-200 transition'><i class='fas fa-times text-xl'></i></button>
+                      </div>
+                      <div class='bg-white px-4 pt-5 pb-4 text-gray-800'>
+                        <p>Weet je zeker dat je de rol/rechten van <strong>".htmlspecialchars($row['voornaam'])."</strong> wilt wijzigen?</p>
+                      </div>
+                      <div class='bg-gray-50 px-4 py-3 flex flex-row-reverse gap-3'>
+                        <button type='submit' form='priv_form_mob_".$row['id']."' class='w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Ja, wijzig</button>
+                        <button type='button' onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').classList.add('hidden')\" class='w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Annuleer</button>
+                      </div>
                     </div>
                   </div>
-                </div>
-                ";
-                echo "</tr>";
+                </div>";
             }
             ?>
-          </table>
+            </ul>
+          </div>
 
+          <!-- Impersonate & Password Reset Modals -->
           <?php
-          // Generate Modals once for all users
           foreach($users_data as $row) {
               $can_impersonate = false;
               if ($_SESSION['priv'] >= 3 && $row['priv'] <= 2) $can_impersonate = true;
               if ($_SESSION['priv'] == 2 && $row['priv'] <= 1) $can_impersonate = true;
               
               if ($can_impersonate) {
+                  // Impersonate Modal
                   echo "
-                  <div id='imp_modal_".$row['id']."' class='w3-modal'>
-                    <div class='w3-modal-content w3-card-4' style='max-width:500px'>
-                      <header class='w3-container w3-blue-gray'> 
-                        <span onclick=\"document.getElementById('imp_modal_".$row['id']."').style.display='none'\" class='w3-button w3-display-topright'>&times;</span>
-                        <h2>Bevestiging</h2>
-                      </header>
-                      <div class='w3-container w3-padding-16'>
-                        <p>Weet je zeker dat je wilt inloggen als ".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."?</p>
-                        <form method='POST'>
-                          <input type='hidden' name='impersonate_user_id' value='".htmlspecialchars($row['id'])."'>
-                          <button type='submit' class='w3-button w3-green'>Ja, log in</button>
-                          <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').style.display='none'\" class='w3-button w3-red w3-right'>Annuleer</button>
-                        </form>
+                  <div id='imp_modal_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm' aria-labelledby='modal-title' role='dialog' aria-modal='true'>
+                    <div class='flex items-center justify-center min-h-screen px-4 text-center'>
+                      <div class='relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full'>
+                        <div class='bg-gray-800 px-4 py-3 flex justify-between items-center text-white'>
+                          <h3 class='text-lg font-bold'><i class='fas fa-user-secret mr-2'></i>Bevestiging</h3>
+                          <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').classList.add('hidden')\" class='hover:text-gray-200 transition'><i class='fas fa-times text-xl'></i></button>
+                        </div>
+                        <div class='bg-white px-4 pt-5 pb-4 text-gray-800'>
+                          <p>Weet je zeker dat je wilt inloggen als <strong>".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."</strong>?</p>
+                        </div>
+                        <div class='bg-gray-50 px-4 py-3 flex flex-row-reverse gap-3'>
+                          <form method='POST' class='m-0 p-0 flex-1 sm:flex-none'>
+                            <input type='hidden' name='impersonate_user_id' value='".htmlspecialchars($row['id'])."'>
+                            <button type='submit' class='w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Ja, log in</button>
+                          </form>
+                          <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').classList.add('hidden')\" class='w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Annuleer</button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  ";
+                  </div>";
                   
+                  // Password Reset Modal
                   echo "
-                  <div id='reset_modal_".$row['id']."' class='w3-modal'>
-                    <div class='w3-modal-content w3-card-4' style='max-width:500px'>
-                      <header class='w3-container w3-orange w3-text-white'> 
-                        <span onclick=\"document.getElementById('reset_modal_".$row['id']."').style.display='none'\" class='w3-button w3-display-topright'>&times;</span>
-                        <h2>Nieuw Wachtwoord</h2>
-                      </header>
-                      <div class='w3-container w3-padding-16'>
-                        <p>Vul een nieuw wachtwoord in voor ".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam']).":</p>
+                  <div id='reset_modal_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm' aria-labelledby='modal-title' role='dialog' aria-modal='true'>
+                    <div class='flex items-center justify-center min-h-screen px-4 text-center'>
+                      <div class='relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full'>
+                        <div class='bg-orange-500 px-4 py-3 flex justify-between items-center text-white'>
+                          <h3 class='text-lg font-bold'><i class='fas fa-key mr-2'></i>Nieuw Wachtwoord</h3>
+                          <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').classList.add('hidden')\" class='hover:text-gray-200 transition'><i class='fas fa-times text-xl'></i></button>
+                        </div>
                         <form method='POST'>
-                          <input type='hidden' name='reset_password_user_id' value='".htmlspecialchars($row['id'])."'>
-                          <input type='text' name='new_password' class='w3-input w3-border w3-margin-bottom' required placeholder='Nieuw wachtwoord'>
-                          <button type='submit' class='w3-button w3-green'>Reset Wachtwoord</button>
-                          <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').style.display='none'\" class='w3-button w3-red w3-right'>Annuleer</button>
+                          <div class='bg-white px-4 pt-5 pb-4 text-gray-800 space-y-4'>
+                            <p>Vul een nieuw wachtwoord in voor <strong>".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."</strong>:</p>
+                            <input type='hidden' name='reset_password_user_id' value='".htmlspecialchars($row['id'])."'>
+                            <input type='text' name='new_password' class='w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm' required placeholder='Nieuw wachtwoord'>
+                          </div>
+                          <div class='bg-gray-50 px-4 py-3 flex flex-row-reverse gap-3'>
+                            <button type='submit' class='w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Reset Wachtwoord</button>
+                            <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').classList.add('hidden')\" class='w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Annuleer</button>
+                          </div>
                         </form>
                       </div>
                     </div>
-                  </div>
-                  ";
+                  </div>";
               }
           }
           ?>
         </div>
       </div>
     </div>
-  </div>
+  </main>
 
+  <!-- Footer -->
   <?php require_once('../includes/footer.php') ?>
-
-  </div>
+</div>
 
 <script>
-if ("<?php echo $_SESSION['gps']?>" == "true"){
+if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
   setInterval(function() {
     GPSrefresh();
   }, 5555);
@@ -502,23 +484,20 @@ function GPSrefresh() {
     }
     
     function showPosition(position) {
-      console.log("Latitude: " + position.coords.latitude + 
-      "\nLongitude: " + position.coords.longitude);
+      console.log("Latitude: " + position.coords.latitude + "\nLongitude: " + position.coords.longitude);
       
+      var xmlhttp;
       if (window.XMLHttpRequest) {
-            // code for IE7+, Firefox, Chrome, Opera, Safari
             xmlhttp = new XMLHttpRequest();
-        } else {
-            // code for IE6, IE5
+      } else {
             xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-        xmlhttp.onreadystatechange = function() {
+      }
+      xmlhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
-                // Success logic
             }
-        };
-        xmlhttp.open("GET","../functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-        xmlhttp.send();
+      };
+      xmlhttp.open("GET","../functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
+      xmlhttp.send();
     }
 } 
 </script>
