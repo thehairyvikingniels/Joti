@@ -55,10 +55,10 @@ $stmt->close();
       <div class="absolute inset-0 bg-black/40 backdrop-blur-sm z-0"></div>
 
       <div class="z-10 w-full max-w-md p-4">
-        <div class="theme-card rounded-2xl border shadow-2xl overflow-hidden backdrop-blur-md bg-white/90 dark:bg-gray-900/90" style="border-color: var(--theme-card-border);">
+        <div class="theme-card theme-text rounded-2xl border shadow-2xl overflow-hidden backdrop-blur-md" style="border-color: var(--theme-card-border);">
             <header class="p-6 text-center border-b" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
-              <h1 class="text-3xl font-bold text-white tracking-wider">Login</h1>
-              <h5 class="text-sm text-white/80 mt-1 uppercase tracking-widest font-semibold"><?= htmlspecialchars($groupName) ?></h5>
+              <h1 class="text-3xl font-bold text-white tracking-wider">Jotihunt</h1>
+              <h5 class="text-sm text-white/80 mt-1 uppercase tracking-widest font-semibold">Login &mdash; <?= htmlspecialchars($groupName) ?></h5>
             </header>
             
             <div class="p-6">
@@ -80,7 +80,7 @@ $stmt->close();
                   <label class="block text-sm font-semibold mb-1 opacity-80">Gebruikersnaam</label>
                   <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none opacity-50">
-                      <i class="fas fa-user"></i>
+                      <i class="fas fa-user text-gray-800"></i>
                     </div>
                     <input class="w-full border rounded-lg pl-10 pr-3 py-2.5 text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" id="user" type="text" name="username" placeholder="Gebruikersnaam" autofocus>
                   </div>
@@ -90,7 +90,7 @@ $stmt->close();
                   <label class="block text-sm font-semibold mb-1 opacity-80">Wachtwoord</label>
                   <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none opacity-50">
-                      <i class="fas fa-lock"></i>
+                      <i class="fas fa-lock text-gray-800"></i>
                     </div>
                     <input class="w-full border rounded-lg pl-10 pr-3 py-2.5 text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" id="pswd" type="password" name="pswd" placeholder="Wachtwoord">
                   </div>
@@ -100,7 +100,7 @@ $stmt->close();
                   <button class="w-full theme-bg-primary text-white font-bold py-3 rounded-lg shadow-md hover:opacity-90 transition transform hover:-translate-y-0.5" type="submit">Log In</button>
                 </div>
                 
-                <div class="flex justify-between items-center text-sm pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-center text-sm pt-4 border-t" style="border-color: var(--theme-card-border);">
                   <button type="button" class="font-semibold theme-primary hover:opacity-80 transition" onclick="document.getElementById('modal01').classList.remove('hidden')">Wordt lid</button>
                   <button type="button" class="font-semibold opacity-70 hover:opacity-100 transition" onclick="document.getElementById('adminModal').classList.remove('hidden')">Wachtwoord vergeten?</button>
                 </div>

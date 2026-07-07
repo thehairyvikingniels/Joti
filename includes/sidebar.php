@@ -91,18 +91,23 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
     <button class="md:hidden text-white/70 hover:text-white" onclick="w3_close()"><i class="fas fa-times"></i></button>
   </div>
   
-  <div class="px-5 py-4 flex items-center space-x-3 border-b border-black/10">
-    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 border shadow-sm" style="border-color: var(--theme-card-border);">
-      <img src="<?= $notInAdminfolder.$siteSettings['GROUP_LOGO_SMALL_URL']?>" class="w-full h-full object-contain p-1">
+  <div class="px-5 py-4 flex items-center justify-between border-b border-black/10">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 border shadow-sm" style="border-color: var(--theme-card-border);">
+        <img src="<?= $notInAdminfolder.$siteSettings['GROUP_LOGO_SMALL_URL']?>" class="w-full h-full object-contain p-1">
+      </div>
+      <div>
+          <p class="text-sm font-semibold">Welkom, <strong><?php echo ucfirst($vn); ?></strong></p>
+          <?php
+          $roleNames = [0 => 'Gast', 1 => 'Vossenjager', 2 => 'Admin', 3 => 'Superadmin'];
+          $userPriv = $_SESSION['priv'] ?? 0;
+          ?>
+          <p class="text-xs opacity-70"><?php echo $roleNames[$userPriv] ?? "Onbekend"; ?></p>
+      </div>
     </div>
-    <div>
-        <p class="text-sm font-semibold">Welkom, <strong><?php echo ucfirst($vn); ?></strong></p>
-        <?php
-        $roleNames = [0 => 'Gast', 1 => 'Vossenjager', 2 => 'Admin', 3 => 'Superadmin'];
-        $userPriv = $_SESSION['priv'] ?? 0;
-        ?>
-        <p class="text-xs opacity-70"><?php echo $roleNames[$userPriv] ?? "Onbekend"; ?></p>
-    </div>
+    <a href="/" class="opacity-70 hover:opacity-100 hover:text-red-500 transition-colors" title="Uitloggen">
+      <i class="fas fa-sign-out-alt text-xl"></i>
+    </a>
   </div>
 
   <nav class="flex-1 py-4 space-y-1 overflow-y-auto">

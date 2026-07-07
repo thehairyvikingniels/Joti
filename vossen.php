@@ -293,10 +293,7 @@ foreach ($fox_teams as $team) {
   <?php include_once('includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-    <!-- Header -->
-    <header class="mb-6">
-      <h2 class="text-2xl font-bold"><i class="fas fa-bullseye opacity-70 mr-2"></i>Vossen</h2>
-    </header>
+
 
     <div class="space-y-6">
       

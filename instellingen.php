@@ -69,10 +69,7 @@ $stmt->close();
   <?php include_once('includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-    <!-- Header -->
-    <header class="mb-6">
-      <h2 class="text-2xl font-bold"><i class="fas fa-cog opacity-70 mr-2"></i>Instellingen</h2>
-    </header>
+
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       

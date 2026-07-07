@@ -119,7 +119,7 @@ $stmt->close();
   <?php include_once('includes/topbar.php') ?>
 
   <!-- Mobile Fox Status -->
-  <div class="md:hidden p-4 grid grid-cols-2 gap-2">
+  <div class="md:hidden p-4 grid grid-cols-3 sm:grid-cols-4 gap-2">
     <?php
       if (isset($vossen_names)) {
           foreach ($vossen_names as $n) {
@@ -128,7 +128,7 @@ $stmt->close();
             elseif ($vos[$n]['Kleur'] == 'orange') $tw_color = 'bg-orange-500 text-white';
             elseif ($vos[$n]['Kleur'] == 'green') $tw_color = 'bg-green-500 text-white';
             
-            echo '<div class="rounded py-2 px-3 flex items-center justify-center font-bold text-sm shadow-sm '.$tw_color.'">';
+            echo '<div class="rounded py-2 px-3 flex items-center justify-center font-bold text-sm shadow-sm '.$tw_color.' whitespace-nowrap">';
             echo '<span class="mr-2">'.htmlspecialchars(substr($n,0,1)).'</span><span>'.htmlspecialchars($vos[$n]["duratie"]).'</span>';
             echo '</div>';
           }

@@ -158,10 +158,7 @@ if ($result->num_rows > 0) {
   <?php include_once('includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-    <!-- Header -->
-    <header class="mb-6">
-      <h2 class="text-2xl font-bold"><i class="fas fa-circle-nodes opacity-70 mr-2"></i>Voslocaties</h2>
-    </header>
+
 
     <!-- --- START: NEW FEATURE - LOCATION FORM --- -->
     <div class="theme-card rounded border shadow-sm overflow-hidden mb-12 max-w-4xl">

@@ -86,10 +86,7 @@ $result_voslocaties = $stmt_vos->get_result();
   <?php include_once('../includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-    <!-- Header -->
-    <header class="mb-6">
-      <h2 class="text-2xl font-bold"><i class="fas fa-cogs opacity-70 mr-2"></i>Admin Database</h2>
-    </header>
+
 
     <div class="space-y-6 mb-24">
       <div class="theme-card rounded border shadow-sm overflow-hidden w-full">
