@@ -61,7 +61,7 @@ if (isset($_POST['pswd1'])){
   $username = $_POST['username'];
   $pswd = $_POST['pswd'];
 
-  $stmt_login = $conn->prepare("SELECT id, priv, wachtwoord FROM Gebruikers WHERE gebruikersnaam = ? OR email = ?");
+  $stmt_login = $conn->prepare("SELECT id, priv, wachtwoord, theme FROM Gebruikers WHERE gebruikersnaam = ? OR email = ?");
   $stmt_login->bind_param("ss", $username, $username);
   $stmt_login->execute();
   $result = $stmt_login->get_result();
@@ -107,6 +107,7 @@ if (isset($_POST['pswd1'])){
           $_SESSION['id'] = $row['id'];
           $_SESSION['priv'] = $row['priv'];
           $_SESSION['gps'] = "false";
+          $_SESSION['theme'] = $row['theme'] ?? 'light';
           
           // show welcome modal on next page load for new users (priv == 0)
           if ($row['priv'] == 0) {

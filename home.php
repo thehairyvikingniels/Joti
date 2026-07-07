@@ -102,282 +102,157 @@ $stmt->close();
 
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
 
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
-
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
-
-  
-
 <meta name="mobile-web-app-capable" content="yes">
-
 <meta name="apple-mobile-web-app-capable" content="yes">
-
-<style>
-
-html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
-
-</style>
-
-<body class="w3-light-grey">
-
-
-<!-- Topbar -->
-<?php include_once('includes/topbar.php') ?>
-
+<?php include_once('includes/theme.php'); ?>
+</head>
+<body class="flex h-screen overflow-hidden">
 
 <!-- Sidebar -->
 <?php include_once('includes/sidebar.php') ?>
 
-
-<!-- !PAGE CONTENT! -->
-
-<div class="w3-main" style="margin-left:200px;margin-top:43px;">
-
-  <div class="w3-bar">
-
-    <!-- Mobile / small: show only on small screens; items wrap (two per row) -->
-    <div class="w3-hide-large w3-row w3-padding-small">
-      <?php
-        foreach ($names as $n) {
-          echo '<div class="w3-col s6" style="box-sizing:border-box; padding:4px;">';
-          // match the desktop height/centering so thickness is the same visually
-          echo '<div class="w3-card-2 w3-'.$vos[$n]["Kleur"].' w3-padding-small w3-center" style="height:42px; display:flex; align-items:center; justify-content:center; gap:6px;">';
-          echo '<span style="font-weight:700;">'.substr($n,0,1).'</span><span style="font-size:0.95rem;">'.$vos[$n]["duratie"].'</span>';
-          echo '</div></div>';
-        }
-      ?>
-    </div>
-
-  </div>
-
-  <!-- Header -->
-
-  <header class="w3-container" style="padding-top:22px">
-
-    <h5><b><i class="fas fa-tachometer-alt"></i> Overzicht</b></h5>
-
-  </header>
-
-
-
-  <div class="w3-row-padding w3-margin-bottom">
-
-    <div class="w3-quarter" style="margin-bottom:11px">
-
-      <div class="w3-container w3-red w3-padding-16 w3-round-xlarge">
-
-        <div class="w3-left"><i class="fas fa-trophy w3-xxxlarge"></i></div>
-
-        <div class="w3-right">
-
-          <h3><?php if (isset($puntentotaal)){echo $puntentotaal;} else {echo 0;} ?></h3>
-
-        </div>
-
-        <div class="w3-clear"></div>
-
-        <h4>Punten</h4>
-
-      </div>
-
-    </div>
-
-    <div class="w3-quarter" style="margin-bottom:11px">
-
-      <div class="w3-container w3-orange w3-text-white w3-padding-16 w3-round-xlarge">
-
-        <div class="w3-left"><i class="fas fa-star w3-xxxlarge"></i></div>
-
-        <div class="w3-right">
-
-          <h3><?php if (isset($plaats)){echo $plaats;} else {echo 0;}?>e</h3>
-
-        </div>
-
-        <div class="w3-clear"></div>
-
-        <h4>Plaats</h4>
-
-      </div>
-
-    </div>
-
-    <div class="w3-quarter" style="margin-bottom:11px">
-
-      <div class="w3-container w3-blue w3-padding-16 w3-round-xlarge">
-
-        <div class="w3-left"><i class="fas fa-bullseye w3-xxxlarge"></i></div>
-
-        <div class="w3-right">
-
-          <h3><?php echo $huntaantal;?></h3>
-
-        </div>
-
-        <div class="w3-clear"></div>
-
-        <h4>Hunts</h4>
-
-      </div>
-
-    </div>
-
-    <div class="w3-quarter" style="margin-bottom:11px">
-
-      <div class="w3-container w3-teal w3-padding-16 w3-round-xlarge">
-
-        <div class="w3-left"><i class="fas fa-question-circle w3-xxxlarge"></i></div>
-
-        <div class="w3-right">
-
-          <h3><?php echo $hintaantal ?></h3>
-
-        </div>
-
-        <div class="w3-clear"></div>
-
-        <h4>Hints opgestuurd</h4>
-
-      </div>
-
-    </div>
-
-  </div>
-
-
-
-  <div class="w3-panel" style="margin-bottom:11px">
-
-    <div class="w3-row-padding" style="margin:0 -16px">
-
-      <div class="w3-third">
-
-        <div>
-
-          <h5>Invulgegevens voor homebase<i id="invulgegevens_icon" class="fas fa-redo-alt w3-right" onclick="invulgegevens()"></i></h5>
-
-          <div id="invulgegevens">
-
-
-
-          </div>
-
-        </div>
-
-        <div>
-
-          <h5>Auto's onderweg<i id="autosonderweg_icon" class="fas fa-redo-alt w3-right" onclick="autosonderweg()"></i></h5>
-
-          <div id="autosonderweg">
-
-
-
-          </div>
-
-        </div>
-
-      </div>
-
-      <div class="w3-twothird">
-
-        <h5>Gebeurtenissen<i id="gebeurtenissen_icon" class="fas fa-redo-alt w3-right" onclick="gebeurtenissen()"></i></h5>
-
-          <div id="gebeurtenissen">
-
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+  <!-- Topbar -->
+  <?php include_once('includes/topbar.php') ?>
+
+  <!-- Mobile Fox Status -->
+  <div class="md:hidden p-4 grid grid-cols-2 gap-2">
+    <?php
+      if (isset($vossen_names)) {
+          foreach ($vossen_names as $n) {
+            $tw_color = 'bg-gray-200 text-gray-700';
+            if ($vos[$n]['Kleur'] == 'red') $tw_color = 'bg-red-500 text-white';
+            elseif ($vos[$n]['Kleur'] == 'orange') $tw_color = 'bg-orange-500 text-white';
+            elseif ($vos[$n]['Kleur'] == 'green') $tw_color = 'bg-green-500 text-white';
             
+            echo '<div class="rounded py-2 px-3 flex items-center justify-center font-bold text-sm shadow-sm '.$tw_color.'">';
+            echo '<span class="mr-2">'.htmlspecialchars(substr($n,0,1)).'</span><span>'.htmlspecialchars($vos[$n]["duratie"]).'</span>';
+            echo '</div>';
+          }
+      }
+    ?>
+  </div>
 
+  <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
+
+      <!-- Stats -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="theme-card rounded p-5 border shadow-sm flex flex-col justify-between">
+          <div class="flex justify-between items-center mb-2">
+            <p class="text-xs font-semibold uppercase tracking-wider opacity-60">Punten Totaal</p>
+            <i class="fas fa-trophy opacity-40"></i>
           </div>
-
+          <h3 class="text-3xl font-bold"><?php echo isset($puntentotaal) ? $puntentotaal : 0; ?></h3>
+        </div>
+        <div class="theme-card rounded p-5 border shadow-sm flex flex-col justify-between">
+          <div class="flex justify-between items-center mb-2">
+            <p class="text-xs font-semibold uppercase tracking-wider opacity-60">Huidige Plaats</p>
+            <i class="fas fa-star opacity-40"></i>
+          </div>
+          <h3 class="text-3xl font-bold"><?php echo isset($plaats) ? $plaats : 0; ?><span class="text-xl opacity-60">e</span></h3>
+        </div>
+        <div class="theme-card rounded p-5 border shadow-sm flex flex-col justify-between">
+          <div class="flex justify-between items-center mb-2">
+            <p class="text-xs font-semibold uppercase tracking-wider opacity-60">Aantal Hunts</p>
+            <i class="fas fa-bullseye opacity-40"></i>
+          </div>
+          <h3 class="text-3xl font-bold"><?php echo $huntaantal; ?></h3>
+        </div>
+        <div class="theme-card rounded p-5 border shadow-sm flex flex-col justify-between">
+          <div class="flex justify-between items-center mb-2">
+            <p class="text-xs font-semibold uppercase tracking-wider opacity-60">Hints Opgestuurd</p>
+            <i class="fas fa-question-circle opacity-40"></i>
+          </div>
+          <h3 class="text-3xl font-bold"><?php echo $hintaantal; ?></h3>
+        </div>
       </div>
 
-    </div>
 
-  </div>
+
+      <!-- Panels -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div class="lg:col-span-1 space-y-6">
+          <div class="theme-card rounded border shadow-sm">
+            <div class="px-5 py-3 border-b flex justify-between items-center rounded-t" style="border-color: var(--theme-card-border); background: rgba(0,0,0,0.02);">
+              <h4 class="font-semibold text-sm">Invulgegevens</h4>
+              <button id="invulgegevens_icon" class="opacity-50 hover:opacity-100 transition" onclick="invulgegevens()"><i class="fas fa-sync-alt text-xs"></i></button>
+            </div>
+            <div id="invulgegevens" class="p-0 overflow-x-auto">
+            </div>
+          </div>
+          <div class="theme-card rounded border shadow-sm">
+            <div class="px-5 py-3 border-b flex justify-between items-center rounded-t" style="border-color: var(--theme-card-border); background: rgba(0,0,0,0.02);">
+              <h4 class="font-semibold text-sm">Auto's Onderweg</h4>
+              <button id="autosonderweg_icon" class="opacity-50 hover:opacity-100 transition" onclick="autosonderweg()"><i class="fas fa-sync-alt text-xs"></i></button>
+            </div>
+            <div id="autosonderweg" class="p-4">
+            </div>
+          </div>
+        </div>
+        <div class="lg:col-span-2">
+          <div class="theme-card rounded border shadow-sm h-full flex flex-col">
+            <div class="px-5 py-3 border-b flex justify-between items-center rounded-t" style="border-color: var(--theme-card-border); background: rgba(0,0,0,0.02);">
+              <h4 class="font-semibold text-sm">Recente Gebeurtenissen</h4>
+              <button id="gebeurtenissen_icon" class="opacity-50 hover:opacity-100 transition" onclick="gebeurtenissen()"><i class="fas fa-sync-alt text-xs"></i></button>
+            </div>
+            <div id="gebeurtenissen" class="p-0 flex-1 overflow-x-auto">
+            </div>
+          </div>
+        </div>
+      </div>
+  </main>
+  
   <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
+</div> <!-- End Main Content / flex-1 -->
 
-<div id="demo">
-
-  
-
-</div>
-
-<div id="modal01" class="w3-modal">
-
-  <div class="w3-modal-content">
-
-    <header class="w3-container w3-red"> 
-
-      <span onclick="document.getElementById('modal01').style.display='none'" 
-
-      class="w3-button w3-display-topright"><i class="fas fa-times"></i></span>
-
-      <h2>Zeker dat je deze wilt markeren als opgestuurd?</h2>
-
+<div id="modal01" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden theme-card theme-text">
+    <header class="bg-red-500 text-white p-4 relative"> 
+      <span onclick="document.getElementById('modal01').style.display='none'" class="absolute top-4 right-4 cursor-pointer hover:opacity-80"><i class="fas fa-times"></i></span>
+      <h2 class="text-xl font-bold">Zeker weten?</h2>
     </header>
-
-    <div class="w3-container w3-padding">
-
-      <p><b>Door dit te markeren als klaar betekend het dat iemand dit in de officiele jotihuntwebsite heeft opgestuurd.</b></p>
-
-      <div class="w3-bar">
-
-        <a href="#" id="opgestuurdurl" class="w3-button w3-red" onclick="">Ja</a>
-
-        <span class="w3-button w3-green" onclick="document.getElementById('modal01').style.display='none'">Nee</span>
-
+    <div class="p-6">
+      <p class="mb-6 font-medium">Door dit te markeren als klaar betekend het dat iemand dit in de officiele jotihuntwebsite heeft opgestuurd.</p>
+      <div class="flex space-x-3">
+        <a href="#" id="opgestuurdurl" class="px-4 py-2 bg-red-500 text-white rounded font-bold hover:bg-red-600 transition" onclick="">Ja</a>
+        <button class="px-4 py-2 bg-gray-200 text-gray-800 rounded font-bold hover:bg-gray-300 transition" onclick="document.getElementById('modal01').style.display='none'">Nee</button>
       </div>
-
     </div>
-
-
-
-  <footer class="w3-container w3-padding-16 w3-dark-grey w3-bottom">
-
-    <center><p><a href="#">Niels Maarleveld</a> - &copy; <?php echo date("Y");?></p>
-
-  </footer>
-
-
-
   </div>
-
 </div>
 
-  <!-- End page content -->
-
-</div>
-
-<!-- Welcome modal (lorem ipsum title/content) -->
+<!-- Welcome modal -->
 <?php
 // show welcome modal once after login for priv 0
 if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] === true && isset($_SESSION['priv']) && $_SESSION['priv'] == 0) {
   // unset immediately so it won't show on refresh
   unset($_SESSION['show_welcome_modal']);
   ?>
-  <div id="welcomeModal" class="w3-modal">
-    <div class="w3-modal-content w3-animate-top w3-card-4" style="max-width:600px">
-      <header class="w3-container w3-theme-d1"> 
-        <h2>Welkom bij de Jotihunt van de Geuzen Arnhem!</h2>
+  <div id="welcomeModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden transform -translate-y-4 transition-transform duration-300 theme-card theme-text" id="welcomeModalContent">
+      <header class="theme-bg-primary text-white p-5 border-b border-black/10"> 
+        <h2 class="text-xl font-bold">Welkom bij de Jotihunt!</h2>
       </header>
-      <div class="w3-container w3-padding">
+      <div class="p-6 space-y-4 text-sm">
         <p>
-          Hoi <?php echo ucfirst($vn); ?>, als nieuwe gebruiker van dit platform willen we je graag welkom heten!
+          Hoi <strong><?php echo ucfirst($vn); ?></strong>, als nieuwe gebruiker van dit platform willen we je graag welkom heten!
         </p>
         <p>
-          Dit platform is speciaal ontwikkeld voor de Jotihunt en biedt verschillende functies om je ervaring te verbeteren. Hier zijn enkele belangrijke punten om te weten:
+          Dit platform is speciaal ontwikkeld voor de Jotihunt en biedt verschillende functies om je ervaring te verbeteren. Hier zijn enkele belangrijke punten:
         </p>
-        <ul>
+        <ul class="list-disc pl-5 space-y-1 opacity-90">
           <li>Je kunt eenvoudig hints opvragen en opdrachten bekijken via het menu.</li>
           <li>Je locatie kan worden gedeeld met de homebase. Dit kun je aan- of uitzetten met de GPS-knop linksbovenin.</li>
           <li>Voor vragen of problemen kun je altijd contact opnemen met de organisatie.</li>
         </ul>
-        <p>
-          <strong>Jij hebt op dit moment nog geen extra rechten, maar deze kan je aanvragen bij de volgende gebruikers:</strong>
+        <p class="font-semibold pt-2">
+          Jij hebt op dit moment nog geen extra rechten. Deze kan je aanvragen bij:
         </p>
-        <ul>
+        <ul class="list-disc pl-5 space-y-1 opacity-90">
           <?php
           // Get admins for the introduction modal
           $stmt = $conn->prepare("SELECT voornaam, achternaam FROM Gebruikers WHERE priv > 1 ORDER BY voornaam ASC");
@@ -389,24 +264,21 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
               echo '<li>'.ucfirst($row['voornaam']).' '.ucfirst($row['achternaam']).'</li>';
             }
           } else {
-            echo '<li>Geen gebruikers met extra rechten gevonden...</br>Als je beheerder bent dien je dat handmatig te doen via de database door de kolomn priv van 0 of 1 naar 2 aan te passen.</li>';
+            echo '<li>Geen beheerders gevonden...</li>';
           }
           $stmt->close();
           ?>
         </ul>
       </div>
-      <footer class="w3-container w3-theme-d1 w3-padding">
-        <div style="display:flex; justify-content:flex-end; align-items:center; gap:8px;">
-          <div id="closeWrap" style="position:relative; display:inline-block; min-width:160px;">
-            <!-- disabled button with countdown -->
-            <button id="welcomeClose" class="w3-button w3-green w3-round w3-disabled" disabled
-                    style="position:relative; z-index:2; opacity:0.65; min-width:160px; display:flex; align-items:center; justify-content:center; gap:8px;">
-              <span id="closeLabel">Sluiten</span>
-              <span id="closeCountdown" style="opacity:0.9;">(7s)</span>
-            </button>
-            <!-- green progress overlay that fills the button -->
-            <div id="welcomeProgress" style="position:absolute; left:0; top:0; height:100%; background:rgba(34,177,76,0.18); width:0%; border-radius:8px; z-index:1; pointer-events:none;"></div>
-          </div>
+      <footer class="p-4 bg-black/5 border-t border-black/10 flex justify-end">
+        <div class="relative min-w-[160px]">
+          <!-- disabled button with countdown -->
+          <button id="welcomeClose" class="w-full py-2.5 px-4 bg-green-500 text-white font-bold rounded shadow-sm opacity-50 cursor-not-allowed flex items-center justify-center space-x-2 transition-opacity" disabled>
+            <span id="closeLabel">Sluiten</span>
+            <span id="closeCountdown" class="opacity-90 font-mono">(7s)</span>
+          </button>
+          <!-- progress overlay -->
+          <div id="welcomeProgress" class="absolute left-0 top-0 h-full bg-white/20 rounded pointer-events-none" style="width:0%;"></div>
         </div>
       </footer>
     </div>
@@ -417,8 +289,15 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
     (function() {
       window.addEventListener('load', function() {
         var modal = document.getElementById('welcomeModal');
+        var modalContent = document.getElementById('welcomeModalContent');
         if (!modal) return;
-        modal.style.display = 'block';
+        
+        modal.classList.remove('hidden');
+        // trigger animation
+        setTimeout(() => {
+          modal.classList.remove('opacity-0');
+          modalContent.classList.remove('-translate-y-4');
+        }, 10);
 
         var closeBtn = document.getElementById('welcomeClose');
         var progress = document.getElementById('welcomeProgress');
@@ -426,7 +305,6 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
         var duration = 7000; // milliseconds
         var start = Date.now();
 
-        // update loop using requestAnimationFrame for smooth progress + 1s steps for countdown
         var raf;
         function tick() {
           var elapsed = Date.now() - start;
@@ -434,7 +312,6 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
           progress.style.width = pct + '%';
 
           var remaining = Math.max(0, Math.ceil((duration - elapsed) / 1000));
-          // show "(Ns)" until finished
           if (remaining > 0) {
             countdownEl.textContent = '(' + remaining + 's)';
           } else {
@@ -446,19 +323,19 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
           } else {
             // enable button after duration
             closeBtn.disabled = false;
-            closeBtn.classList.remove('w3-disabled');
-            closeBtn.style.opacity = '1';
+            closeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            closeBtn.classList.add('hover:bg-green-600');
             progress.style.display = 'none';
             cancelAnimationFrame(raf);
           }
         }
-        // start anim
         tick();
 
-        // close handler (only effective after enabled)
         closeBtn.addEventListener('click', function() {
           if (!closeBtn.disabled) {
-            modal.style.display = 'none';
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('-translate-y-4');
+            setTimeout(() => { modal.style.display = 'none'; }, 300);
           }
         });
       });

@@ -73,35 +73,56 @@ foreach ($vossen_names as $vosnaam) {
 }
 ?>
 
-<div class="w3-bar w3-top w3-black w3-large" style="z-index:4;">
+<header class="h-14 bg-white flex items-center justify-between px-6 sticky top-0 z-30 border-b border-gray-200 shadow-sm flex-shrink-0">
+  <div class="flex items-center">
+    <button class="md:hidden text-gray-500 hover:text-gray-700 mr-4" onclick="w3_open()"><i class="fas fa-bars"></i></button>
+    <h2 class="text-lg font-semibold text-gray-800 hidden sm:block"><?= htmlspecialchars(ucfirst(PAGE_NAME)) ?></h2>
+  </div>
 
-  <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey" onclick="w3_open();"><i class="fa fa-bars"></i> &nbsp;Menu</button>
-
-  <div class="w3-hide-small w3-hide-medium w3-bar-item" style="display:flex; gap:6px; align-items:center; flex:1; min-width:0;">
+  <div class="hidden md:flex items-center space-x-2 mx-4 flex-1 justify-center max-w-2xl">
     <?php
       foreach ($vossen_names as $n) {
-        echo '<div class="w3-center w3-padding-small w3-round w3-'.htmlspecialchars($vos[$n]["Kleur"]).'" style="flex:1; min-width:90px; box-sizing:border-box; height:34px; display:flex; align-items:center; justify-content:center; font-size:0.95rem;">';
-        echo '<span style="font-weight:700; margin-right:6px;">'.htmlspecialchars(substr($n,0,1)).'</span><span>'.htmlspecialchars($vos[$n]["duratie"]).'</span>';
+        $tw_color = 'bg-gray-200 text-gray-700';
+        if ($vos[$n]['Kleur'] == 'red') $tw_color = 'bg-red-500 text-white';
+        elseif ($vos[$n]['Kleur'] == 'orange') $tw_color = 'bg-orange-500 text-white';
+        elseif ($vos[$n]['Kleur'] == 'green') $tw_color = 'bg-green-500 text-white';
+        
+        echo '<div class="px-2 py-1 rounded text-xs font-bold flex items-center shadow-sm '.$tw_color.'">';
+        echo '<span class="mr-1">'.htmlspecialchars(substr($n,0,1)).'</span><span>'.htmlspecialchars($vos[$n]["duratie"]).'</span>';
         echo '</div>';
       }
     ?>
   </div>
 
-  <span class="w3-bar-item w3-right"><?= htmlspecialchars($topbarGroupName) ?></span>
+  <div class="flex items-center space-x-4">
+    <select onchange="changeTheme(this.value)" class="text-xs bg-gray-50 border border-gray-200 rounded px-2 py-1 outline-none focus:border-blue-500 text-gray-600 hidden sm:block">
+      <option value="light" <?= $theme == 'light' ? 'selected' : '' ?>>Light</option>
+      <option value="dark" <?= $theme == 'dark' ? 'selected' : '' ?>>Dark</option>
+      <option value="pink" <?= $theme == 'pink' ? 'selected' : '' ?>>Pink</option>
+      <option value="cyber" <?= $theme == 'cyber' ? 'selected' : '' ?>>Cyber</option>
+      <option value="nature" <?= $theme == 'nature' ? 'selected' : '' ?>>Nature</option>
+      <option value="red-orange" <?= $theme == 'red-orange' ? 'selected' : '' ?>>Red-Orange</option>
+    </select>
+    
+    <button class="text-gray-400 hover:theme-primary transition-colors" onclick="GPSrefresh()"><i class="fas fa-crosshairs text-lg"></i></button>
+    <div class="flex items-center space-x-2 border-l pl-4 border-gray-200">
+      <div class="w-8 h-8 rounded theme-bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm">
+         <?php echo strtoupper(substr($vn ?? 'U', 0, 1)); ?>
+      </div>
+      <span class="text-sm font-medium text-gray-700 hidden sm:block"><?php echo htmlspecialchars(ucfirst($vn ?? 'User')); ?></span>
+    </div>
+  </div>
+</header>
 
-</div>
-
-<style>
-  /* Maak alleen het hoofdgedeelte flexibel, laat de body en sidebar met rust */
-  .w3-main {
-    display: flex;
-    flex-direction: column;
-    /* 100% van de schermhoogte, min de 43px marge van de topbar */
-    min-height: calc(100vh - 43px); 
-  }
-
-  /* Duw de footer áltijd naar de bodem van w3-main */
-  #site-footer-wrapper {
-    margin-top: auto;
-  }
-</style>
+<script>
+function changeTheme(newTheme) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            location.reload();
+        }
+    };
+    xhttp.open("GET", "<?= $notInAdminfolder ?>functies.php?set_theme=" + newTheme, true);
+    xhttp.send();
+}
+</script>
