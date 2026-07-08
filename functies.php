@@ -21,6 +21,22 @@ if (isset($_GET['gpstoggle'])){
   exit();
 }
 
+// Theme Switcher
+if (isset($_GET['set_theme'])) {
+    $newTheme = $_GET['set_theme'];
+    $valid_themes = ['light', 'dark', 'rose-gold', 'cyber', 'nature', 'coral'];
+    if (in_array($newTheme, $valid_themes)) {
+        $_SESSION['theme'] = $newTheme;
+        if (isset($_SESSION['id'])) {
+            $stmt = $conn->prepare("UPDATE Gebruikers SET theme=? WHERE id=?");
+            $stmt->bind_param("si", $newTheme, $_SESSION['id']);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+    exit();
+}
+
 // Save Map Settings to Session
 if (isset($_GET['save_map_settings'])) {
     $settings = json_decode(file_get_contents('php://input'), true);
@@ -227,22 +243,23 @@ if (isset($_GET['invulgegevens'])){
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
-        echo "<table style='width:100%'>";
+        echo "<table class='w-full text-sm text-left theme-text'>";
+        echo "<thead class='text-xs uppercase theme-card-header opacity-80'>";
         echo "<tr>";
-        echo "  <th>Code</th>";
-        echo "  <th>Type</th>";
-        echo "  <th>Tijd</th>";
-        echo "  <th></th>";
-        echo "</tr>";
+        echo "  <th class='px-4 py-2'>Code</th>";
+        echo "  <th class='px-4 py-2'>Type</th>";
+        echo "  <th class='px-4 py-2'>Tijd</th>";
+        echo "  <th class='px-4 py-2'></th>";
+        echo "</tr></thead><tbody>";
         while($row = $result->fetch_assoc()) {
-            echo "<tr>";
-            echo "  <td>".htmlspecialchars($row['code'])."</td>";
-            echo "  <td>".htmlspecialchars($row['type'])."</td>";
-            echo "  <td>".date("H:i",strtotime($row['ingestuurd_op']))."</td>";
-            echo "  <td><i class=\"fas fa-trash-alt\" onclick=\"document.getElementById('modal01').style.display='block';document.getElementById('opgestuurdurl').href='functies?hunthintgedaan=".$row['id']."';\"></i></td>";
+            echo "<tr class='border-b hover:opacity-80 transition-opacity' style='border-color: var(--theme-card-border);'>";
+            echo "  <td class='px-4 py-2 font-medium'>".htmlspecialchars($row['code'])."</td>";
+            echo "  <td class='px-4 py-2'>".htmlspecialchars($row['type'])."</td>";
+            echo "  <td class='px-4 py-2'>".date("H:i",strtotime($row['ingestuurd_op']))."</td>";
+            echo "  <td class='px-4 py-2 text-right'><i class=\"fas fa-trash-alt text-red-500 cursor-pointer hover:text-red-700\" onclick=\"document.getElementById('modal01').style.display='block';document.getElementById('opgestuurdurl').href='functies?hunthintgedaan=".$row['id']."';\"></i></td>";
             echo "</tr>"; 
         }
-        echo "</table>";
+        echo "</tbody></table>";
     } else {
         echo "<p>Hier verschijnen hunts die ingeleverd moeten worden bij de officiële jotihunt website</p>";
     }
@@ -284,7 +301,7 @@ if (isset($_GET['autos'])){
   
     $cars_found = false;
     if ($result && $result->num_rows > 0) {
-        echo "<table style='width:100%' class='w3-table-all'>";
+        echo "<div class='space-y-2'>";
         while($row = $result->fetch_assoc()) {
             $date1 = new DateTime($row['geotijd']);
             $now = new DateTime();
@@ -293,14 +310,13 @@ if (isset($_GET['autos'])){
           
             if($minutes_since < 15){ // Show cars active in last 15 minutes
                 $cars_found = true;
-                echo '<tr>';
-                echo '  <td><i class="fas fa-car-side"></i> '.htmlspecialchars($row['kenteken']).'</td>';
-                echo '  <td><i class="fas fa-users"></i></i> '.htmlspecialchars($row['bijrijders']).'</td>';
-                echo '  <td><i class="fas fa-map-marker-alt"></i> <i>'.time2str($row['geotijd']).'</i></td>';
-                echo '</tr>';
+                echo '<div class="flex items-center justify-between p-3 border rounded theme-card" style="border-color: var(--theme-card-border);">';
+                echo '  <span class="font-semibold text-sm theme-text"><i class="fas fa-car-side opacity-70 mr-1"></i> '.htmlspecialchars($row['kenteken']).' <span class="text-xs font-normal opacity-70 ml-2">('.htmlspecialchars($row['bijrijders']).')</span></span>';
+                echo '  <span class="text-[10px] uppercase tracking-wider bg-green-500/10 text-green-600 border border-green-500/20 px-2 py-0.5 rounded-sm font-bold">Actief <span class="font-normal lowercase">('.time2str($row['geotijd']).')</span></span>';
+                echo '</div>';
             }
         }
-        echo "</table>";
+        echo "</div>";
     }
     if (!$cars_found){
         echo "<p>Er zijn nu geen autos onderweg...</p>";
@@ -365,36 +381,36 @@ if (isset($_GET['gebeurtenissen'])){
     $num = intval($_GET['gebeurtenissen']);
     $data = array_slice($data, 0, $num);
     
-    echo '<table class="w3-table w3-striped w3-white" id="gebeurtenissentabel">';
+    echo '<table class="w-full text-sm text-left theme-text" id="gebeurtenissentabel"><tbody>';
     
     // In tabel zetten
     foreach($data as $element){
         switch ($element["type"]) {
             case "Opdracht": 
-                $fa = "fa fa-bell w3-text-teal"; 
+                $fa = "fa fa-bell text-teal-500 text-lg"; 
                 $url = "opdrachten"; 
                 break;
             case "Hint": 
-                $fa = "fas fa-question-circle w3-text-blue"; 
+                $fa = "fas fa-question-circle text-blue-500 text-lg"; 
                 $url = "hints"; 
                 break;
             case "Nieuws": 
-                $fa = "far fa-newspaper w3-text-black"; 
+                $fa = "far fa-newspaper text-gray-500 text-lg"; 
                 $url = "nieuws"; 
                 break;
             default: 
                 // Hunt, Spot, etc.
-                $fa = "fas fa-bullseye w3-text-red"; 
+                $fa = "fas fa-bullseye text-red-500 text-lg"; 
                 $url = "kaarten"; 
                 break; 
         }
-        echo '<tr onclick="location.href=\''.$url.'\'" style="cursor:pointer;">';
-        echo '<td><i class="'.$fa.' w3-large"></i> '.htmlspecialchars($element['type']).'</td>';
-        echo '<td>'.htmlspecialchars($element['titel']).'</td>';
-        echo '<td><i>'.time2str($element['datum']).'</i></td>';
+        echo '<tr class="border-b hover:opacity-80 cursor-pointer transition-opacity" style="border-color: var(--theme-card-border);" onclick="location.href=\''.$url.'\'">';
+        echo '<td class="px-5 py-4 w-12"><i class="'.$fa.'"></i></td>';
+        echo '<td class="px-5 py-4 font-medium">'.htmlspecialchars($element['type']).': '.htmlspecialchars($element['titel']).'</td>';
+        echo '<td class="px-5 py-4 text-right text-xs opacity-60 whitespace-nowrap">'.time2str($element['datum']).'</td>';
         echo '</tr>';
     }
-    echo "</table>";
-    echo "<center><span id='meerknop' class='w3-button w3-green w3-round-xlarge' onclick='gebeurtenissen(". ($num+5) .")'>Meer resultaten</span></center>";
+    echo "</tbody></table>";
+    echo "<div class='mt-4 flex justify-center'><button id='meerknop' class='px-4 py-2 theme-bg-primary text-white text-sm font-semibold rounded hover:opacity-90 transition' onclick='gebeurtenissen(". ($num+5) .")'>Meer resultaten</button></div>";
 }
 ?>

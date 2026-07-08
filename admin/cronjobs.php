@@ -65,41 +65,38 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
 
 ?>
 <!DOCTYPE html>
-<html>
-<title>Jotihunt - De Geuzen</title>
+<html lang="nl">
+<head>
+<title>Jotihunt - Cronjobs</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<link rel="shortcut icon" type="image/png" href="../media/geusje.png"/>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
-<style>
-html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
-@media only screen and (max-width: 600px) {
-  .mobile100 {
-    width:100%!important;
-    flex-basis:100%!important
-  }
-}
-</style>
-<body class="w3-light-grey">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<?php include_once('../includes/theme.php'); ?>
+</head>
+<body class="flex h-screen overflow-hidden">
 
-<?php include_once('../includes/topbar.php') ?>
-
+<!-- Sidebar -->
 <?php include_once('../includes/sidebar.php') ?>
 
-<div class="w3-main" style="margin-left:200px;margin-top:43px;">
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+  <!-- Topbar -->
+  <?php include_once('../includes/topbar.php') ?>
 
-  <header class="w3-container" style="padding-top:22px">
-    <h5><b><i class="fas fa-cogs"></i> Admin</b></h5>
-  </header>
-  <div class="w3-row" style="margin-bottom:100px;">
-    <div class="w3-col l12 m12 s12 w3-padding">
-      <div class="w3-card-4 w3-white">
-        <div class="w3-blue-gray w3-padding" style="width:100%">
-          <h5>Cronjobs</h5>
+  <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
+
+
+    <div class="space-y-6 mb-24">
+      <div class="theme-card rounded border shadow-sm overflow-hidden w-full max-w-5xl">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold">Cronjobs</h3>
         </div>
-        <ul class="w3-ul">
+        
+        <div class="divide-y" style="border-color: var(--theme-card-border);">
         <?php
         $sql = "SELECT cj.name, cj.enabled, cj.URL, cj.description, cj.interval, cl.exec_time, cl.exec_length, cl.exec_stat, cl.exec_output
                 FROM Cronjobs cj LEFT JOIN Cronlogs cl ON cj.name = cl.name
@@ -128,55 +125,73 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
               $exec_next = $row['exec_time'] ? ($row['interval'] + strtotime($row['exec_time']) - time())." sec" : "Onbekend";
 
               if ($row['enabled'] == 1) {
-                $enabled = '<i class="fas fa-toggle-on fa-fw"></i>';
+                $enabled = '<i class="fas fa-toggle-on fa-fw text-green-500 text-xl align-middle"></i>';
               } else {
-                $enabled = '<i class="fas fa-toggle-off fa-fw"></i>';
+                $enabled = '<i class="fas fa-toggle-off fa-fw text-gray-400 text-xl align-middle"></i>';
               }
 
               switch ($exec_status) {
                 case 200: // succes
-                  $stat_color = "w3-text-green";
+                  $stat_color = "text-green-500";
                   break;
                 case 429: // too many requests
-                  $stat_color = "w3-text-yellow";
+                  $stat_color = "text-yellow-500";
                   break;
                 case 500: // script error
-                  $stat_color = "w3-text-red";
+                  $stat_color = "text-red-500";
                   break;
                 default:
-                  $stat_color = ($exec_status === null) ? "w3-text-grey" : "w3-text-red";
+                  $stat_color = ($exec_status === null) ? "text-gray-400" : "text-red-500";
                   break;
               }
 
-              echo "<li class='cronTimer' style='display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between'>
-                      <div class='mobile100' style='flex-basis: 250px'>
-                        <h3>
-                          <span id='cron_enabled_".$i."' style='cursor:pointer;' onclick='toggleCron(\"".htmlspecialchars(strtolower($name))."\")'>".$enabled."</span>
-                          <span id='cron_status_".$i."' class='".$stat_color."' title='HTML ".htmlspecialchars($exec_status)." code'><i class='fas fa-circle'></i></span>
+              echo "<div class='cronTimer p-5 hover:bg-black/5 transition flex flex-col md:flex-row md:items-center justify-between gap-4'>
+                      <div class='md:w-1/3 min-w-[250px]'>
+                        <h3 class='text-lg font-bold flex items-center gap-2'>
+                          <span id='cron_enabled_".$i."' class='cursor-pointer hover:opacity-80 transition' onclick='toggleCron(\"".htmlspecialchars(strtolower($name))."\")'>".$enabled."</span>
+                          <span id='cron_status_".$i."' class='".$stat_color." text-sm' title='HTML ".htmlspecialchars($exec_status)." code'><i class='fas fa-circle'></i></span>
                           <span id='cron_name_".$i."'>".$name."</span>
                         </h3>
                       </div>
-                      <div><i class='fas fa-calendar-alt'></i> <b>Interval:</b><br><span id='cron_interval_".$i."'>".$interval."</span></div>
-                      <div><i class='far fa-clock'></i> <b>Next exec.:</b><br><span id='cron_exec_next_".$i."'>".$exec_next."</span></div>
-                      <div><i class='fas fa-history'></i> <b>Last exec.:</b><br><span id='cron_exec_time_".$i."'>".$exec_time."</span></div>
-                      <div><i class='fas fa-hourglass-half'></i> <b>Prev. Dur.:</b><br><span id='cron_exec_length_".$i."'>".$exec_length."</span></div>
-                    </li>";
+                      
+                      <div class='grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1 w-full text-sm'>
+                        <div class='bg-black/5 p-2 rounded'>
+                          <div class='opacity-70 mb-1'><i class='fas fa-calendar-alt mr-1'></i> <b>Interval</b></div>
+                          <div id='cron_interval_".$i."' class='font-medium'>".$interval."</div>
+                        </div>
+                        <div class='bg-black/5 p-2 rounded'>
+                          <div class='opacity-70 mb-1'><i class='far fa-clock mr-1'></i> <b>Next exec.</b></div>
+                          <div id='cron_exec_next_".$i."' class='font-medium text-blue-600 dark:text-blue-400'>".$exec_next."</div>
+                        </div>
+                        <div class='bg-black/5 p-2 rounded'>
+                          <div class='opacity-70 mb-1'><i class='fas fa-history mr-1'></i> <b>Last exec.</b></div>
+                          <div id='cron_exec_time_".$i."' class='font-medium opacity-80'>".$exec_time."</div>
+                        </div>
+                        <div class='bg-black/5 p-2 rounded'>
+                          <div class='opacity-70 mb-1'><i class='fas fa-hourglass-half mr-1'></i> <b>Prev. Dur.</b></div>
+                          <div id='cron_exec_length_".$i."' class='font-medium opacity-80'>".$exec_length."</div>
+                        </div>
+                      </div>
+                    </div>";
               $i++;
             }
+        } else {
+            echo "<div class='p-6 text-center opacity-60'>Geen cronjobs gevonden.</div>";
         }
         $stmt_cron->close();
         ?>
-        </ul>
+        </div>
       </div>
     </div>
 
-  </div>
-  <?php require_once('../includes/footer.php') ?>
+  </main>
 
-  </div>
+  <!-- Footer -->
+  <?php require_once('../includes/footer.php') ?>
+</div>
 
 <script>
-if ("<?php echo $_SESSION['gps']?>" == "true"){
+if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
   setInterval(function() {
     GPSrefresh();
   }, 5555);
@@ -193,18 +208,19 @@ setInterval(function() {
 }, 6000);
 
 function toggleCron(name) {
+  var xmlhttp;
   if (window.XMLHttpRequest) {
         xmlhttp = new XMLHttpRequest();
-    } else {
+  } else {
         xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    xmlhttp.onreadystatechange = function() {
+  }
+  xmlhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
           CronRefresh();
         }
-    };
-    xmlhttp.open("GET","cronjobs_helper.php?toggleCron="+encodeURIComponent(name),true);
-    xmlhttp.send();
+  };
+  xmlhttp.open("GET","cronjobs_helper.php?toggleCron="+encodeURIComponent(name),true);
+  xmlhttp.send();
 }
 
 function TimerRefresh() {
@@ -214,22 +230,27 @@ function TimerRefresh() {
 
     if (cron_enabled.innerHTML.includes("off")) {
       timer.innerHTML = " - disabled - ";
+      timer.className = "font-medium opacity-50";
     } else {
-      if (timer.innerHTML !== "executing..." && timer.innerHTML !== "Onbekend") {
+      timer.className = "font-medium text-blue-600 dark:text-blue-400";
+      if (timer.innerHTML !== "executing..." && timer.innerHTML !== "Onbekend" && timer.innerHTML !== " - disabled - ") {
         let currentSecs = parseInt(timer.innerHTML);
-        currentSecs--;
-        
-        if (currentSecs <= 0) {
-          timer.innerHTML = "executing...";
-        } else {
-          timer.innerHTML = currentSecs + " sec";
-        }        
+        if(!isNaN(currentSecs)) {
+            currentSecs--;
+            if (currentSecs <= 0) {
+              timer.innerHTML = "executing...";
+              timer.className = "font-bold text-orange-500 animate-pulse";
+            } else {
+              timer.innerHTML = currentSecs + " sec";
+            }        
+        }
       }
     }
   }
 }
 
 function CronRefresh() {
+  var xmlhttp;
   if (window.XMLHttpRequest) {
       xmlhttp = new XMLHttpRequest();
   } else {
@@ -237,8 +258,6 @@ function CronRefresh() {
   }
   xmlhttp.onreadystatechange = function() {
       if (this.readyState == 4 && this.status == 200) {
-        // Zorg ervoor dat de log niet volloopt in de console in productie
-        // console.log(this.responseText); 
         try {
             var json = JSON.parse(this.responseText);
             countAmont = json.length;
@@ -252,8 +271,13 @@ function CronRefresh() {
               var cron_exec_length = document.getElementById("cron_exec_length_" + i);
               var cron_exec_next = document.getElementById("cron_exec_next_" + i);
 
-              cron_enabled.innerHTML = json[i]['enabled'];
-              cron_status.className = json[i]['stat_color'];
+              if (json[i]['enabled'].includes('toggle-on')) {
+                  cron_enabled.innerHTML = '<i class="fas fa-toggle-on fa-fw text-green-500 text-xl align-middle"></i>';
+              } else {
+                  cron_enabled.innerHTML = '<i class="fas fa-toggle-off fa-fw text-gray-400 text-xl align-middle"></i>';
+              }
+              
+              cron_status.className = json[i]['stat_color'].replace('w3-text-green', 'text-green-500').replace('w3-text-yellow', 'text-yellow-500').replace('w3-text-red', 'text-red-500').replace('w3-text-grey', 'text-gray-400') + ' text-sm';
               cron_status.title = "HTML " + json[i]['exec_status'] + " code.";
               cron_name.innerHTML = json[i]['name'];
               cron_name.title = json[i]['description'];
@@ -261,7 +285,6 @@ function CronRefresh() {
               cron_exec_time.innerHTML = json[i]['exec_time'];
               cron_exec_length.innerHTML = json[i]['exec_length'];
               cron_exec_next.innerHTML = json[i]['exec_next'];
-              
             }
         } catch (e) {
             console.error("Ongeldige JSON ontvangen van cronjobs_helper.php");
@@ -280,6 +303,7 @@ function GPSrefresh() {
   }
   
   function showPosition(position) {
+    var xmlhttp;
     if (window.XMLHttpRequest) {
         xmlhttp = new XMLHttpRequest();
     } else {

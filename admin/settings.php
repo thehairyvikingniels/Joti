@@ -171,146 +171,190 @@ if ($result_groups->num_rows > 0) {
 $stmt_groups->close();
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="nl">
+<head>
 <title>Jotihunt - Instellingen</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<link rel="shortcut icon" type="image/png" href="../media/geusje.png"/>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
-<style>
-html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
-</style>
-<body class="w3-light-grey">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<?php include_once('../includes/theme.php'); ?>
+</head>
+<body class="flex h-screen overflow-hidden">
 
-<?php include_once('../includes/topbar.php') ?>
-
+<!-- Sidebar -->
 <?php include_once('../includes/sidebar.php') ?>
 
-<div class="w3-main" style="margin-left:200px;margin-top:43px;">
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+  <!-- Topbar -->
+  <?php include_once('../includes/topbar.php') ?>
 
-  <header class="w3-container" style="padding-top:22px">
-    <h5><b><i class="fas fa-toolbox"></i> Site Instellingen</b></h5>
-  </header>
+  <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
-  <div class="w3-container" style="margin-bottom:100px;">
-    <?php if (!empty($succes_message)): ?>
-      <div class="w3-panel w3-green w3-display-container w3-round-large">
-        <span onclick="this.parentElement.style.display='none'" class="w3-button w3-large w3-display-topright">&times;</span>
-        <p><?php echo htmlspecialchars($succes_message); ?></p>
-      </div>
-    <?php endif; ?>
-    
-    <?php if (!empty($error_message)): ?>
-      <div class="w3-panel w3-red w3-display-container w3-round-large">
-        <span onclick="this.parentElement.style.display='none'" class="w3-button w3-large w3-display-topright">&times;</span>
-        <p><?php echo htmlspecialchars($error_message); ?></p>
-      </div>
-    <?php endif; ?>
 
-    <div class="w3-card-4 w3-white w3-margin-bottom">
-      <div class="w3-container w3-blue-gray">
-        <h5>Bewerk Bestaande Instellingen</h5>
-      </div>
-      <div class="w3-container w3-padding">
-        <form method="POST" action="settings" class="w3-container">
-          <input type="hidden" name="action" value="update_settings">
-          <?php foreach ($settings as $setting): ?>
-            <p>
-              <label class="w3-text-grey">
-                <b><?php echo htmlspecialchars($setting['Instelling']); ?></b>
-                <br>
-                <small><?php echo htmlspecialchars($setting['Omschrijving']); ?></small>
-              </label>
-              <div class="w3-row">
-                  <?php if ($setting['Instelling'] === 'GROUP_ID'): ?>
-                      <div class="w3-col" style="width:calc(100% - 60px)">
-                          <?php if (empty($groepen_options)): ?>
-                              <select class="w3-select w3-border w3-round-large w3-padding" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" required>
-                                  <option value="0">Placeholder (No Groups Loaded)</option>
-                              </select>
-                              <a href="../cron/subscriptions.php" target="_blank" class="w3-text-blue w3-small"><i class="fas fa-sync"></i> Haal groepen op</a>
-                          <?php else: ?>
-                              <select class="w3-select w3-border w3-round-large w3-padding" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" required>
-                                  <option value="0" <?php echo ($setting['Waarde'] == '0') ? 'selected' : ''; ?>>Placeholder (No Groups Loaded)</option>
-                                  <?php foreach ($groepen_options as $groep): ?>
-                                      <option value="<?php echo htmlspecialchars($groep['id']); ?>" <?php echo ($setting['Waarde'] == $groep['id']) ? 'selected' : ''; ?>>
-                                          <?php echo htmlspecialchars($groep['naam']); ?>
-                                      </option>
-                                  <?php endforeach; ?>
-                              </select>
-                          <?php endif; ?>
-                      </div>
-                  <?php else: ?>
-                      <div class="w3-col" style="width:calc(100% - 60px)">
-                          <input class="w3-input w3-border w3-round-large" type="text" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" value="<?php echo htmlspecialchars($setting['Waarde']); ?>" required>
-                      </div>
-                  <?php endif; ?>
-                  <div class="w3-rest w3-right-align">
-                      <button type="button" onclick="confirmDelete('<?php echo htmlspecialchars($setting['Instelling']); ?>')" class="w3-button w3-red w3-round-large w3-margin-left" title="Verwijder instelling">
-                          <i class="fas fa-trash"></i>
-                      </button>
-                  </div>
+    <div class="space-y-6 mb-24 max-w-5xl">
+      <?php if (!empty($succes_message)): ?>
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative shadow-sm">
+          <span onclick="this.parentElement.style.display='none'" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">
+            <i class="fas fa-times opacity-70 hover:opacity-100 transition"></i>
+          </span>
+          <p><?php echo htmlspecialchars($succes_message); ?></p>
+        </div>
+      <?php endif; ?>
+      
+      <?php if (!empty($error_message)): ?>
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative shadow-sm">
+          <span onclick="this.parentElement.style.display='none'" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">
+            <i class="fas fa-times opacity-70 hover:opacity-100 transition"></i>
+          </span>
+          <p><?php echo htmlspecialchars($error_message); ?></p>
+        </div>
+      <?php endif; ?>
+
+      <!-- Bewerk Bestaande Instellingen -->
+      <div class="theme-card rounded border shadow-sm overflow-hidden">
+        <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold">Bewerk Bestaande Instellingen</h3>
+        </div>
+        <div class="p-6">
+          <form method="POST" action="settings" class="space-y-8">
+            <input type="hidden" name="action" value="update_settings">
+            
+            <div class="space-y-6">
+            <?php foreach ($settings as $setting): ?>
+              <div class="p-4 rounded-lg bg-black/5 border" style="border-color: var(--theme-card-border);">
+                <div class="mb-3">
+                  <label class="block font-bold opacity-80"><?php echo htmlspecialchars($setting['Instelling']); ?></label>
+                  <p class="text-sm opacity-60"><?php echo htmlspecialchars($setting['Omschrijving']); ?></p>
+                </div>
+                
+                <div class="flex flex-row gap-2 sm:gap-4 items-center">
+                    <?php if ($setting['Instelling'] === 'GROUP_ID'): ?>
+                        <div class="flex-1 min-w-0">
+                            <?php if (empty($groepen_options)): ?>
+                                <select class="w-full border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white text-gray-800" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" required>
+                                    <option value="0">Placeholder (No Groups Loaded)</option>
+                                </select>
+                                <a href="../cron/subscriptions.php" target="_blank" class="text-blue-500 hover:text-blue-600 text-sm mt-1 inline-block transition"><i class="fas fa-sync mr-1"></i>Haal groepen op</a>
+                            <?php else: ?>
+                                <select class="w-full border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white text-gray-800" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" required>
+                                    <option value="0" <?php echo ($setting['Waarde'] == '0') ? 'selected' : ''; ?>>Placeholder (No Groups Loaded)</option>
+                                    <?php foreach ($groepen_options as $groep): ?>
+                                        <option value="<?php echo htmlspecialchars($groep['id']); ?>" <?php echo ($setting['Waarde'] == $groep['id']) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($groep['naam']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            <?php endif; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="flex-1 min-w-0">
+                            <input class="w-full border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white text-gray-800" type="text" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" value="<?php echo htmlspecialchars($setting['Waarde']); ?>" required>
+                        </div>
+                    <?php endif; ?>
+                    
+                    <button type="button" onclick="confirmDelete('<?php echo htmlspecialchars($setting['Instelling']); ?>')" class="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition shadow-sm flex-shrink-0 w-10 h-10 flex justify-center items-center" title="Verwijder instelling">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
               </div>
-            </p>
-          <?php endforeach; ?>
-          <p>
-            <button type="submit" class="w3-btn w3-blue w3-round-large w3-padding">Instellingen Opslaan</button>
-          </p>
-        </form>
+            <?php endforeach; ?>
+            </div>
+            
+            <div class="pt-4 border-t" style="border-color: var(--theme-card-border);">
+              <button type="submit" class="theme-bg-primary text-white font-bold py-3 px-8 rounded shadow-sm hover:opacity-90 transition"><i class="fas fa-save mr-2"></i>Instellingen Opslaan</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Voeg Nieuwe Instelling Toe -->
+      <div class="theme-card rounded border shadow-sm overflow-hidden mt-8">
+        <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold">Voeg Nieuwe Instelling Toe</h3>
+        </div>
+        <div class="p-6">
+          <form method="POST" action="settings" class="space-y-6">
+            <input type="hidden" name="action" value="add_setting">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Instelling Naam (Uniek)</label>
+                <input class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="text" name="add_setting_name" placeholder="Bijv. joti_startdatum" required>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Waarde</label>
+                <input class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="text" name="add_setting_value" placeholder="Bijv. 2023-10-13 18:00:00" required>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Omschrijving</label>
+              <input class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="text" name="add_setting_description" placeholder="Korte omschrijving van deze instelling">
+            </div>
+            
+            <div class="pt-4 border-t" style="border-color: var(--theme-card-border);">
+              <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded shadow-sm transition"><i class="fas fa-plus mr-2"></i>Nieuwe Instelling Toevoegen</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
+  </main>
 
-    <div class="w3-card-4 w3-white">
-      <div class="w3-container w3-blue-gray">
-        <h5>Voeg Nieuwe Instelling Toe</h5>
-      </div>
-      <div class="w3-container w3-padding">
-        <form method="POST" action="settings" class="w3-container">
-          <input type="hidden" name="action" value="add_setting">
-          <p>
-            <label class="w3-text-grey"><b>Instelling Naam (Uniek)</b></label>
-            <input class="w3-input w3-border w3-round-large" type="text" name="add_setting_name" placeholder="Bijv. joti_startdatum" required>
-          </p>
-          <p>
-            <label class="w3-text-grey"><b>Waarde</b></label>
-            <input class="w3-input w3-border w3-round-large" type="text" name="add_setting_value" placeholder="Bijv. 2023-10-13 18:00:00" required>
-          </p>
-          <p>
-            <label class="w3-text-grey"><b>Omschrijving</b></label>
-            <input class="w3-input w3-border w3-round-large" type="text" name="add_setting_description" placeholder="Korte omschrijving van deze instelling">
-          </p>
-          <p>
-            <button type="submit" class="w3-btn w3-green w3-round-large w3-padding">Nieuwe Instelling Toevoegen</button>
-          </p>
-        </form>
+  <!-- Delete Modal -->
+  <div id="deleteModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+      
+      <div class="relative inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+        
+        <div class="bg-red-600 px-4 py-3 sm:px-6 flex justify-between items-center">
+          <h3 class="text-lg leading-6 font-medium text-white" id="modal-title">
+            <i class="fas fa-exclamation-triangle mr-2"></i>Bevestig Verwijdering
+          </h3>
+          <button onclick="document.getElementById('deleteModal').classList.add('hidden')" class="text-white hover:text-gray-200 focus:outline-none">
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+        
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 text-gray-800">
+          <div class="sm:flex sm:items-start">
+            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+              <div class="mt-2">
+                <p id="deleteModalText" class="text-sm mb-4"></p>
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded text-sm text-red-700">
+                    <p class="font-bold mb-1">LET OP:</p>
+                    <p>Het verwijderen van essentiële instellingen kan de werking van de website permanent verstoren!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+          <a id="confirmDeleteButton" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm transition">
+            Verwijderen
+          </a>
+          <button type="button" onclick="document.getElementById('deleteModal').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition">
+            Annuleren
+          </button>
+        </div>
+        
       </div>
     </div>
   </div>
 
-  <div id="deleteModal" class="w3-modal">
-    <div class="w3-modal-content w3-card-4 w3-animate-zoom" style="max-width:600px">
-      <div class="w3-container w3-red">
-        <span onclick="document.getElementById('deleteModal').style.display='none'" class="w3-button w3-display-topright w3-hover-red">&times;</span>
-        <h4><i class="fas fa-exclamation-triangle"></i> Bevestig Verwijdering</h4>
-      </div>
-      <div class="w3-container w3-padding">
-        <p id="deleteModalText"></p>
-        <p><b>LET OP:</b> Het verwijderen van essentiële instellingen kan de werking van de website permanent verstoren!</p>
-      </div>
-      <div class="w3-container w3-padding w3-light-grey w3-right-align">
-        <button type="button" class="w3-button w3-round-large w3-border" onclick="document.getElementById('deleteModal').style.display='none'">Annuleren</button>
-        <a id="confirmDeleteButton" class="w3-button w3-red w3-round-large">Verwijderen</a>
-      </div>
-    </div>
-  </div>
-
+  <!-- Footer -->
   <?php require_once('../includes/footer.php') ?>
-
 </div>
+
 <script>
-if ("<?php echo $_SESSION['gps']?>" == "true"){
+if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
   setInterval(function() {
     GPSrefresh();
   }, 5555);
@@ -326,6 +370,7 @@ function GPSrefresh() {
     function showPosition(position) {
         console.log("Latitude: " + position.coords.latitude + "\nLongitude: " + position.coords.longitude);
         
+        var xmlhttp;
         if (window.XMLHttpRequest) {
             xmlhttp = new XMLHttpRequest();
         } else {
@@ -333,16 +378,14 @@ function GPSrefresh() {
         }
         xmlhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
-               // Succes logica
             }
         };
-        // Opgelet: Pad aangepast naar ../functies.php omdat deze pagina zich in een subfolder lijkt te bevinden (gezien require("../dblogin.php"))
         xmlhttp.open("GET", "../functies.php?lat=" + position.coords.latitude + "&lon=" + position.coords.longitude, true);
         xmlhttp.send();
     }
 }
 
-// Show W3 modal for deleting a setting
+// Show modal for deleting a setting
 function confirmDelete(settingName) {
     // Set the dynamic text in the modal
     document.getElementById('deleteModalText').innerHTML = "Weet je zeker dat je de instelling '<strong>" + settingName + "</strong>' wilt verwijderen?";
@@ -352,7 +395,7 @@ function confirmDelete(settingName) {
     document.getElementById('confirmDeleteButton').href = deleteUrl;
 
     // Show the modal
-    document.getElementById('deleteModal').style.display = 'block';
+    document.getElementById('deleteModal').classList.remove('hidden');
 }
 </script>
 

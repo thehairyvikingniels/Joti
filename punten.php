@@ -87,280 +87,188 @@ $stmt->close();
 ?>
 
 <!DOCTYPE html>
-
-<html>
-
-<title>Jotihunt - De Geuzen</title>
-
+<html lang="nl">
+<head>
+<title>Jotihunt - Punten</title>
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
-
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
-
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
-
-<style>
-
-html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
-
-</style>
-
-<body class="w3-light-grey">
-
-<!-- Topbar -->
-<?php include_once('includes/topbar.php') ?>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<?php include_once('includes/theme.php'); ?>
+</head>
+<body class="flex h-screen overflow-hidden">
 
 <!-- Sidebar -->
 <?php include_once('includes/sidebar.php') ?>
 
-<!-- !PAGE CONTENT! -->
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+  <!-- Topbar -->
+  <?php include_once('includes/topbar.php') ?>
 
-<div class="w3-main" style="margin-left:200px;margin-top:43px;">
+  <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
-  <!-- Header -->
 
-  <header class="w3-container" style="padding-top:22px">
-
-    <h5><b><i class="fas fa-trophy"></i> Punten</b></h5>
-
-    <div class="w3-row-padding" style="margin:0 -16px">
-
-      <div class="w3-card-4 w3-padding w3-white w3-margin">
-
-        <h5><span class="w3-xlarge"><?php echo $plaats;?>e</span> Plaats</h5>
-
-        <table>
-
-          <tr>
-
-            <td>Hunts</td>
-
-            <td><?php echo $hunts;?></td>
-
-          </tr>
-
-          <tr>
-
-            <td>Tegenhunts</td>
-
-            <td><?php echo $tegenhunts;?></td>
-
-          </tr>
-
-          <tr>
-
-            <td>Opdrachten</td>
-
-            <td><?php echo $opdrachten;?></td>
-
-          </tr>
-
-          <tr>
-
-            <td>Fotoopdrachten</td>
-
-            <td><?php echo $fotoopdrachten;?></td>
-
-          </tr>
-
-          <tr>
-
-            <td>Hints</td>
-
-            <td><?php echo $hints;?></td>
-
-          </tr>
-
-          <tr>
-
-            <td>Bonus</td>
-
-            <td><?php echo $bonus;?></td>
-
-          </tr>
-
-          <tr>
-
-            <td>Penalties</td>
-
-            <td><?php echo $penalties;?></td>
-
-          </tr>
-
-          <tr>
-
-            <td><b>Totaal</b></td>
-
-            <td><?php echo $puntentotaal;?></td>
-
-          </tr>
-
-        </table>
-
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <!-- Your Team Score Card -->
+      <div class="theme-card rounded border shadow-sm overflow-hidden lg:col-span-1 h-fit">
+        <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h5 class="text-lg font-bold flex items-center">
+              <span class="text-2xl mr-2 font-black"><?php echo $plaats;?>e</span> Plaats
+            </h5>
+        </div>
+        <div class="p-0">
+            <table class="w-full text-sm text-left">
+              <tbody class="divide-y" style="border-color: var(--theme-card-border);">
+                <tr class="hover:bg-black/5 transition">
+                  <td class="px-6 py-3 font-medium">Hunts</td>
+                  <td class="px-6 py-3 text-right font-bold"><?php echo $hunts;?></td>
+                </tr>
+                <tr class="hover:bg-black/5 transition">
+                  <td class="px-6 py-3 font-medium">Tegenhunts</td>
+                  <td class="px-6 py-3 text-right font-bold"><?php echo $tegenhunts;?></td>
+                </tr>
+                <tr class="hover:bg-black/5 transition">
+                  <td class="px-6 py-3 font-medium">Opdrachten</td>
+                  <td class="px-6 py-3 text-right font-bold"><?php echo $opdrachten;?></td>
+                </tr>
+                <tr class="hover:bg-black/5 transition">
+                  <td class="px-6 py-3 font-medium">Fotoopdrachten</td>
+                  <td class="px-6 py-3 text-right font-bold"><?php echo $fotoopdrachten;?></td>
+                </tr>
+                <tr class="hover:bg-black/5 transition">
+                  <td class="px-6 py-3 font-medium">Hints</td>
+                  <td class="px-6 py-3 text-right font-bold"><?php echo $hints;?></td>
+                </tr>
+                <tr class="hover:bg-black/5 transition">
+                  <td class="px-6 py-3 font-medium text-green-600 dark:text-green-400">Bonus</td>
+                  <td class="px-6 py-3 text-right font-bold text-green-600 dark:text-green-400"><?php echo $bonus;?></td>
+                </tr>
+                <tr class="hover:bg-black/5 transition">
+                  <td class="px-6 py-3 font-medium text-red-600 dark:text-red-400">Penalties</td>
+                  <td class="px-6 py-3 text-right font-bold text-red-600 dark:text-red-400"><?php echo $penalties;?></td>
+                </tr>
+                <tr class="hover:bg-black/5 transition" style="background-color: var(--theme-card-header);">
+                  <td class="px-6 py-4 font-bold text-base uppercase">Totaal</td>
+                  <td class="px-6 py-4 text-right font-bold text-base"><?php echo $puntentotaal;?></td>
+                </tr>
+              </tbody>
+            </table>
+        </div>
       </div>
 
-      <div class="w3-card-4 w3-padding w3-white w3-margin">
-
-        <h5>Scorelijst</h5>
-
-        <table class="w3-table-all">
-
-          <tr claas="w3-white">
-
-            <th style="background: white; position: sticky;top: 42px;">Plaats</th>
-
-            <th style="background: white; position: sticky;top: 42px;">Hunts</th>
-
-            <th style="background: white; position: sticky;top: 42px;">Tegenhunts</th>
-
-            <th style="background: white; position: sticky;top: 42px;">Opdrachten</th>
-
-            <th style="background: white; position: sticky;top: 42px;">Foto Opdrachten</th>
-
-            <th style="background: white; position: sticky;top: 42px;">Hints</th>
-
-            <th style="background: white; position: sticky;top: 42px;">Bonus</th>
-
-            <th style="background: white; position: sticky;top: 42px;">Penalties</th>
-
-            <th style="background: white; position: sticky;top: 42px;"><b>Totaal</b></th>
-
-          </tr>
-
+      <!-- Scoreboard Card -->
+      <div class="theme-card rounded border shadow-sm overflow-hidden lg:col-span-2">
+        <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h5 class="text-lg font-bold">Scorelijst</h5>
+        </div>
+        <div class="overflow-x-auto max-h-[600px]">
           <?php
           // Get the points for own group
-          $stmt = $conn->prepare("SELECT * FROM Punten");
+          $stmt = $conn->prepare("SELECT * FROM Punten ORDER BY (hunts + tegenhunts + opdrachten + foto_opdrachten + hints + bonus - strafpunten) DESC");
           $stmt->execute();
           $result = $stmt->get_result();
 
           if ($result->num_rows > 0) {
+            echo '
+            <table class="w-full text-sm text-left whitespace-nowrap">
+              <thead class="text-xs uppercase sticky top-0 z-10 shadow-sm" style="background-color: var(--theme-card-header);">
+                <tr>
+                  <th class="px-4 py-3 font-bold border-b" style="border-color: var(--theme-card-border);">Plts</th>
+                  <th class="px-4 py-3 font-bold border-b" style="border-color: var(--theme-card-border);">Team</th>
+                  <th class="px-4 py-3 font-bold border-b text-center" style="border-color: var(--theme-card-border);">Hunts</th>
+                  <th class="px-4 py-3 font-bold border-b text-center" style="border-color: var(--theme-card-border);">T.Hunts</th>
+                  <th class="px-4 py-3 font-bold border-b text-center" style="border-color: var(--theme-card-border);">Opdr</th>
+                  <th class="px-4 py-3 font-bold border-b text-center" style="border-color: var(--theme-card-border);">F.Opdr</th>
+                  <th class="px-4 py-3 font-bold border-b text-center" style="border-color: var(--theme-card-border);">Hints</th>
+                  <th class="px-4 py-3 font-bold border-b text-center" style="border-color: var(--theme-card-border);">Bonus</th>
+                  <th class="px-4 py-3 font-bold border-b text-center" style="border-color: var(--theme-card-border);">Pen</th>
+                  <th class="px-4 py-3 font-bold border-b text-right text-base" style="border-color: var(--theme-card-border);">Totaal</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y" style="border-color: var(--theme-card-border);">';
             while($row = $result->fetch_assoc()) {
+              // Fetch team name based on groep_id
+              $teamName = "Groep " . $row['groep_id'];
+              $stmt2 = $conn->prepare("SELECT naam FROM Groepen WHERE id=?");
+              $stmt2->bind_param("i", $row['groep_id']);
+              $stmt2->execute();
+              $res2 = $stmt2->get_result();
+              if($r2 = $res2->fetch_assoc()) {
+                $teamName = $r2['naam'];
+              }
+              $stmt2->close();
+              
+              $isUs = (stripos($teamName, 'geuzen') !== false);
+              $rowClass = $isUs ? 'bg-blue-500/10 font-bold' : 'hover:bg-black/5 transition';
+
               echo '
-              <tr>
-                <td>'.($row['plaats'] ?? "?").'</td>
-                <td>'.($row['hunts'] ?? 0).'</td>
-                <td>'.($row['tegenhunts'] ?? 0).'</td>
-                <td>'.($row['opdrachten'] ?? 0).'</td>
-                <td>'.($row['foto_opdrachten'] ?? 0).'</td>
-                <td>'.($row['hints'] ?? 0).'</td>
-                <td>'.($row['bonus'] ?? 0).'</td>
-                <td>'.($row['strafpunten'] ?? 0).'</td>
-                <td>'.( ($row['hunts'] ?? 0) + ($row['tegenhunts'] ?? 0) + ($row['opdrachten'] ?? 0) + ($row['foto_opdrachten'] ?? 0) + ($row['hints'] ?? 0) + ($row['bonus'] ?? 0) - ($row['strafpunten'] ?? 0) ).'</td>
+              <tr class="'.$rowClass.'">
+                <td class="px-4 py-3 text-center">'.($row['plaats'] ?? "?").'</td>
+                <td class="px-4 py-3 font-medium">'.$teamName.'</td>
+                <td class="px-4 py-3 text-center">'.($row['hunts'] ?? 0).'</td>
+                <td class="px-4 py-3 text-center">'.($row['tegenhunts'] ?? 0).'</td>
+                <td class="px-4 py-3 text-center">'.($row['opdrachten'] ?? 0).'</td>
+                <td class="px-4 py-3 text-center">'.($row['foto_opdrachten'] ?? 0).'</td>
+                <td class="px-4 py-3 text-center">'.($row['hints'] ?? 0).'</td>
+                <td class="px-4 py-3 text-center text-green-600 dark:text-green-400">'.($row['bonus'] ?? 0).'</td>
+                <td class="px-4 py-3 text-center text-red-600 dark:text-red-400">'.($row['strafpunten'] ?? 0).'</td>
+                <td class="px-4 py-3 text-right font-bold text-base">'.( ($row['hunts'] ?? 0) + ($row['tegenhunts'] ?? 0) + ($row['opdrachten'] ?? 0) + ($row['foto_opdrachten'] ?? 0) + ($row['hints'] ?? 0) + ($row['bonus'] ?? 0) - ($row['strafpunten'] ?? 0) ).'</td>
               </tr>
               ';
             }
+            echo '</tbody></table>';
           } else {
-            echo "</table><h3>Nog geen punt-gegevens beschikbaar...</h3>";
+            echo "<div class='p-8 text-center opacity-70'>
+                    <i class='fas fa-trophy text-4xl mb-3 block'></i>
+                    <h3 class='text-lg font-bold'>Nog geen punt-gegevens beschikbaar...</h3>
+                  </div>";
           }
           $stmt->close();
         ?>
-
-        </table>
-
+        </div>
       </div>
-
     </div>
-
-  </header>
+  </main>
 
   <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
-
-
-
-  <!-- End page content -->
-
 </div>
 
 <script>
-
-
-
-if ("<?php echo $_SESSION['gps']?>" == "true"){
-
+if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
   setInterval(function() {
-
     GPSrefresh();
-
   }, 5555);
-
 }
 
-  
-
- 
-
- function GPSrefresh() {
-
+function GPSrefresh() {
     if (navigator.geolocation) {
-
         navigator.geolocation.getCurrentPosition(showPosition);
-
     } else {
-
         console.log("Geolocation is not supported by this browser.");
-
     }
-
     function showPosition(position) {
-
-     console.log("Latitude: " + position.coords.latitude + 
-
-      "<br>Longitude: " + position.coords.longitude);
-
+      console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
       
-
-      
-
+      var xmlhttp;
       if (window.XMLHttpRequest) {
-
-            // code for IE7+, Firefox, Chrome, Opera, Safari
-
             xmlhttp = new XMLHttpRequest();
-
-        } else {
-
-            // code for IE6, IE5
-
+      } else {
             xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-
-        }
-
-        xmlhttp.onreadystatechange = function() {
-
+      }
+      xmlhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
-
             }
-
-        };
-
-        xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-
-        xmlhttp.send();
-
+      };
+      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
+      xmlhttp.send();
     }
-
-   
-
-   
-
-
-
- } 
-
-  
-
-  
-
+} 
 </script>
 
-
-
 </body>
-
 </html>

@@ -82,24 +82,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) 
         $stmt->bind_param("sssddssi", $type, $deelgebied, $ingestuurd_op, $lat, $lon, $code, $opmerking, $ingeleverd_door);
         
         if ($stmt->execute()) {
-            $message = '<div class="w3-panel w3-green w3-display-container">
-                            <span onclick="this.parentElement.style.display=\'none\'" class="w3-button w3-large w3-display-topright">&times;</span>
-                            <h3>Success!</h3>
-                            <p>Voslocatie succesvol toegevoegd.</p>
+            $message = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6 shadow-sm">
+                            <span onclick="this.parentElement.style.display=\'none\'" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">
+                                <i class="fas fa-times opacity-70 hover:opacity-100 transition"></i>
+                            </span>
+                            <strong class="font-bold">Success!</strong>
+                            <span class="block sm:inline">Voslocatie succesvol toegevoegd.</span>
                         </div>';
         } else {
-            $message = '<div class="w3-panel w3-red w3-display-container">
-                            <span onclick="this.parentElement.style.display=\'none\'" class="w3-button w3-large w3-display-topright">&times;</span>
-                            <h3>Error!</h3>
-                            <p>Er is een fout opgetreden: ' . htmlspecialchars($stmt->error) . '</p>
+            $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6 shadow-sm">
+                            <span onclick="this.parentElement.style.display=\'none\'" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">
+                                <i class="fas fa-times opacity-70 hover:opacity-100 transition"></i>
+                            </span>
+                            <strong class="font-bold">Error!</strong>
+                            <span class="block sm:inline">Er is een fout opgetreden: ' . htmlspecialchars($stmt->error) . '</span>
                         </div>';
         }
         $stmt->close();
     } else {
-        $message = '<div class="w3-panel w3-red w3-display-container">
-                        <span onclick="this.parentElement.style.display=\'none\'" class="w3-button w3-large w3-display-topright">&times;</span>
-                        <h3>Error!</h3>
-                        <p>Ongeldige coördinaten ingevoerd.</p>
+        $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6 shadow-sm">
+                        <span onclick="this.parentElement.style.display=\'none\'" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">
+                            <i class="fas fa-times opacity-70 hover:opacity-100 transition"></i>
+                        </span>
+                        <strong class="font-bold">Error!</strong>
+                        <span class="block sm:inline">Ongeldige coördinaten ingevoerd.</span>
                     </div>';
     }
 }
@@ -129,90 +135,96 @@ if ($result->num_rows > 0) {
 
 ?>
 <!DOCTYPE html>
-<html>
-<title>Jotihunt - Vossen</title>
+<html lang="nl">
+<head>
+<title>Jotihunt - Voslocaties</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
-<style>
-html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
-</style>
-<body class="w3-light-grey">
-
-<!-- Topbar -->
-<?php include_once('includes/topbar.php') ?>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<?php include_once('includes/theme.php'); ?>
+</head>
+<body class="flex h-screen overflow-hidden">
 
 <!-- Sidebar -->
 <?php include_once('includes/sidebar.php') ?>
 
-<!-- !PAGE CONTENT! -->
-<div class="w3-main" style="margin-left:200px;margin-top:43px;">
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+  <!-- Topbar -->
+  <?php include_once('includes/topbar.php') ?>
 
-  <!-- Header -->
-  <header class="w3-container" style="padding-top:22px">
-    <h5><b><i class="fas fa-circle-nodes"></i> Voslocaties</b></h5>
-  </header>
+  <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
-  <!-- --- START: NEW FEATURE - LOCATION FORM --- -->
-  <div class="w3-container w3-padding-16">
-    <div class="w3-card-4">
-      <div class="w3-container w3-blue-gray">
-        <h2>Nieuwe voslocatie toevoegen</h2>
+
+    <!-- --- START: NEW FEATURE - LOCATION FORM --- -->
+    <div class="theme-card rounded border shadow-sm overflow-hidden mb-12 max-w-4xl">
+      <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+        <h3 class="text-xl font-bold">Nieuwe voslocatie toevoegen</h3>
       </div>
-      <form class="w3-container w3-padding" method="post" action="voslocaties.php">
+      <form class="p-6" method="post" action="voslocaties.php">
         
         <!-- This is where success or error messages will be displayed -->
         <?php echo $message; ?>
 
-        <div class="w3-row-padding">
-          <div class="w3-half">
-            <p>
-              <label class="w3-text-grey"><b>Coördinaat Systeem</b></label><br>
-              <input class="w3-radio" id="coord_latlon" type="radio" name="coord_type" value="latlon" onclick="showCoords('latlon');" checked>
-              <label for="coord_latlon" style="cursor: pointer;">Latitude / Longitude</label><br>
-              <input class="w3-radio" id="coord_rd" type="radio" name="coord_type" value="rd" onclick="showCoords('rd');">
-              <label for="coord_rd" style="cursor: pointer;">RD Coördinaten</label>
-            </p>
-            
-            <div id="latlon_coords">
-              <div class="w3-padding-small">
-                  <button type="button" class="w3-button w3-blue-gray w3-round" onclick="getGPSLocation()" id="gps-button"><i class="fas fa-location-arrow"></i> Haal locatie op</button>
-                  <span id="gps-status" class="w3-text-grey w3-margin-left"></span>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          <!-- Left Column -->
+          <div class="space-y-6">
+            <div>
+              <label class="block text-sm font-bold opacity-70 mb-2 uppercase tracking-wide">Coördinaat Systeem</label>
+              <div class="flex items-center space-x-6">
+                <label class="flex items-center space-x-2 cursor-pointer group">
+                  <input id="coord_latlon" type="radio" name="coord_type" value="latlon" onclick="showCoords('latlon');" checked class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                  <span class="group-hover:opacity-80 transition">Latitude / Longitude</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer group">
+                  <input id="coord_rd" type="radio" name="coord_type" value="rd" onclick="showCoords('rd');" class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                  <span class="group-hover:opacity-80 transition">RD Coördinaten</span>
+                </label>
               </div>
-              <p>
-                <label class="w3-text-grey">Latitude</label>
-                <input class="w3-input w3-border" type="number" step="any" name="lat" placeholder="52.000000" required>
-              </p>
-              <p>
-                <label class="w3-text-grey">Longitude</label>
-                <input class="w3-input w3-border" type="number" step="any" name="lon" placeholder="5.900000" required>
-              </p>
             </div>
             
-            <div id="rd_coords" style="display:none;">
-              <p>
-                <label class="w3-text-grey">RD X</label>
-                <input class="w3-input w3-border" type="number" step="any" name="rd_x" placeholder="190000">
-              </p>
-              <p>
-                <label class="w3-text-grey">RD Y</label>
-                <input class="w3-input w3-border" type="number" step="any" name="rd_y" placeholder="450000">
-              </p>
+            <div id="latlon_coords" class="space-y-4">
+              <div>
+                  <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition shadow-sm text-sm" onclick="getGPSLocation()" id="gps-button"><i class="fas fa-location-arrow mr-2"></i>Haal locatie op</button>
+                  <span id="gps-status" class="text-sm opacity-70 ml-3 italic"></span>
+              </div>
+              <div>
+                <label class="block text-sm font-bold opacity-70 mb-1">Latitude</label>
+                <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="number" step="any" name="lat" placeholder="52.000000" required>
+              </div>
+              <div>
+                <label class="block text-sm font-bold opacity-70 mb-1">Longitude</label>
+                <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="number" step="any" name="lon" placeholder="5.900000" required>
+              </div>
             </div>
             
-            <p>
-              <label class="w3-text-grey"><b>Datum & Tijd</b></label>
-              <input class="w3-input w3-border" type="datetime-local" name="datumtijd" value="<?php echo date('Y-m-d\TH:i'); ?>" required>
-            </p>
+            <div id="rd_coords" class="space-y-4" style="display:none;">
+              <div>
+                <label class="block text-sm font-bold opacity-70 mb-1">RD X</label>
+                <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="number" step="any" name="rd_x" placeholder="190000">
+              </div>
+              <div>
+                <label class="block text-sm font-bold opacity-70 mb-1">RD Y</label>
+                <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="number" step="any" name="rd_y" placeholder="450000">
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Datum & Tijd</label>
+              <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="datetime-local" name="datumtijd" value="<?php echo date('Y-m-d\TH:i'); ?>" required>
+            </div>
           </div>
 
-          <div class="w3-half">
-            <p>
-              <label class="w3-text-grey"><b>Vossenteam (Deelgebied)</b></label>
-              <select class="w3-select w3-border" name="deelgebied" required>
+          <!-- Right Column -->
+          <div class="space-y-6">
+            <div>
+              <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Vossenteam (Deelgebied)</label>
+              <select class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white" name="deelgebied" required>
                 <option value="" disabled selected>Kies een team</option>
                 <?php
                 foreach ($vossen_names as $fox) {
@@ -220,86 +232,78 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
                 }
                 ?>
               </select>
-            </p>
+            </div>
             
-            <p>
-              <label class="w3-text-grey"><b>Type Locatie</b></label>
-              <select class="w3-select w3-border" name="type" id="type_select" onchange="toggleCodeInput()" required>
+            <div>
+              <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Type Locatie</label>
+              <select class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white" name="type" id="type_select" onchange="toggleCodeInput()" required>
                 <option value="Hint">Hint</option>
                 <option value="Hunt">Hunt</option>
                 <option value="Spot" selected>Spot</option>
                 <option value="Voorspelling">Voorspelling</option>
               </select>
-            </p>
+            </div>
             
-            <p>
-              <label class="w3-text-grey"><b>Code</b></label>
-              <input class="w3-input w3-border" type="text" name="code" id="code_input" maxlength="32" disabled>
-            </p>
+            <div>
+              <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Code</label>
+              <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-gray-100 disabled:opacity-60 disabled:cursor-not-allowed" type="text" name="code" id="code_input" maxlength="32" disabled>
+            </div>
             
-            <p>
-              <label class="w3-text-grey"><b>Opmerking (optioneel)</b></label>
-              <textarea class="w3-input w3-border" name="opmerking" style="resize:vertical" maxlength="128"></textarea>
-            </p>
+            <div>
+              <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Opmerking (optioneel)</label>
+              <textarea class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm resize-y" name="opmerking" rows="3" maxlength="128"></textarea>
+            </div>
           </div>
         </div>
         
-        <p class="w3-padding-16">
-          <button type="submit" name="submit_voslocatie" class="w3-button w3-blue-gray w3-padding-large w3-hover-dark-grey"><i class="fas fa-plus"></i> Locatie Toevoegen</button>
-        </p>
+        <div class="mt-8 border-t pt-6" style="border-color: var(--theme-card-border);">
+          <button type="submit" name="submit_voslocatie" class="theme-bg-primary text-white font-bold py-3 px-8 rounded shadow-sm hover:opacity-90 transition"><i class="fas fa-plus mr-2"></i>Locatie Toevoegen</button>
+        </div>
       </form>
     </div>
-  </div>
-  <!-- --- END: NEW FEATURE - LOCATION FORM --- -->
-
+    <!-- --- END: NEW FEATURE - LOCATION FORM --- -->
+  </main>
 
   <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
-
-  <!-- End page content -->
-  </div>
+</div>
   
-  <script>
-
+<script>
 if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
   setInterval(function() {
     GPSrefresh();
   }, 5555);
 }
  
- function GPSrefresh() {
+function GPSrefresh() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(showPosition);
     } else {
         console.log("Geolocation is not supported by this browser.");
     }
     function showPosition(position) {
-     console.log("Latitude: " + position.coords.latitude + 
-      "<br>Longitude: " . position.coords.longitude);
+      console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
       
       var xmlhttp;
       if (window.XMLHttpRequest) {
-            // code for IE7+, Firefox, Chrome, Opera, Safari
             xmlhttp = new XMLHttpRequest();
-        } else {
-            // code for IE6, IE5
+      } else {
             xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-        xmlhttp.onreadystatechange = function() {
+      }
+      xmlhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
-                // optional: handle response
             }
-        };
-        xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-        xmlhttp.send();
+      };
+      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
+      xmlhttp.send();
     }
- }
+}
 
- // --- START: NEW FEATURE - JAVASCRIPT ---
- /**
-  * Toggles the visibility of coordinate input fields based on user selection.
-  * Also handles the 'required' attribute to ensure form validation works correctly.
-  */
+// --- START: NEW FEATURE - JAVASCRIPT ---
+/**
+ * Toggles the visibility of coordinate input fields based on user selection.
+ * Also handles the 'required' attribute to ensure form validation works correctly.
+ */
 function showCoords(type) {
     const latInput = document.querySelector('input[name="lat"]');
     const lonInput = document.querySelector('input[name="lon"]');
@@ -344,13 +348,13 @@ function getGPSLocation() {
     const lonInput = document.querySelector('input[name="lon"]');
 
     if (navigator.geolocation) {
-        gpsStatus.textContent = 'Locatie ophalen...';
+        gpsStatus.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Locatie ophalen...';
         navigator.geolocation.getCurrentPosition(
             function(position) {
                 // Populate the fields with retrieved coordinates, rounded to 6 decimal places.
                 latInput.value = position.coords.latitude.toFixed(6);
                 lonInput.value = position.coords.longitude.toFixed(6);
-                gpsStatus.innerHTML = '<i class="fas fa-check-circle" style="color: green;"></i> Locatie succesvol opgehaald.';
+                gpsStatus.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i>Locatie succesvol opgehaald.';
             },
             function(error) {
                 let errorMessage;
@@ -368,7 +372,7 @@ function getGPSLocation() {
                         errorMessage = "Een onbekende fout is opgetreden.";
                         break;
                 }
-                gpsStatus.innerHTML = '<i class="fas fa-times-circle" style="color: red;"></i> ' + errorMessage;
+                gpsStatus.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-1"></i>' + errorMessage;
             }
         );
     } else {
@@ -386,10 +390,14 @@ function toggleCodeInput() {
     if (typeSelect.value === 'Hunt') {
         codeInput.disabled = false;
         codeInput.required = true;
+        codeInput.classList.remove('bg-gray-100');
+        codeInput.classList.add('bg-white');
     } else {
         codeInput.disabled = true;
         codeInput.required = false;
         codeInput.value = ''; // Clear the value if not a Hunt
+        codeInput.classList.add('bg-gray-100');
+        codeInput.classList.remove('bg-white');
     }
 }
 

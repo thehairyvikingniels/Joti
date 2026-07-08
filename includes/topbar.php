@@ -55,7 +55,7 @@ foreach ($vossen_names as $vosnaam) {
                 } elseif ($diff < 86400) {
                     $vos[$vosnaam]["duratie"] = round($diff / 3600, 1) . " uur";
                 } else {
-                    $vos[$vosnaam]["duratie"] = "24 uur +";
+                    $vos[$vosnaam]["duratie"] = ">24u";
                 }
             }
         }
@@ -73,35 +73,41 @@ foreach ($vossen_names as $vosnaam) {
 }
 ?>
 
-<div class="w3-bar w3-top w3-black w3-large" style="z-index:4;">
+<header class="h-14 theme-card flex items-center justify-between px-6 sticky top-0 z-30 border-b shadow-sm flex-shrink-0">
+  <div class="flex items-center">
+    <button class="md:hidden opacity-60 hover:opacity-100 mr-3 transition" onclick="w3_open()"><i class="fas fa-bars"></i></button>
+    <h2 class="text-base sm:text-lg font-semibold whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer md:cursor-auto" onclick="if(window.innerWidth < 768) w3_open()"><?= htmlspecialchars(ucfirst(PAGE_NAME)) ?></h2>
+    <span class="ml-2 sm:ml-4 text-xs sm:text-sm font-medium opacity-60 border-l pl-2 sm:pl-4 whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px] sm:max-w-none" style="border-color: var(--theme-card-border);"><?= htmlspecialchars($topbarGroupName) ?></span>
+  </div>
 
-  <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey" onclick="w3_open();"><i class="fa fa-bars"></i> &nbsp;Menu</button>
-
-  <div class="w3-hide-small w3-hide-medium w3-bar-item" style="display:flex; gap:6px; align-items:center; flex:1; min-width:0;">
+  <div class="hidden xl:flex items-center space-x-2 mx-4 flex-1 justify-center max-w-2xl overflow-hidden whitespace-nowrap">
     <?php
-      foreach ($vossen_names as $n) {
-        echo '<div class="w3-center w3-padding-small w3-round w3-'.htmlspecialchars($vos[$n]["Kleur"]).'" style="flex:1; min-width:90px; box-sizing:border-box; height:34px; display:flex; align-items:center; justify-content:center; font-size:0.95rem;">';
-        echo '<span style="font-weight:700; margin-right:6px;">'.htmlspecialchars(substr($n,0,1)).'</span><span>'.htmlspecialchars($vos[$n]["duratie"]).'</span>';
-        echo '</div>';
+      if (isset($vossen_names)) {
+          foreach ($vossen_names as $n) {
+            $tw_color = 'bg-gray-200 text-gray-700';
+            if ($vos[$n]['Kleur'] == 'red') $tw_color = 'bg-red-500 text-white';
+            elseif ($vos[$n]['Kleur'] == 'orange') $tw_color = 'bg-orange-500 text-white';
+            elseif ($vos[$n]['Kleur'] == 'green') $tw_color = 'bg-green-500 text-white';
+            
+            echo '<div class="px-2 py-1 rounded text-xs font-bold flex items-center shadow-sm '.$tw_color.' whitespace-nowrap">';
+            echo '<span class="mr-1">'.htmlspecialchars(substr($n,0,1)).'</span><span>'.htmlspecialchars($vos[$n]["duratie"]).'</span>';
+            echo '</div>';
+          }
       }
     ?>
   </div>
 
-  <span class="w3-bar-item w3-right"><?= htmlspecialchars($topbarGroupName) ?></span>
-
-</div>
-
-<style>
-  /* Maak alleen het hoofdgedeelte flexibel, laat de body en sidebar met rust */
-  .w3-main {
-    display: flex;
-    flex-direction: column;
-    /* 100% van de schermhoogte, min de 43px marge van de topbar */
-    min-height: calc(100vh - 43px); 
-  }
-
-  /* Duw de footer áltijd naar de bodem van w3-main */
-  #site-footer-wrapper {
-    margin-top: auto;
-  }
-</style>
+  <div class="flex items-center space-x-3 sm:space-x-4">
+    <?php 
+    $gps_active = (isset($_SESSION['gps']) && $_SESSION['gps'] == "true");
+    $gps_color = $gps_active ? "text-green-500 opacity-100" : "opacity-60 hover:opacity-100";
+    ?>
+    <a href="<?= $notInAdminfolder ?? '' ?>functies.php?gpstoggle=1&return=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="<?= $gps_color ?> transition-colors" title="Location sharing is <?= $gps_active ? 'ON' : 'OFF' ?>"><i class="fas fa-crosshairs text-lg"></i></a>
+    <a href="<?= $notInAdminfolder ?? '' ?>instellingen" class="flex items-center space-x-2 border-l pl-3 sm:pl-4 hover:opacity-80 transition" style="border-color: var(--theme-card-border);">
+      <div class="w-8 h-8 rounded theme-bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
+         <?php echo strtoupper(substr($vn ?? 'U', 0, 1)); ?>
+      </div>
+      <span class="text-sm font-medium hidden sm:block"><?php echo htmlspecialchars(ucfirst($vn ?? 'User')); ?></span>
+    </a>
+  </div>
+</header>

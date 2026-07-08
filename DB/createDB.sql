@@ -107,7 +107,8 @@ CREATE TABLE `Gebruikers` (
   `last_login` datetime DEFAULT NULL,
   `lat` decimal(8,6) DEFAULT NULL,
   `lon` decimal(9,6) DEFAULT NULL,
-  `geotijd` datetime DEFAULT NULL
+  `geotijd` datetime DEFAULT NULL,
+  `theme` varchar(32) NOT NULL DEFAULT 'light'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
