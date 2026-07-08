@@ -1,6 +1,11 @@
 <?php
+// redirect if user is logged in
 session_start();
-session_destroy();
+if (isset($_SESSION['id']) && !empty($_SESSION['id'])) {
+    header("Location: home");
+    exit();
+}
+
 require_once("dblogin.php");
 
 $groupName = 'Jotihunt';
