@@ -11,32 +11,27 @@ if (!isset($_SESSION['id'])) {
 require("dblogin.php");
 require_once("functies.php");
 
-// --- START: NEW FEATURE - PROCESS FORM ---
-$message = ''; // Variable to store success or error messages for the user.
+$message = '';
 
 /**
  * Converts RD (Rijksdriehoekstelsel) coordinates to WGS84 (Latitude/Longitude).
- * This is an approximation based on the formulas provided by the Dutch Kadaster.
+ * Provides an approximation based on the formulas from the Dutch Kadaster.
  *
  * @param float $rd_x The RD X-coordinate.
  * @param float $rd_y The RD Y-coordinate.
- * @return array An associative array with 'lat' and 'lon'.
+ * @return array An associative array containing 'lat' and 'lon'.
  */
 function convertRDtoLatLon($rd_x, $rd_y) {
-    // Amersfoort datum parameters
     $X0 = 155000;
     $Y0 = 463000;
     $phi0 = 52.15517440;
     $lambda0 = 5.38720621;
 
-    // Calculate differences from the origin
     $dx = ($rd_x - $X0) * 1E-5;
     $dy = ($rd_y - $Y0) * 1E-5;
 
-    // Polynomial expansion for latitude
     $sum_lat = (3235.65389 * $dy) + (-32.58297 * pow($dx, 2)) + (-0.2475 * pow($dy, 2)) + (-0.84978 * pow($dx, 2) * $dy) + (-0.0655 * pow($dy, 3)) + (-0.01709 * pow($dx, 2) * pow($dy, 2)) + (-0.00738 * $dx) + (0.0053 * pow($dx, 4)) + (-0.00039 * pow($dx, 2) * pow($dy, 3)) + (0.00033 * pow($dx, 4) * $dy) + (-0.00012 * $dx * $dy);
 
-    // Polynomial expansion for longitude
     $sum_lon = (5260.52916 * $dx) + (105.94684 * $dx * $dy) + (2.45656 * $dx * pow($dy, 2)) + (-0.81885 * pow($dx, 3)) + (0.05594 * $dx * pow($dy, 3)) + (-0.05607 * pow($dx, 3) * $dy) + (0.01199 * $dy) + (-0.00256 * pow($dx, 3) * pow($dy, 2)) + (0.00128 * $dx * pow($dy, 4)) + (0.00022 * pow($dy, 2)) + (-0.00022 * pow($dx, 2)) + (0.00026 * pow($dx, 5));
 
     $lat = $phi0 + $sum_lat / 3600;
@@ -45,21 +40,19 @@ function convertRDtoLatLon($rd_x, $rd_y) {
     return ['lat' => $lat, 'lon' => $lon];
 }
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) {
     // Sanitize and retrieve form data
-    $coord_type = $_POST['coord_type'];
-    $type = $_POST['type'];
-    $deelgebied = $_POST['deelgebied'];
-    $datumtijd_str = $_POST['datumtijd'];
-    $code = $_POST['code'];
-    $opmerking = $_POST['opmerking'];
+    $coord_type = $_POST['coord_type'] ?? '';
+    $type = $_POST['type'] ?? '';
+    $deelgebied = $_POST['deelgebied'] ?? '';
+    $datumtijd_str = $_POST['datumtijd'] ?? '';
+    $code = $_POST['code'] ?? null;
+    $opmerking = $_POST['opmerking'] ?? null;
     $ingeleverd_door = $_SESSION['id'];
 
     $lat = 0.0;
     $lon = 0.0;
 
-    // Check which coordinate type was submitted and process accordingly
     if ($coord_type === 'latlon') {
         $lat = filter_input(INPUT_POST, 'lat', FILTER_VALIDATE_FLOAT);
         $lon = filter_input(INPUT_POST, 'lon', FILTER_VALIDATE_FLOAT);
@@ -71,13 +64,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) 
             $lat = $converted_coords['lat'];
             $lon = $converted_coords['lon'];
         }
+    } elseif ($coord_type === 'group') {
+        $group_id = filter_input(INPUT_POST, 'group_id', FILTER_VALIDATE_INT);
+        if ($group_id) {
+            $stmt_grp = $conn->prepare("SELECT lat, lon FROM Groepen WHERE id = ?");
+            $stmt_grp->bind_param("i", $group_id);
+            $stmt_grp->execute();
+            $grp_res = $stmt_grp->get_result();
+            if ($grp_row = $grp_res->fetch_assoc()) {
+                $lat = $grp_row['lat'];
+                $lon = $grp_row['lon'];
+            }
+            $stmt_grp->close();
+        }
     }
 
-    // Format datetime from "YYYY-MM-DDTHH:mm" to "YYYY-MM-DD HH:mm:ss" for MySQL
     $ingestuurd_op = str_replace('T', ' ', $datumtijd_str) . ':00';
 
     if ($lat && $lon) {
-        // Prepare and execute the insert statement to prevent SQL injection
         $stmt = $conn->prepare("INSERT INTO Voslocaties (type, deelgebied, ingestuurd_op, coordinaat_x, coordinaat_y, code, opmerking, ingeleverd_door, ingeleverd) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)");
         $stmt->bind_param("sssddssi", $type, $deelgebied, $ingestuurd_op, $lat, $lon, $code, $opmerking, $ingeleverd_door);
         
@@ -109,6 +113,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) 
                     </div>';
     }
 }
+
 $stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
 $stmt->bind_param("i", $_SESSION['id']);
 $stmt->execute();
@@ -122,7 +127,6 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
-// Get global site settings
 $stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
 $stmt->execute();
 $result = $stmt->get_result();
@@ -134,9 +138,17 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
-// Fetch group location for map centering based on GROUP_ID
-$group_lat = 52.15517440; // Default fallback latitude
-$group_lon = 5.38720621;  // Default fallback longitude
+$groups = [];
+$stmt_groups = $conn->prepare("SELECT id, naam, deelgebied FROM Groepen ORDER BY deelgebied, naam");
+$stmt_groups->execute();
+$res_groups = $stmt_groups->get_result();
+while ($row_group = $res_groups->fetch_assoc()) {
+    $groups[] = $row_group;
+}
+$stmt_groups->close();
+
+$group_lat = 52.15517440;
+$group_lon = 5.38720621;
 
 if (isset($siteSettings['GROUP_ID'])) {
     $stmt = $conn->prepare("SELECT lat, lon FROM Groepen WHERE id = ?");
@@ -177,7 +189,6 @@ if (isset($siteSettings['GROUP_ID'])) {
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
-
     <div class="theme-card rounded border shadow-sm overflow-hidden mb-12 max-w-4xl">
       <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
         <h3 class="text-xl font-bold">Nieuwe voslocatie toevoegen</h3>
@@ -190,15 +201,19 @@ if (isset($siteSettings['GROUP_ID'])) {
           
           <div class="space-y-6">
             <div>
-              <label class="block text-sm font-bold opacity-70 mb-2 uppercase tracking-wide">Coördinaat Systeem</label>
-              <div class="flex items-center space-x-6">
+              <label class="block text-sm font-bold opacity-70 mb-2 uppercase tracking-wide">Locatie Invoermethode</label>
+              <div class="flex items-center space-x-4">
                 <label class="flex items-center space-x-2 cursor-pointer group">
                   <input id="coord_latlon" type="radio" name="coord_type" value="latlon" onclick="showCoords('latlon');" checked class="w-4 h-4 text-blue-600 focus:ring-blue-500">
-                  <span class="group-hover:opacity-80 transition">Latitude / Longitude</span>
+                  <span class="group-hover:opacity-80 transition">Lat / Lon</span>
                 </label>
                 <label class="flex items-center space-x-2 cursor-pointer group">
                   <input id="coord_rd" type="radio" name="coord_type" value="rd" onclick="showCoords('rd');" class="w-4 h-4 text-blue-600 focus:ring-blue-500">
-                  <span class="group-hover:opacity-80 transition">RD Coördinaten</span>
+                  <span class="group-hover:opacity-80 transition">RD</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer group">
+                  <input id="coord_group" type="radio" name="coord_type" value="group" onclick="showCoords('group');" class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                  <span class="group-hover:opacity-80 transition">Groep</span>
                 </label>
               </div>
             </div>
@@ -231,6 +246,26 @@ if (isset($siteSettings['GROUP_ID'])) {
               <div>
                 <label class="block text-sm font-bold opacity-70 mb-1">RD Y</label>
                 <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="number" step="any" name="rd_y" placeholder="450000">
+              </div>
+            </div>
+
+            <div id="group_coords" class="space-y-4" style="display:none;">
+              <div>
+                <label class="block text-sm font-bold opacity-70 mb-1">Zoek Scoutinggroep</label>
+                <input type="text" id="group_search" onkeyup="filterGroups()" class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm mb-2" placeholder="Typ om te zoeken...">
+                <div class="border rounded max-h-48 overflow-y-auto bg-white shadow-inner">
+                    <table class="w-full text-sm text-left">
+                        <tbody id="group_list">
+                            <?php foreach($groups as $g): ?>
+                            <tr class="group-row cursor-pointer hover:bg-blue-50 transition border-b last:border-b-0" onclick="selectGroup(<?= $g['id'] ?>, this)">
+                                <td class="px-3 py-2 font-bold text-gray-600 w-10 border-r border-gray-100 text-center"><?= htmlspecialchars(substr($g['deelgebied'], 0, 1)) ?></td>
+                                <td class="px-3 py-2"><?= htmlspecialchars($g['naam']) ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <input type="hidden" name="group_id" id="selected_group_id">
               </div>
             </div>
             
@@ -280,7 +315,7 @@ if (isset($siteSettings['GROUP_ID'])) {
         </div>
       </form>
     </div>
-    </main>
+  </main>
 
   <div id="map-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-60 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl overflow-hidden flex flex-col h-[80vh] md:h-[600px]">
@@ -334,10 +369,9 @@ function GPSrefresh() {
     }
 }
 
-// --- START: NEW FEATURE - JAVASCRIPT ---
 /**
  * Toggles the visibility of coordinate input fields based on user selection.
- * Also handles the 'required' attribute to ensure form validation works correctly.
+ * Also handles the 'required' attribute to ensure HTML validation works properly.
  */
 function showCoords(type) {
     const latInput = document.querySelector('input[name="lat"]');
@@ -346,36 +380,34 @@ function showCoords(type) {
     const rdYInput = document.querySelector('input[name="rd_y"]');
     const gpsStatus = document.getElementById('gps-status');
 
-    // Reset values and status first
     gpsStatus.textContent = '';
     rdXInput.value = '';
     rdYInput.value = '';
 
+    document.getElementById('latlon_coords').style.display = 'none';
+    document.getElementById('rd_coords').style.display = 'none';
+    document.getElementById('group_coords').style.display = 'none';
+
+    latInput.required = false;
+    lonInput.required = false;
+    rdXInput.required = false;
+    rdYInput.required = false;
+
     if (type === 'latlon') {
         document.getElementById('latlon_coords').style.display = 'block';
-        document.getElementById('rd_coords').style.display = 'none';
-        
         latInput.required = true;
         lonInput.required = true;
-        rdXInput.required = false;
-        rdYInput.required = false;
-
     } else if (type === 'rd') {
-        document.getElementById('latlon_coords').style.display = 'none';
         document.getElementById('rd_coords').style.display = 'block';
-        
-        latInput.required = false;
-        lonInput.required = false;
         rdXInput.required = true;
         rdYInput.required = true;
-        
-        latInput.value = '';
-        lonInput.value = '';
+    } else if (type === 'group') {
+        document.getElementById('group_coords').style.display = 'block';
     }
 }
 
 /**
- * Gets the current GPS location and fills the lat/lon input fields.
+ * Retrieves the current GPS location and populates the lat/lon input fields.
  */
 function getGPSLocation() {
     const gpsStatus = document.getElementById('gps-status');
@@ -386,7 +418,6 @@ function getGPSLocation() {
         gpsStatus.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Locatie ophalen...';
         navigator.geolocation.getCurrentPosition(
             function(position) {
-                // Populate the fields with retrieved coordinates, rounded to 6 decimal places.
                 latInput.value = position.coords.latitude.toFixed(6);
                 lonInput.value = position.coords.longitude.toFixed(6);
                 gpsStatus.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i>Locatie succesvol opgehaald.';
@@ -416,7 +447,7 @@ function getGPSLocation() {
 }
 
 /**
- * Toggles the code input field based on the selected location type.
+ * Sets the code input field state depending on the selected location type.
  */
 function toggleCodeInput() {
     const typeSelect = document.getElementById('type_select');
@@ -430,24 +461,47 @@ function toggleCodeInput() {
     } else {
         codeInput.disabled = true;
         codeInput.required = false;
-        codeInput.value = ''; // Clear the value if not a Hunt
+        codeInput.value = '';
         codeInput.classList.add('bg-gray-100');
         codeInput.classList.remove('bg-white');
     }
 }
 
-// Mapbox Modal Logic
+/**
+ * Marks a scout group as selected and populates the hidden input field.
+ */
+function selectGroup(id, rowElement) {
+    document.getElementById('selected_group_id').value = id;
+    const rows = document.querySelectorAll('#group_list .group-row');
+    rows.forEach(row => row.classList.remove('bg-blue-100'));
+    rowElement.classList.add('bg-blue-100');
+}
+
+/**
+ * Filters the list of scout groups based on user search input.
+ */
+function filterGroups() {
+    const filter = document.getElementById('group_search').value.toLowerCase();
+    const rows = document.querySelectorAll('#group_list .group-row');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(filter) ? '' : 'none';
+    });
+}
+
 let mapModal;
 let modalMarker;
 let mapInitialized = false;
 
 mapboxgl.accessToken = '<?php echo $siteSettings["API_KEY_MAPBOX"] ?? ""; ?>';
 
+/**
+ * Initializes and displays the Mapbox modal.
+ */
 function openMapModal() {
     document.getElementById('map-modal').classList.remove('hidden');
     
     if (!mapInitialized) {
-        // Mapbox gebruikt [lng, lat] volgorde. Gecentreerd op de eigen groepslocatie uit de database.
         mapModal = new mapboxgl.Map({
             container: 'modal-map',
             style: 'mapbox://styles/mapbox/streets-v12',
@@ -485,10 +539,16 @@ function openMapModal() {
     }, 200);
 }
 
+/**
+ * Hides the Mapbox modal without saving.
+ */
 function closeMapModal() {
     document.getElementById('map-modal').classList.add('hidden');
 }
 
+/**
+ * Extracts coordinates from the placed Mapbox marker and inserts them into the form.
+ */
 function confirmMapLocation() {
     if (modalMarker) {
         const lngLat = modalMarker.getLngLat();
@@ -504,7 +564,6 @@ function confirmMapLocation() {
     }
 }
 
-// Initialize the code input state on page load.
 toggleCodeInput();
 </script>
 </body>
