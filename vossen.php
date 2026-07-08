@@ -99,7 +99,7 @@ $voslog_data = array_values($voslog_data_assoc);
 $stmt->close();
 
 // --- FETCH HUNTS DATA ---
-$stmt_hunts = $conn->prepare("SELECT ingestuurd_op, deelgebied FROM Voslocaties WHERE type = 'Hunt' AND status LIKE '%correct%' OR status LIKE '%happy%' AND ingestuurd_op >= ? AND ingestuurd_op <= ?");
+$stmt_hunts = $conn->prepare("SELECT ingestuurd_op, deelgebied FROM Voslocaties WHERE type = 'Hunt' AND status IN ('Correct', 'HAPPY HOUR !') AND ingestuurd_op >= ? AND ingestuurd_op <= ?");
 $stmt_hunts->bind_param("ss", $start_fmt, $end_fmt);
 $stmt_hunts->execute();
 $result_hunts = $stmt_hunts->get_result();
@@ -115,6 +115,7 @@ if ($result_hunts->num_rows > 0) {
     }
 }
 $stmt_hunts->close();
+// ------------------------
 
 $fox_teams = $vossen_names;
 $status_colors = [
@@ -136,9 +137,10 @@ function format_seconds($seconds) {
 }
 
 foreach ($fox_teams as $team) {
+    // Array uitgebreid met 'hunts' teller
     $stats[$team] = [
-        'spelhelft1' => [0 => 0, 1 => 0, 2 => 0, 'total' => 0],
-        'spelhelft2' => [0 => 0, 1 => 0, 2 => 0, 'total' => 0],
+        'spelhelft1' => [0 => 0, 1 => 0, 2 => 0, 'total' => 0, 'hunts' => 0],
+        'spelhelft2' => [0 => 0, 1 => 0, 2 => 0, 'total' => 0, 'hunts' => 0],
     ];
 
     $last_time = clone $game_start_time;
@@ -183,6 +185,22 @@ foreach ($fox_teams as $team) {
         
         $last_time = $segment_end_time;
         $last_status = $log[$team] ?? $last_status; 
+    }
+
+    // --- NIEUW: Tellen van de hunts per spelhelft ---
+    $team_lower = strtolower($team);
+    if (isset($hunts_data[$team_lower])) {
+        foreach ($hunts_data[$team_lower] as $hunt_time_str) {
+            $hunt_time = new DateTime($hunt_time_str);
+            // Alleen tellen als de hunt echt in de speeltijd valt
+            if ($hunt_time >= $game_start_time && $hunt_time <= $game_end_time) {
+                if ($hunt_time < $fox_exchange_end_time) {
+                    $stats[$team]['spelhelft1']['hunts']++;
+                } else {
+                    $stats[$team]['spelhelft2']['hunts']++;
+                }
+            }
+        }
     }
 }
 
@@ -293,12 +311,10 @@ foreach ($fox_teams as $team) {
     opacity: 1;
 }
 
-/* --- NIEUW: Hunt Immuniteit Stijlen --- */
 .hunt-immune-block {
     position: absolute;
     top: 0;
     bottom: 0;
-    /* Schuine grijze strepen, semi-transparant */
     background: repeating-linear-gradient(
       45deg,
       rgba(100, 116, 139, 0.4),
@@ -307,7 +323,7 @@ foreach ($fox_teams as $team) {
       rgba(100, 116, 139, 0.1) 16px
     );
     z-index: 5;
-    pointer-events: none; /* Cruciaal: laat hovers door naar de statusblokken eronder! */
+    pointer-events: none;
 }
 
 .hunt-line {
@@ -315,7 +331,7 @@ foreach ($fox_teams as $team) {
     top: 0;
     bottom: 0;
     width: 2px;
-    background-color: #1e293b; /* Zwarte/donkergrijze lijn */
+    background-color: #1e293b;
     z-index: 6;
     cursor: help;
 }
@@ -344,7 +360,6 @@ foreach ($fox_teams as $team) {
     visibility: visible;
     opacity: 1;
 }
-/* -------------------------------------- */
 
 /* Custom Status Colors for Timeline */
 .status-red { background-color: #ef4444; }
@@ -355,9 +370,12 @@ foreach ($fox_teams as $team) {
 </head>
 <body class="flex h-screen overflow-hidden">
 
+<!-- Sidebar -->
 <?php include_once('includes/sidebar.php') ?>
 
+<!-- Main Content -->
 <div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+  <!-- Topbar -->
   <?php include_once('includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
@@ -365,12 +383,14 @@ foreach ($fox_teams as $team) {
 
     <div class="space-y-6">
       
+      <!-- Timeline Card -->
       <div class="theme-card rounded border shadow-sm overflow-hidden">
         <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold">Vossen Status Tijdlijn</h5>
         </div>
         <div class="p-4 md:p-6">
-            <div class="relative space-y-2"> <?php 
+            <div class="relative space-y-2">
+                <?php 
                 $status_tailwind_colors = [
                     0 => 'status-red',
                     1 => 'status-orange',
@@ -423,18 +443,14 @@ foreach ($fox_teams as $team) {
                                     }
                                 }
 
-                                // --- VOEG HUNTS EN IMMUNITEIT BLOKKEN TOE ---
                                 $team_lower = strtolower($team);
                                 if (isset($hunts_data[$team_lower])) {
                                     foreach ($hunts_data[$team_lower] as $hunt_time_str) {
                                         $hunt_time = new DateTime($hunt_time_str);
                                         $hunt_offset_seconds = $hunt_time->getTimestamp() - $game_start_time->getTimestamp();
                                         
-                                        // Zorg dat de hunt binnen de spelduur valt
                                         if ($hunt_offset_seconds >= 0 && $hunt_offset_seconds <= $total_duration_seconds) {
                                             $left_perc = ($hunt_offset_seconds / $total_duration_seconds) * 100;
-                                            
-                                            // Bereken breedte voor 1 uur immuniteit (3600 sec), maar cap het op het einde van de tijdlijn
                                             $immune_dur = min(3600, $total_duration_seconds - $hunt_offset_seconds);
                                             $width_perc = ($immune_dur / $total_duration_seconds) * 100;
                                             
@@ -443,13 +459,13 @@ foreach ($fox_teams as $team) {
                                         }
                                     }
                                 }
-                                // -------------------------------------------
                                 ?>
                             </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
 
+                <!-- Now Indicator -->
                 <?php
                 if ($now > $game_start_time && $now < $game_end_time) {
                     $now_offset_seconds = $now->getTimestamp() - $game_start_time->getTimestamp();
@@ -473,6 +489,7 @@ foreach ($fox_teams as $team) {
         </div>
       </div>
 
+      <!-- Statistics Card -->
       <div class="theme-card rounded border shadow-sm overflow-hidden">
         <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold">Vossen Statistieken</h5>
@@ -483,6 +500,7 @@ foreach ($fox_teams as $team) {
                     <tr>
                         <th class="px-4 py-3">Vos</th>
                         <th class="px-4 py-3 text-center">Spelhelft</th>
+                        <th class="px-4 py-3 text-center">Hunts</th>
                         <th class="px-4 py-3 text-center text-green-600 dark:text-green-400">Lopend</th>
                         <th class="px-4 py-3 text-center text-orange-600 dark:text-orange-400">Kleine Verpl.</th>
                         <th class="px-4 py-3 text-center text-red-600 dark:text-red-400">Grote Verpl.</th>
@@ -493,6 +511,9 @@ foreach ($fox_teams as $team) {
                         <tr class="hover:bg-black/5 transition">
                             <td rowspan="2" class="px-4 py-3 font-bold border-b align-middle border-r" style="border-color: var(--theme-card-border);"><?php echo ucfirst($team); ?></td>
                             <td class="px-4 py-3 text-center border-b font-medium" style="border-color: var(--theme-card-border);">Spelhelft 1</td>
+                            <td class="px-4 py-3 text-center border-b font-bold text-lg" style="border-color: var(--theme-card-border);">
+                                <?php echo $stats[$team]['spelhelft1']['hunts']; ?>
+                            </td>
                             <td class="px-4 py-3 text-center border-b" style="border-color: var(--theme-card-border);">
                                 <span class="font-semibold"><?php echo format_seconds($stats[$team]['spelhelft1'][2]); ?></span><br>
                                 <span class="text-xs opacity-70">(<?php echo $stats[$team]['spelhelft1']['total'] > 0 ? round($stats[$team]['spelhelft1'][2] / $stats[$team]['spelhelft1']['total'] * 100, 1) : 0; ?>%)</span>
@@ -508,6 +529,9 @@ foreach ($fox_teams as $team) {
                         </tr>
                         <tr class="hover:bg-black/5 transition">
                             <td class="px-4 py-3 text-center font-medium">Spelhelft 2</td>
+                            <td class="px-4 py-3 text-center font-bold text-lg">
+                                <?php echo $stats[$team]['spelhelft2']['hunts']; ?>
+                            </td>
                             <td class="px-4 py-3 text-center">
                                 <span class="font-semibold"><?php echo format_seconds($stats[$team]['spelhelft2'][2]); ?></span><br>
                                 <span class="text-xs opacity-70">(<?php echo $stats[$team]['spelhelft2']['total'] > 0 ? round($stats[$team]['spelhelft2'][2] / $stats[$team]['spelhelft2']['total'] * 100, 1) : 0; ?>%)</span>
@@ -529,6 +553,7 @@ foreach ($fox_teams as $team) {
     </div>
   </main>
 
+  <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
 </div>
 
