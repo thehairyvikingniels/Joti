@@ -261,7 +261,7 @@ if (isset($_GET['invulgegevens'])){
         }
         echo "</tbody></table>";
     } else {
-        echo "<p>Hier verschijnen hunts die ingeleverd moeten worden bij de officiële jotihunt website</p>";
+        echo "<p class=\"m-4\">Hier verschijnen hunts die ingeleverd moeten worden bij de officiële jotihunt website</p>";
     }
     $stmt->close();
 }
