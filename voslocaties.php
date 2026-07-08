@@ -102,7 +102,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) 
     } else {
         $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6 shadow-sm">
                         <span onclick="this.parentElement.style.display=\'none\'" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">
-                            <i class="fas fa-times opacity-70 hover:opacity-100 transition"></i>
+                            <i class="fas fa-times circle text-red-500 mr-1"></i>
                         </span>
                         <strong class="font-bold">Error!</strong>
                         <span class="block sm:inline">Ongeldige coördinaten ingevoerd.</span>
@@ -132,6 +132,25 @@ if ($result->num_rows > 0) {
     $siteSettings[$row['Instelling']] = $row['Waarde'];
   }
 }
+$stmt->close();
+
+// Fetch group location for map centering based on GROUP_ID
+$group_lat = 52.15517440; // Default fallback latitude
+$group_lon = 5.38720621;  // Default fallback longitude
+
+if (isset($siteSettings['GROUP_ID'])) {
+    $stmt = $conn->prepare("SELECT lat, lon FROM Groepen WHERE id = ?");
+    $stmt->bind_param("i", $siteSettings['GROUP_ID']);
+    $stmt->execute();
+    $groupResult = $stmt->get_result();
+    if ($groupRow = $groupResult->fetch_assoc()) {
+        if (!empty($groupRow['lat']) && !empty($groupRow['lon'])) {
+            $group_lat = floatval($groupRow['lat']);
+            $group_lon = floatval($groupRow['lon']);
+        }
+    }
+    $stmt->close();
+}
 
 ?>
 <!DOCTYPE html>
@@ -143,36 +162,32 @@ if ($result->num_rows > 0) {
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
+<script src='https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js'></script>
+<link href='https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css' rel='stylesheet' />
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <?php include_once('includes/theme.php'); ?>
 </head>
 <body class="flex h-screen overflow-hidden">
 
-<!-- Sidebar -->
 <?php include_once('includes/sidebar.php') ?>
 
-<!-- Main Content -->
 <div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
-  <!-- Topbar -->
   <?php include_once('includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
 
-    <!-- --- START: NEW FEATURE - LOCATION FORM --- -->
     <div class="theme-card rounded border shadow-sm overflow-hidden mb-12 max-w-4xl">
       <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
         <h3 class="text-xl font-bold">Nieuwe voslocatie toevoegen</h3>
       </div>
       <form class="p-6" method="post" action="voslocaties.php">
         
-        <!-- This is where success or error messages will be displayed -->
         <?php echo $message; ?>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
           
-          <!-- Left Column -->
           <div class="space-y-6">
             <div>
               <label class="block text-sm font-bold opacity-70 mb-2 uppercase tracking-wide">Coördinaat Systeem</label>
@@ -190,8 +205,13 @@ if ($result->num_rows > 0) {
             
             <div id="latlon_coords" class="space-y-4">
               <div>
-                  <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition shadow-sm text-sm" onclick="getGPSLocation()" id="gps-button"><i class="fas fa-location-arrow mr-2"></i>Haal locatie op</button>
-                  <span id="gps-status" class="text-sm opacity-70 ml-3 italic"></span>
+                  <div class="flex items-center space-x-2 flex-wrap gap-y-2">
+                      <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition shadow-sm text-sm" onclick="getGPSLocation()" id="gps-button"><i class="fas fa-location-arrow mr-2"></i>Haal locatie op</button>
+                      <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition shadow-sm text-sm" onclick="openMapModal()" id="map-button"><i class="fas fa-map-marked-alt mr-2"></i>Kies op kaart</button>
+                  </div>
+                  <div class="mt-1">
+                      <span id="gps-status" class="text-sm opacity-70 italic"></span>
+                  </div>
               </div>
               <div>
                 <label class="block text-sm font-bold opacity-70 mb-1">Latitude</label>
@@ -220,7 +240,6 @@ if ($result->num_rows > 0) {
             </div>
           </div>
 
-          <!-- Right Column -->
           <div class="space-y-6">
             <div>
               <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Vossenteam (Deelgebied)</label>
@@ -261,10 +280,26 @@ if ($result->num_rows > 0) {
         </div>
       </form>
     </div>
-    <!-- --- END: NEW FEATURE - LOCATION FORM --- -->
-  </main>
+    </main>
 
-  <!-- Footer -->
+  <div id="map-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-60 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl overflow-hidden flex flex-col h-[80vh] md:h-[600px]">
+        <div class="px-6 py-4 border-b flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h3 class="text-xl font-bold text-white"><i class="fas fa-map-marked-alt mr-2"></i>Kies een locatie op de kaart</h3>
+            <button type="button" onclick="closeMapModal()" class="text-white hover:text-gray-300 focus:outline-none transition">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+        <div class="flex-1 w-full relative">
+            <div id="modal-map" class="absolute inset-0 w-full h-full"></div>
+        </div>
+        <div class="px-6 py-4 border-t bg-gray-50 flex justify-end space-x-4">
+            <button type="button" onclick="closeMapModal()" class="px-5 py-2.5 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded font-bold transition shadow-sm">Annuleren</button>
+            <button type="button" onclick="confirmMapLocation()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold transition shadow-sm"><i class="fas fa-check mr-2"></i>Bevestig Locatie</button>
+        </div>
+    </div>
+  </div>
+
   <?php require_once('includes/footer.php') ?>
 </div>
   
@@ -401,10 +436,76 @@ function toggleCodeInput() {
     }
 }
 
+// Mapbox Modal Logic
+let mapModal;
+let modalMarker;
+let mapInitialized = false;
+
+mapboxgl.accessToken = '<?php echo $siteSettings["API_KEY_MAPBOX"] ?? ""; ?>';
+
+function openMapModal() {
+    document.getElementById('map-modal').classList.remove('hidden');
+    
+    if (!mapInitialized) {
+        // Mapbox gebruikt [lng, lat] volgorde. Gecentreerd op de eigen groepslocatie uit de database.
+        mapModal = new mapboxgl.Map({
+            container: 'modal-map',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [<?php echo $group_lon; ?>, <?php echo $group_lat; ?>],
+            zoom: 11
+        });
+        
+        mapModal.on('click', function(e) {
+            if (modalMarker) {
+                modalMarker.remove();
+            }
+            modalMarker = new mapboxgl.Marker()
+                .setLngLat(e.lngLat)
+                .addTo(mapModal);
+        });
+        
+        mapInitialized = true;
+    }
+    
+    setTimeout(() => {
+        mapModal.resize();
+        
+        const currentLat = parseFloat(document.querySelector('input[name="lat"]').value);
+        const currentLon = parseFloat(document.querySelector('input[name="lon"]').value);
+        
+        if (!isNaN(currentLat) && !isNaN(currentLon)) {
+            if (modalMarker) modalMarker.remove();
+            modalMarker = new mapboxgl.Marker()
+                .setLngLat([currentLon, currentLat])
+                .addTo(mapModal);
+                
+            mapModal.setCenter([currentLon, currentLat]);
+            mapModal.setZoom(14);
+        }
+    }, 200);
+}
+
+function closeMapModal() {
+    document.getElementById('map-modal').classList.add('hidden');
+}
+
+function confirmMapLocation() {
+    if (modalMarker) {
+        const lngLat = modalMarker.getLngLat();
+        document.querySelector('input[name="lat"]').value = lngLat.lat.toFixed(6);
+        document.querySelector('input[name="lon"]').value = lngLat.lng.toFixed(6);
+        
+        const gpsStatus = document.getElementById('gps-status');
+        gpsStatus.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i>Locatie succesvol gekozen via kaart.';
+        
+        closeMapModal();
+    } else {
+        alert("Klik eerst ergens op de kaart om een locatie te selecteren.");
+    }
+}
+
 // Initialize the code input state on page load.
 toggleCodeInput();
-// --- END: NEW FEATURE - JAVASCRIPT ---
 </script>
 </body>
 </html>
-
