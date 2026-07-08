@@ -2,7 +2,6 @@
 -- version 5.2.2
 -- https://www.phpmyadmin.net/
 --
--- Host: maarleveld.one.mysql.service.one.com:3306
 -- Gegenereerd op: 15 okt 2025 om 13:20
 -- Serverversie: 10.6.23-MariaDB-ubu2204
 -- PHP-versie: 8.1.2-1ubuntu2.22
@@ -17,9 +16,6 @@ SET time_zone = "+00:00";
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
 
---
--- Database: `maarleveld_one_joti`
---
 
 -- --------------------------------------------------------
 
@@ -218,7 +214,8 @@ INSERT INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) VALUES
 ('GROUP_LOGO_LARGE_URL', 'media/geusje_bevosd.png', 'A local or external URL for the group logo.'),
 ('GROUP_LOGO_SMALL_URL', 'media/geusje_bevosd.png', 'A local or external URL for the group logo. '),
 ('GROUP_ID', '0', 'The ID of the scout group using this website. Used for point calculations.'),
-('GROUP_URL', 'https://example.com/', 'The URL of the scout group using this website. ');
+('GROUP_URL', 'https://example.com/', 'The URL of the scout group using this website. '),
+('JOTIHUNT_CREDENTIALS',	'{\"username\":\"example@domain.com\",\"password\":\"example_password\"}',	'Credentials of the official Jotihunt website in JSON format.');
 
 -- --------------------------------------------------------
 
