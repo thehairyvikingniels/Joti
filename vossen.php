@@ -98,6 +98,24 @@ if ($result->num_rows > 0) {
 $voslog_data = array_values($voslog_data_assoc);
 $stmt->close();
 
+// --- FETCH HUNTS DATA ---
+$stmt_hunts = $conn->prepare("SELECT ingestuurd_op, deelgebied FROM Voslocaties WHERE type = 'Hunt' AND status LIKE '%correct%' OR status LIKE '%happy%' AND ingestuurd_op >= ? AND ingestuurd_op <= ?");
+$stmt_hunts->bind_param("ss", $start_fmt, $end_fmt);
+$stmt_hunts->execute();
+$result_hunts = $stmt_hunts->get_result();
+
+$hunts_data = [];
+if ($result_hunts->num_rows > 0) {
+    while($row = $result_hunts->fetch_assoc()) {
+        $hunt_team = strtolower($row['deelgebied']);
+        if (!isset($hunts_data[$hunt_team])) {
+            $hunts_data[$hunt_team] = [];
+        }
+        $hunts_data[$hunt_team][] = $row['ingestuurd_op'];
+    }
+}
+$stmt_hunts->close();
+
 $fox_teams = $vossen_names;
 $status_colors = [
     0 => 'w3-red',    // Red
@@ -275,6 +293,59 @@ foreach ($fox_teams as $team) {
     opacity: 1;
 }
 
+/* --- NIEUW: Hunt Immuniteit Stijlen --- */
+.hunt-immune-block {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    /* Schuine grijze strepen, semi-transparant */
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(100, 116, 139, 0.4),
+      rgba(100, 116, 139, 0.4) 8px,
+      rgba(100, 116, 139, 0.1) 8px,
+      rgba(100, 116, 139, 0.1) 16px
+    );
+    z-index: 5;
+    pointer-events: none; /* Cruciaal: laat hovers door naar de statusblokken eronder! */
+}
+
+.hunt-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #1e293b; /* Zwarte/donkergrijze lijn */
+    z-index: 6;
+    cursor: help;
+}
+
+.hunt-line .tooltiptext {
+    visibility: hidden;
+    width: 90px;
+    background-color: #1e293b;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 10;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -45px;
+    margin-bottom: 5px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.75rem;
+    pointer-events: none;
+}
+
+.hunt-line:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+/* -------------------------------------- */
+
 /* Custom Status Colors for Timeline */
 .status-red { background-color: #ef4444; }
 .status-orange { background-color: #f97316; }
@@ -284,12 +355,9 @@ foreach ($fox_teams as $team) {
 </head>
 <body class="flex h-screen overflow-hidden">
 
-<!-- Sidebar -->
 <?php include_once('includes/sidebar.php') ?>
 
-<!-- Main Content -->
 <div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
-  <!-- Topbar -->
   <?php include_once('includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
@@ -297,14 +365,12 @@ foreach ($fox_teams as $team) {
 
     <div class="space-y-6">
       
-      <!-- Timeline Card -->
       <div class="theme-card rounded border shadow-sm overflow-hidden">
         <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold">Vossen Status Tijdlijn</h5>
         </div>
         <div class="p-4 md:p-6">
-            <div class="relative space-y-2"> <!-- Parent container for rows and the absolute indicator -->
-                <?php 
+            <div class="relative space-y-2"> <?php 
                 $status_tailwind_colors = [
                     0 => 'status-red',
                     1 => 'status-orange',
@@ -314,11 +380,9 @@ foreach ($fox_teams as $team) {
 
                 foreach ($fox_teams as $team): ?>
                     <div class="flex items-center h-10 w-full">
-                        <!-- Column for Team Name -->
                         <div class="w-1/6 lg:w-1/12 text-right pr-3 sm:pr-4">
                             <b class="text-sm md:text-base"><?php echo ucfirst($team); ?></b>
                         </div>
-                        <!-- Column for Timeline -->
                         <div class="w-5/6 lg:w-11/12">
                             <div class="timeline-container">
                                 <?php
@@ -358,13 +422,34 @@ foreach ($fox_teams as $team) {
                                         echo "<div class='timeline-segment $future_tailwind_color' style='width: $width_percentage%;'></div>";
                                     }
                                 }
+
+                                // --- VOEG HUNTS EN IMMUNITEIT BLOKKEN TOE ---
+                                $team_lower = strtolower($team);
+                                if (isset($hunts_data[$team_lower])) {
+                                    foreach ($hunts_data[$team_lower] as $hunt_time_str) {
+                                        $hunt_time = new DateTime($hunt_time_str);
+                                        $hunt_offset_seconds = $hunt_time->getTimestamp() - $game_start_time->getTimestamp();
+                                        
+                                        // Zorg dat de hunt binnen de spelduur valt
+                                        if ($hunt_offset_seconds >= 0 && $hunt_offset_seconds <= $total_duration_seconds) {
+                                            $left_perc = ($hunt_offset_seconds / $total_duration_seconds) * 100;
+                                            
+                                            // Bereken breedte voor 1 uur immuniteit (3600 sec), maar cap het op het einde van de tijdlijn
+                                            $immune_dur = min(3600, $total_duration_seconds - $hunt_offset_seconds);
+                                            $width_perc = ($immune_dur / $total_duration_seconds) * 100;
+                                            
+                                            echo "<div class='hunt-immune-block' style='left: {$left_perc}%; width: {$width_perc}%;'></div>";
+                                            echo "<div class='hunt-line' style='left: {$left_perc}%;'><span class='tooltiptext'>Hunt: ".$hunt_time->format('H:i')."</span></div>";
+                                        }
+                                    }
+                                }
+                                // -------------------------------------------
                                 ?>
                             </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
 
-                <!-- Now Indicator -->
                 <?php
                 if ($now > $game_start_time && $now < $game_end_time) {
                     $now_offset_seconds = $now->getTimestamp() - $game_start_time->getTimestamp();
@@ -380,11 +465,14 @@ foreach ($fox_teams as $team) {
                 <div class="flex items-center gap-2 ml-4">
                   <span class="inline-block w-1 h-6 bg-blue-500 shadow-sm rounded-full"></span> <span>Nu</span>
                 </div>
+                <div class="flex items-center gap-2 ml-2">
+                    <span class="inline-block w-6 h-6 rounded shadow-sm border-l-2 border-slate-800" style="background: repeating-linear-gradient(45deg, rgba(100, 116, 139, 0.4), rgba(100, 116, 139, 0.4) 4px, rgba(100, 116, 139, 0.1) 4px, rgba(100, 116, 139, 0.1) 8px);"></span>
+                    <span>Hunt (1 uur immuniteit)</span>
+                </div>
             </div>
         </div>
       </div>
 
-      <!-- Statistics Card -->
       <div class="theme-card rounded border shadow-sm overflow-hidden">
         <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold">Vossen Statistieken</h5>
@@ -441,7 +529,6 @@ foreach ($fox_teams as $team) {
     </div>
   </main>
 
-  <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
 </div>
 
@@ -478,4 +565,3 @@ function GPSrefresh() {
 </script>
 </body>
 </html>
-
