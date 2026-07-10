@@ -104,7 +104,8 @@ CREATE TABLE `Gebruikers` (
   `lat` decimal(8,6) DEFAULT NULL,
   `lon` decimal(9,6) DEFAULT NULL,
   `geotijd` datetime DEFAULT NULL,
-  `theme` varchar(32) NOT NULL DEFAULT 'light'
+  `theme` varchar(32) NOT NULL DEFAULT 'light',
+  `profile_picture` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------

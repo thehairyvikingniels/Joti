@@ -175,9 +175,87 @@ if (isset($_POST['impersonate_user_id'])) {
     $stmt_target->close();
 }
 
+// Admin Profile Picture Upload
+if (isset($_POST['admin_upload_user_id']) && isset($_FILES['admin_profile_picture']) && $_FILES['admin_profile_picture']['error'] === UPLOAD_ERR_OK) {
+    $target_user_id = intval($_POST['admin_upload_user_id']);
+    $fileTmpPath = $_FILES['admin_profile_picture']['tmp_name'];
+    $fileType = mime_content_type($fileTmpPath);
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    
+    // Check permission logic
+    $stmt_target = $conn->prepare("SELECT priv FROM Gebruikers WHERE id=?");
+    $stmt_target->bind_param("i", $target_user_id);
+    $stmt_target->execute();
+    $result_target = $stmt_target->get_result();
+    
+    if ($result_target->num_rows > 0) {
+        $row_target = $result_target->fetch_assoc();
+        $target_priv = $row_target['priv'];
+        
+        $allowed = false;
+        if ($_SESSION['priv'] >= 3 && $target_priv <= 2) {
+            $allowed = true;
+        } else if ($_SESSION['priv'] == 2 && $target_priv <= 1) {
+            $allowed = true;
+        }
+        
+        if ($allowed && in_array($fileType, $allowedTypes)) {
+            if (!function_exists('imagecreatefromjpeg')) {
+                $error_msg = "De server mist de PHP GD extensie. Installeer php-gd om afbeeldingen te uploaden.";
+            } else {
+                $hash = bin2hex(random_bytes(8));
+            
+            if ($fileType == 'image/jpeg') $src = imagecreatefromjpeg($fileTmpPath);
+            elseif ($fileType == 'image/png') $src = imagecreatefrompng($fileTmpPath);
+            elseif ($fileType == 'image/webp') $src = imagecreatefromwebp($fileTmpPath);
+            
+            if ($src) {
+                $width = imagesx($src);
+                $height = imagesy($src);
+                $size = min($width, $height);
+                $x = ($width - $size) / 2;
+                $y = ($height - $size) / 2;
+                
+                $high_res = imagecreatetruecolor(512, 512);
+                $white = imagecolorallocate($high_res, 255, 255, 255);
+                imagefill($high_res, 0, 0, $white);
+                imagecopyresampled($high_res, $src, 0, 0, $x, $y, 512, 512, $size, $size);
+                imagejpeg($high_res, __DIR__ . "/../media/profiles/{$hash}_high.jpg", 90);
+                
+                $low_res = imagecreatetruecolor(128, 128);
+                $white = imagecolorallocate($low_res, 255, 255, 255);
+                imagefill($low_res, 0, 0, $white);
+                imagecopyresampled($low_res, $src, 0, 0, $x, $y, 128, 128, $size, $size);
+                imagejpeg($low_res, __DIR__ . "/../media/profiles/{$hash}_low.jpg", 80);
+                
+                imagedestroy($src);
+                imagedestroy($high_res);
+                imagedestroy($low_res);
+                
+                $stmt_upd = $conn->prepare("UPDATE Gebruikers SET profile_picture=? WHERE id=?");
+                $stmt_upd->bind_param("si", $hash, $target_user_id);
+                if ($stmt_upd->execute()) {
+                    $succes = true;
+                } else {
+                    $error_msg = "Database fout: " . $stmt_upd->error;
+                }
+                $stmt_upd->close();
+            } else {
+                $error_msg = "Fout bij verwerken afbeelding.";
+            }
+            } // end of function_exists check
+        } elseif (!$allowed) {
+            $error_msg = "Je hebt niet de juiste rechten om deze profielfoto te wijzigen.";
+        } else {
+            $error_msg = "Ongeldig bestandstype.";
+        }
+    }
+    $stmt_target->close();
+}
+
 // Haal alle gebruikers op en sla ze op in een array (voorkomt 2x dezelfde query uitvoeren)
 $users_data = [];
-$stmt_users = $conn->prepare("SELECT id, voornaam, achternaam, email, priv, first_login, last_login FROM Gebruikers ORDER BY id ASC");
+$stmt_users = $conn->prepare("SELECT id, voornaam, achternaam, email, priv, first_login, last_login, profile_picture FROM Gebruikers ORDER BY id ASC");
 $stmt_users->execute();
 $result_users = $stmt_users->get_result();
 
@@ -272,7 +350,14 @@ $stmt_users->close();
 
                   echo "<tr class='hover:bg-black/5 transition'>";
                   echo "  <td class='px-6 py-4 font-bold opacity-70'>".htmlspecialchars($row["id"])."</td>";
-                  echo "  <td class='px-6 py-4 font-medium'>".htmlspecialchars($row["voornaam"])."<br><span class='opacity-70 text-xs'>".htmlspecialchars($row["achternaam"])."</span></td>";
+                  echo "  <td class='px-6 py-4 font-medium flex items-center space-x-3'>";
+                  if ($row['profile_picture']) {
+                      echo "<img src='../profile_image.php?hash=".urlencode($row['profile_picture'])."&res=low' class='w-8 h-8 rounded-full object-cover shadow-sm'>";
+                  } else {
+                      echo "<div class='w-8 h-8 rounded-full theme-bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm'>".strtoupper(substr($row['voornaam'], 0, 1))."</div>";
+                  }
+                  echo "    <div>".htmlspecialchars($row["voornaam"])."<br><span class='opacity-70 text-xs'>".htmlspecialchars($row["achternaam"])."</span></div>";
+                  echo "  </td>";
                   echo "  <td class='px-6 py-4 opacity-80'>".htmlspecialchars($row["email"])."</td>";
                   echo "  <td class='px-6 py-4 opacity-80'>".htmlspecialchars(time2str($row['last_login']))."</td>";
                   echo "  <td class='px-6 py-4 opacity-80'>".htmlspecialchars(time2str($row['first_login']))."</td>";
@@ -292,9 +377,11 @@ $stmt_users->close();
                   if ($can_impersonate) {
                       echo "  <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').classList.remove('hidden')\" class='bg-gray-700 hover:bg-gray-800 text-white p-2 rounded shadow-sm transition' title='Imiteren'><i class='fas fa-user-secret'></i></button>";
                       echo "  <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').classList.remove('hidden')\" class='bg-orange-500 hover:bg-orange-600 text-white p-2 rounded shadow-sm transition' title='Wachtwoord reset'><i class='fas fa-key'></i></button>";
+                      echo "  <button type='button' onclick=\"document.getElementById('pic_modal_".$row['id']."').classList.remove('hidden')\" class='bg-blue-500 hover:bg-blue-600 text-white p-2 rounded shadow-sm transition' title='Foto uploaden'><i class='fas fa-image'></i></button>";
                   } else {
                       echo "  <button type='button' class='bg-gray-300 text-gray-500 p-2 rounded cursor-not-allowed opacity-50'><i class='fas fa-user-secret'></i></button>";
                       echo "  <button type='button' class='bg-gray-300 text-gray-500 p-2 rounded cursor-not-allowed opacity-50'><i class='fas fa-key'></i></button>";
+                      echo "  <button type='button' class='bg-gray-300 text-gray-500 p-2 rounded cursor-not-allowed opacity-50'><i class='fas fa-image'></i></button>";
                   }
                   echo "    </form>";
                   echo "  </td>";
@@ -341,9 +428,16 @@ $stmt_users->close();
 
                 echo "<li class='p-4 hover:bg-black/5 transition'>";
                 echo "  <div class='flex justify-between items-start mb-2'>";
-                echo "    <div>";
-                echo "      <p class='font-bold'>".htmlspecialchars($row["voornaam"])." ".htmlspecialchars($row["achternaam"])."</p>";
-                echo "      <p class='text-sm opacity-80'>".htmlspecialchars($row["email"])."</p>";
+                echo "    <div class='flex items-center space-x-3'>";
+                if ($row['profile_picture']) {
+                    echo "<img src='../profile_image.php?hash=".urlencode($row['profile_picture'])."&res=low' class='w-10 h-10 rounded-full object-cover shadow-sm'>";
+                } else {
+                    echo "<div class='w-10 h-10 rounded-full theme-bg-primary text-white flex items-center justify-center font-bold shadow-sm'>".strtoupper(substr($row['voornaam'], 0, 1))."</div>";
+                }
+                echo "      <div>";
+                echo "        <p class='font-bold'>".htmlspecialchars($row["voornaam"])." ".htmlspecialchars($row["achternaam"])."</p>";
+                echo "        <p class='text-sm opacity-80'>".htmlspecialchars($row["email"])."</p>";
+                echo "      </div>";
                 echo "    </div>";
                 echo "    <div class='text-right text-sm opacity-70'>";
                 echo "      <p><b>ID:</b> ".htmlspecialchars($row["id"])."</p>";
@@ -369,9 +463,11 @@ $stmt_users->close();
                 if ($can_impersonate) {
                     echo "  <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').classList.remove('hidden')\" class='bg-gray-700 hover:bg-gray-800 text-white p-2 rounded shadow-sm transition'><i class='fas fa-user-secret'></i></button>";
                     echo "  <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').classList.remove('hidden')\" class='bg-orange-500 hover:bg-orange-600 text-white p-2 rounded shadow-sm transition'><i class='fas fa-key'></i></button>";
+                    echo "  <button type='button' onclick=\"document.getElementById('pic_modal_".$row['id']."').classList.remove('hidden')\" class='bg-blue-500 hover:bg-blue-600 text-white p-2 rounded shadow-sm transition'><i class='fas fa-image'></i></button>";
                 } else {
                     echo "  <button type='button' class='bg-gray-300 text-gray-500 p-2 rounded cursor-not-allowed opacity-50'><i class='fas fa-user-secret'></i></button>";
                     echo "  <button type='button' class='bg-gray-300 text-gray-500 p-2 rounded cursor-not-allowed opacity-50'><i class='fas fa-key'></i></button>";
+                    echo "  <button type='button' class='bg-gray-300 text-gray-500 p-2 rounded cursor-not-allowed opacity-50'><i class='fas fa-image'></i></button>";
                 }
                 echo "  </form>";
                 echo "</li>";
@@ -449,6 +545,30 @@ $stmt_users->close();
                           <div class='bg-gray-50 px-4 py-3 flex flex-row-reverse gap-3'>
                             <button type='submit' class='w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Reset Wachtwoord</button>
                             <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').classList.add('hidden')\" class='w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Annuleer</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>";
+                  
+                  // Profile Picture Upload Modal
+                  echo "
+                  <div id='pic_modal_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm' aria-labelledby='modal-title' role='dialog' aria-modal='true'>
+                    <div class='flex items-center justify-center min-h-screen px-4 text-center'>
+                      <div class='relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full'>
+                        <div class='bg-blue-500 px-4 py-3 flex justify-between items-center text-white'>
+                          <h3 class='text-lg font-bold'><i class='fas fa-image mr-2'></i>Foto Uploaden</h3>
+                          <button type='button' onclick=\"document.getElementById('pic_modal_".$row['id']."').classList.add('hidden')\" class='hover:text-gray-200 transition'><i class='fas fa-times text-xl'></i></button>
+                        </div>
+                        <form method='POST' enctype='multipart/form-data'>
+                          <div class='bg-white px-4 pt-5 pb-4 text-gray-800 space-y-4'>
+                            <p>Upload een profielfoto voor <strong>".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."</strong>:</p>
+                            <input type='hidden' name='admin_upload_user_id' value='".htmlspecialchars($row['id'])."'>
+                            <input type='file' name='admin_profile_picture' accept='image/jpeg, image/png, image/webp' class='w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm' required>
+                          </div>
+                          <div class='bg-gray-50 px-4 py-3 flex flex-row-reverse gap-3'>
+                            <button type='submit' class='w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Uploaden</button>
+                            <button type='button' onclick=\"document.getElementById('pic_modal_".$row['id']."').classList.add('hidden')\" class='w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Annuleer</button>
                           </div>
                         </form>
                       </div>

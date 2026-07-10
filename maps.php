@@ -367,13 +367,31 @@ if (isset($_GET['personen']) && $_GET['personen'] == "true"){
         $minutes_since = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
         
         if ($minutes_since <= 15) {
+          $initial = strtoupper(substr($row['voornaam'], 0, 1));
+          $bgStyle = "";
+          if ($row['profile_picture']) {
+              $bgStyle = "person_".$i_person.".style.backgroundImage = `url(profile_image.php?hash=".urlencode($row['profile_picture'])."&res=low)`;
+                          person_".$i_person.".style.backgroundSize = 'cover';";
+          } else {
+              $bgStyle = "person_".$i_person.".style.backgroundColor = '#3b82f6';
+                          person_".$i_person.".style.display = 'flex';
+                          person_".$i_person.".style.alignItems = 'center';
+                          person_".$i_person.".style.justifyContent = 'center';
+                          person_".$i_person.".style.color = 'white';
+                          person_".$i_person.".style.fontWeight = 'bold';
+                          person_".$i_person.".innerHTML = '".$initial."';";
+          }
+
           echo "
           const person_".$i_person." = document.createElement('div');
           person_".$i_person.".className = 'marker';
-          person_".$i_person.".style.backgroundImage = `url(media/icons/pin_user.png)`;
-          person_".$i_person.".style.width = `40px`;
-          person_".$i_person.".style.height = `32px`;
-          person_".$i_person.".style.backgroundSize = '100%';
+          person_".$i_person.".style.width = `36px`;
+          person_".$i_person.".style.height = `36px`;
+          person_".$i_person.".style.borderRadius = '50%';
+          person_".$i_person.".style.border = '2px solid white';
+          person_".$i_person.".style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+          ".$bgStyle."
+          
           const marker_person_".$i_person." = new mapboxgl.Marker(person_".$i_person.")
               .setLngLat([".$row['lon'].",".$row['lat']."])
               .setPopup(new mapboxgl.Popup().setHTML(\"<h4>".ucfirst(addslashes($row['voornaam']))."</h4><p>".time2str($row['geotijd'])."</p>\"))

@@ -26,6 +26,7 @@ if ($result->num_rows > 0) {
       $api = $row['api'];
       $priv = $row['priv'];
       $username = $row['gebruikersnaam'];
+      $profile_picture = $row['profile_picture'] ?? null;
     }
 }
 $stmt->close();
@@ -133,6 +134,43 @@ $stmt->close();
           
           <div class="mt-5 text-center">
             <button type="submit" class="theme-bg-primary text-white font-bold py-2 px-6 rounded hover:opacity-90 transition shadow-sm">Verander</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Profielfoto Wijzigen -->
+      <div class="theme-card rounded border shadow-sm p-5">
+        <?php if (isset($_GET['t']) && $_GET['t'] == "profielfoto"): ?>
+          <div class="bg-blue-100 text-blue-800 p-3 rounded mb-4 flex justify-between items-start">
+            <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
+            <button onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
+          </div>
+        <?php endif; ?>
+        <form method="POST" action="instellingen_helper.php" enctype="multipart/form-data">
+          <h3 class="text-lg font-bold mb-4">Profielfoto</h3>
+          
+          <div class="flex flex-col items-center mb-4">
+            <?php if ($profile_picture): ?>
+              <img src="<?= $notInAdminfolder ?? '' ?>profile_image.php?hash=<?= urlencode($profile_picture) ?>&res=high" alt="Profielfoto" class="w-32 h-32 rounded-full object-cover shadow-md mb-2 border-2 border-gray-200">
+            <?php else: ?>
+              <div class="w-32 h-32 rounded-full theme-bg-primary text-white flex items-center justify-center font-bold text-4xl shadow-md mb-2">
+                 <?php echo strtoupper(substr($vn ?? 'U', 0, 1)); ?>
+              </div>
+            <?php endif; ?>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-sm font-semibold mb-1 opacity-80">Nieuwe foto uploaden</label>
+              <input name="profile_picture" type="file" accept="image/jpeg, image/png, image/webp" class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer bg-white">
+            </div>
+          </div>
+          
+          <div class="mt-5 text-center flex gap-2 justify-center">
+            <button type="submit" class="theme-bg-primary text-white font-bold py-2 px-6 rounded hover:opacity-90 transition shadow-sm">Uploaden</button>
+            <?php if ($profile_picture): ?>
+            <a href="instellingen_helper.php?delete_profile_picture=1" class="bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-600 transition shadow-sm"><i class="fas fa-trash-alt"></i></a>
+            <?php endif; ?>
           </div>
         </form>
       </div>
