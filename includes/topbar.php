@@ -124,7 +124,7 @@ foreach ($vossen_names as $vosnaam) {
                 if (isset($vos[$n]["immune_until"])) {
                     $diff = $vos[$n]["immune_until"] - time();
                     $initial_text = ($diff > 0) ? floor($diff / 60) . 'm ' . ($diff % 60) . 's' : '0m 0s';
-                    echo '<span class="immune-countdown" data-until="' . $vos[$n]["immune_until"] . '">' . $initial_text . '</span>';
+                    echo '<span class="immune-countdown" data-until="' . $vos[$n]["immune_until"] . '" data-duratie="' . htmlspecialchars($vos[$n]["duratie"]) . '">' . $initial_text . '</span>';
                 } else {
                     echo '<span>' . htmlspecialchars($vos[$n]["duratie"]) . '</span>';
                 }
@@ -166,11 +166,12 @@ foreach ($vossen_names as $vosnaam) {
                 const s = diff % 60;
                 el.textContent = m + 'm ' + s + 's';
             } else {
-                // Optional: trigger a page reload or remove the background when time is up
-                if (el.textContent !== 'Klaar') {
-                    el.textContent = '0m 0s';
-                    setTimeout(() => location.reload(), 1000); // Reload to update status
+                // Immunity over: restore original duration text and remove striped background
+                el.textContent = el.getAttribute('data-duratie');
+                if (el.parentElement) {
+                    el.parentElement.style.backgroundImage = '';
                 }
+                el.classList.remove('immune-countdown');
             }
         });
     }

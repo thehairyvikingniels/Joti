@@ -137,7 +137,7 @@ $stmt->close();
             if (isset($vos[$n]["immune_until"])) {
                 $diff = $vos[$n]["immune_until"] - time();
                 $initial_text = ($diff > 0) ? floor($diff / 60) . 'm ' . ($diff % 60) . 's' : '0m 0s';
-                echo '<span class="immune-countdown" data-until="'.$vos[$n]["immune_until"].'">'.$initial_text.'</span>';
+                echo '<span class="immune-countdown" data-until="'.$vos[$n]["immune_until"].'" data-duratie="'.htmlspecialchars($vos[$n]["duratie"]).'">'.$initial_text.'</span>';
             } else {
                 echo '<span>'.htmlspecialchars($vos[$n]["duratie"]).'</span>';
             }
