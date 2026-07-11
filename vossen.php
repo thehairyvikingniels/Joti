@@ -24,6 +24,11 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
+if (!isset($priv) || $priv < 1) {
+    header("Location: home");
+    exit();
+}
+
 // Get global site settings
 $stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
 $stmt->execute();

@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['id'])) {
+if (!isset($_SESSION['id']) || !isset($_SESSION['priv']) || $_SESSION['priv'] < 1) {
     header("Location: index.php");
     exit();
 }

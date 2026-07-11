@@ -73,6 +73,11 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
+if (!isset($priv) || $priv < 1) {
+    header("Location: home");
+    exit();
+}
+
 
 // In of uitstappen als bijrijder
 if (isset($_POST['carid'])) {
