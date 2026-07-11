@@ -9,6 +9,7 @@ if (empty($_SESSION['id'])){
 }
 
 require("dblogin.php");
+require_once("includes/globals.php");
 
 // GPS Toggle
 if (isset($_GET['gpstoggle'])){
@@ -271,6 +272,8 @@ if (isset($_POST['toggle_toewijzing'])) {
                 $r = $s->get_result();
                 if ($r->num_rows > 0) $c_name = $r->fetch_assoc()['naam'];
                 $s->close();
+            } else if ($c_type == 'hunt') {
+                $c_name = isset($vossen_names[$c_ref]) ? "Hunt: " . $vossen_names[$c_ref] : "Hunt " . $c_ref;
             }
         } else {
             $conflict = $res_car->fetch_assoc();
@@ -304,6 +307,8 @@ if (isset($_POST['toggle_toewijzing'])) {
                 $r = $s->get_result();
                 if ($r->num_rows > 0) $t_name = $r->fetch_assoc()['naam'];
                 $s->close();
+            } else if ($type == 'hunt') {
+                $t_name = isset($vossen_names[$ref_id]) ? "Hunt: " . $vossen_names[$ref_id] : "Hunt " . $ref_id;
             }
 
             echo json_encode(["status" => "conflict", "conflict_name" => $c_name, "target_name" => $t_name]);
