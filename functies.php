@@ -264,6 +264,13 @@ if (isset($_POST['toggle_toewijzing'])) {
                 $r = $s->get_result();
                 if ($r->num_rows > 0) $c_name = "Hint: " . $r->fetch_assoc()['titel'];
                 $s->close();
+            } else if ($c_type == 'custom') {
+                $s = $conn->prepare("SELECT naam FROM Whiteboard_Categorieen WHERE id = ?");
+                $s->bind_param("i", $c_ref);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $c_name = $r->fetch_assoc()['naam'];
+                $s->close();
             }
         } else {
             $conflict = $res_car->fetch_assoc();
@@ -289,6 +296,13 @@ if (isset($_POST['toggle_toewijzing'])) {
                 $s->execute();
                 $r = $s->get_result();
                 if ($r->num_rows > 0) $t_name = "Hint: " . $r->fetch_assoc()['titel'];
+                $s->close();
+            } else if ($type == 'custom') {
+                $s = $conn->prepare("SELECT naam FROM Whiteboard_Categorieen WHERE id = ?");
+                $s->bind_param("i", $ref_id);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $t_name = $r->fetch_assoc()['naam'];
                 $s->close();
             }
 
