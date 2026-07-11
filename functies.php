@@ -177,6 +177,148 @@ if (isset($_POST['update_voslocatie'])) {
     exit();
 }
 
+// Toggle toewijzing
+if (isset($_POST['toggle_toewijzing'])) {
+    if (!isset($_SESSION['id']) || !isset($_SESSION['priv']) || $_SESSION['priv'] < 1) {
+        echo json_encode(["status" => "error", "message" => "Geen rechten"]);
+        exit();
+    }
+    
+    header('Content-Type: application/json');
+    $type = $_POST['type'] ?? '';
+    $ref_id = intval($_POST['referentie_id'] ?? 0);
+    $user_id = $_SESSION['id'];
+    $force = isset($_POST['force']) && $_POST['force'] == '1';
+    
+    if (!$type || !$ref_id) {
+        echo json_encode(["status" => "error"]);
+        exit();
+    }
+    
+    // Helper function to get assigned users
+    $get_users = function($conn, $t, $r) {
+        $stmt_users = $conn->prepare("SELECT g.id, g.voornaam, g.achternaam, g.profile_picture FROM Toewijzingen t JOIN Gebruikers g ON t.gebruiker_id = g.id WHERE t.type = ? AND t.referentie_id = ?");
+        $stmt_users->bind_param("si", $t, $r);
+        $stmt_users->execute();
+        $res_users = $stmt_users->get_result();
+        $users = $res_users->fetch_all(MYSQLI_ASSOC);
+        $stmt_users->close();
+        return $users;
+    };
+
+    // Check if already assigned to THIS exact item
+    $stmt = $conn->prepare("SELECT id FROM Toewijzingen WHERE gebruiker_id = ? AND type = ? AND referentie_id = ?");
+    $stmt->bind_param("isi", $user_id, $type, $ref_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stmt->close();
+    
+    if ($result->num_rows > 0) {
+        // Unassign THIS item
+        $stmt_del = $conn->prepare("DELETE FROM Toewijzingen WHERE gebruiker_id = ? AND type = ? AND referentie_id = ?");
+        $stmt_del->bind_param("isi", $user_id, $type, $ref_id);
+        $stmt_del->execute();
+        $stmt_del->close();
+        
+        $users = $get_users($conn, $type, $ref_id);
+        echo json_encode(["status" => "unassigned", "target_type" => $type, "target_id" => $ref_id, "users" => $users]);
+        exit();
+    }
+    
+    // Check if assigned to ANYTHING ELSE
+    $stmt_any = $conn->prepare("SELECT type, referentie_id FROM Toewijzingen WHERE gebruiker_id = ?");
+    $stmt_any->bind_param("i", $user_id);
+    $stmt_any->execute();
+    $res_any = $stmt_any->get_result();
+    
+    $unassigned_type = null;
+    $unassigned_id = null;
+    $unassigned_users = [];
+    
+    if ($res_any->num_rows > 0) {
+        $conflict = $res_any->fetch_assoc();
+        $c_type = $conflict['type'];
+        $c_ref = $conflict['referentie_id'];
+        
+        if (!$force) {
+            // We have a conflict
+            // Get name of conflict
+            $c_name = ucfirst($c_type) . " " . $c_ref; // Default
+            if ($c_type == 'opdracht') {
+                $s = $conn->prepare("SELECT titel FROM Opdrachten WHERE id = ?");
+                $s->bind_param("i", $c_ref);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $c_name = "Opdracht: " . $r->fetch_assoc()['titel'];
+                $s->close();
+            } else if ($c_type == 'hint') {
+                $s = $conn->prepare("SELECT titel FROM Hints WHERE id = ?");
+                $s->bind_param("i", $c_ref);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $c_name = "Hint: " . $r->fetch_assoc()['titel'];
+                $s->close();
+            }
+            
+            // Get name of target
+            $t_name = ucfirst($type) . " " . $ref_id;
+            if ($type == 'opdracht') {
+                $s = $conn->prepare("SELECT titel FROM Opdrachten WHERE id = ?");
+                $s->bind_param("i", $ref_id);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $t_name = "Opdracht: " . $r->fetch_assoc()['titel'];
+                $s->close();
+            } else if ($type == 'hint') {
+                $s = $conn->prepare("SELECT titel FROM Hints WHERE id = ?");
+                $s->bind_param("i", $ref_id);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $t_name = "Hint: " . $r->fetch_assoc()['titel'];
+                $s->close();
+            }
+
+            echo json_encode(["status" => "conflict", "conflict_name" => $c_name, "target_name" => $t_name]);
+            $stmt_any->close();
+            exit();
+        } else {
+            // Force override: track what we unassigned so frontend can sync
+            $unassigned_type = $c_type;
+            $unassigned_id = $c_ref;
+        }
+    }
+    $stmt_any->close();
+
+    // If we reach here, we either have no conflict, or we have force=1
+    if ($force) {
+        $stmt_del_all = $conn->prepare("DELETE FROM Toewijzingen WHERE gebruiker_id = ?");
+        $stmt_del_all->bind_param("i", $user_id);
+        $stmt_del_all->execute();
+        $stmt_del_all->close();
+        if ($unassigned_type) {
+            $unassigned_users = $get_users($conn, $unassigned_type, $unassigned_id);
+        }
+    }
+    
+    // Assign
+    $stmt_ins = $conn->prepare("INSERT INTO Toewijzingen (gebruiker_id, type, referentie_id) VALUES (?, ?, ?)");
+    $stmt_ins->bind_param("isi", $user_id, $type, $ref_id);
+    $stmt_ins->execute();
+    $stmt_ins->close();
+    
+    $users = $get_users($conn, $type, $ref_id);
+    
+    echo json_encode([
+        "status" => "assigned", 
+        "target_type" => $type, 
+        "target_id" => $ref_id, 
+        "users" => $users,
+        "unassigned_type" => $unassigned_type,
+        "unassigned_id" => $unassigned_id,
+        "unassigned_users" => $unassigned_users
+    ]);
+    exit();
+}
   
 // elke x seconden gps locatie ophalen
 if (isset($_GET['lat']) && isset($_GET['lon'])) {

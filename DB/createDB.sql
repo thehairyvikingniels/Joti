@@ -221,6 +221,22 @@ INSERT INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Tabelstructuur voor tabel `Toewijzingen`
+--
+
+CREATE TABLE `Toewijzingen` (
+  `id` int(11) NOT NULL,
+  `gebruiker_id` int(11) NOT NULL,
+  `type` varchar(32) NOT NULL,
+  `referentie_id` int(11) NOT NULL,
+  `timestamp` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_toewijzingen_gebruiker` FOREIGN KEY (`gebruiker_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Tabelstructuur voor tabel `Voslocaties`
 --
 
