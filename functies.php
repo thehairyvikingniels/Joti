@@ -596,4 +596,39 @@ if (isset($_GET['gebeurtenissen'])){
     echo "</tbody></table>";
     echo "<div class='mt-4 flex justify-center'><button id='meerknop' class='px-4 py-2 theme-bg-primary text-white text-sm font-semibold rounded hover:opacity-90 transition' onclick='gebeurtenissen(". ($num+5) .")'>Meer resultaten</button></div>";
 }
+
+/**
+ * Queue a push notification to be sent by the cronjob.
+ * @param mixed $to_user  User ID, 'ALL', or an array of user IDs
+ * @param string $title   The notification title
+ * @param string $message The notification message/body
+ * @param string $url     The URL to open when clicked
+ * @param string $initiator The script or context queueing this
+ * @param string|null $send_before ISO date string or null
+ */
+function send_push_notification($to_user, $title, $message, $url = '/', $initiator = 'system', $send_before = null) {
+    global $conn;
+    
+    $users = [];
+    if ($to_user === 'ALL') {
+        $res = $conn->query("SELECT DISTINCT user_id FROM Notification_Subscriptions");
+        while ($row = $res->fetch_assoc()) {
+            $users[] = (int)$row['user_id'];
+        }
+    } else {
+        $users = is_array($to_user) ? $to_user : [$to_user];
+    }
+    
+    if (empty($users)) return;
+    
+    $stmt = $conn->prepare("INSERT INTO Notification_Backlog (user_id, title, message, url, initiator, send_before) VALUES (?, ?, ?, ?, ?, ?)");
+    
+    foreach ($users as $u) {
+        $u_int = (int)$u;
+        $stmt->bind_param("isssss", $u_int, $title, $message, $url, $initiator, $send_before);
+        $stmt->execute();
+    }
+    
+    $stmt->close();
+}
 ?>

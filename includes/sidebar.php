@@ -63,6 +63,10 @@ $pagelist = array(
     'sa_settings' => array(
         'active' => null,
         'filename' => 'admin/settings.php'
+    ),
+    'sa_notifications' => array(
+        'active' => null,
+        'filename' => 'admin/notifications.php'
     )
 );
 $pagelist[PAGE_NAME]['active'] = " theme-sidebar-active theme-border-primary text-white";
@@ -78,7 +82,8 @@ $adminpagelist = array(
     'a_users',
     'a_database',
     'a_cronjobs',
-    'sa_settings'
+    'sa_settings',
+    'sa_notifications'
 );
 if (in_array(PAGE_NAME, $adminpagelist)) {
     $inAdminfolder = "";
@@ -138,6 +143,7 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
     <a href="<?=$inAdminfolder?>users" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_users']['active']?>"><i class="fas fa-user-cog fa-fw w-5 opacity-70"></i><span>Users</span></a>
     <a href="<?=$inAdminfolder?>cronjobs" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_cronjobs']['active']?>"><i class="fas fa-stopwatch fa-fw w-5 opacity-70"></i><span>Cronjobs</span></a>
     <a href="<?=$inAdminfolder?>database" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_database']['active']?>"><i class="fas fa-database fa-fw w-5 opacity-70"></i><span>Database</span></a>
+    <a href="<?=$inAdminfolder?>notifications" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['sa_notifications']['active']?>"><i class="fas fa-bell fa-fw w-5 opacity-70"></i><span>Notifications</span></a>
     <?php endif; ?>
     <?php if ($priv > 2): ?>
     <a href="<?=$inAdminfolder?>settings" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['sa_settings']['active']?>"><i class="fas fa-toolbox fa-fw w-5 opacity-70"></i><span>Settings</span></a>

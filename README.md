@@ -14,9 +14,10 @@ For use by all members of a scout group and associates. Groups may fork the repo
 
 ### Requirements
 - PHP 8.2 (other versions untested)
+- Composer (for installing dependencies like web-push)
 - MySQL / MariaDB
 - Webserver or PHP built-in server
-- Enable required PHP extensions for mysqli, DOM (used in templates), and cURL (used for Mapbox routing APIs in maps.php)
+- Enable required PHP extensions for mysqli, DOM (used in templates), gmp/bcmath (for web-push), and cURL (used for Mapbox routing APIs in maps.php)
 
 ### Quick start (local dev)
 1. Create the database from the SQL file:

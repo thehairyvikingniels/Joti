@@ -168,3 +168,5 @@ $themeConfig = getThemeConfig($theme);
         }
     }
 </script>
+<script>window.VAPID_PUBLIC_KEY = '<?= htmlspecialchars($siteSettings['VAPID_PUBLIC_KEY'] ?? '') ?>';</script>
+<script src="js/push.js"></script>
