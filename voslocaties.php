@@ -173,7 +173,7 @@ if (isset($siteSettings['GROUP_ID'])) {
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<title>Jotihunt - Voslocaties</title>
+<title>Jotify - Voslocaties</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>

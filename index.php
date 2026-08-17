@@ -45,7 +45,7 @@ $stmt->close();
 
 <html>
   <head>
-    <title>Jotihunt - Login</title>
+    <title>Jotify - Login</title>
     <meta name="author" content="Niels Maarleveld">
     <link rel="icon" href="media/geusje.png">
     <meta charset="utf-8">

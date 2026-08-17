@@ -94,7 +94,7 @@ $stmt->close();
 
 <html>
 
-<title>Jotihunt - De Geuzen</title>
+<title>Jotify - De Geuzen</title>
 
 <meta charset="UTF-8">
 
@@ -246,7 +246,7 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
   <div id="welcomeModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
     <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden transform -translate-y-4 transition-transform duration-300 theme-card theme-text" id="welcomeModalContent">
       <header class="theme-bg-primary text-white p-5 border-b border-black/10"> 
-        <h2 class="text-xl font-bold">Welkom bij de Jotihunt!</h2>
+        <h2 class="text-xl font-bold">Welkom bij Jotify!</h2>
       </header>
       <div class="p-6 space-y-4 text-sm">
         <p>

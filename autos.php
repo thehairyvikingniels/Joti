@@ -100,7 +100,7 @@ if (isset($_POST['carid'])) {
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<title>Jotihunt - Auto's</title>
+<title>Jotify - Auto's</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>

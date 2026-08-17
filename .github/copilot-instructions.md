@@ -1,6 +1,6 @@
 ## Quick context (what this project is)
 
-- Simple, procedural PHP web app for a local "Jotihunt" service. No framework. Frontend uses W3.CSS, jQuery and FontAwesome; server-side is plain PHP + MySQL (mysqli).
+- Simple, procedural PHP web app for a local "Jotify" service. No framework. Frontend uses W3.CSS, jQuery and FontAwesome; server-side is plain PHP + MySQL (mysqli).
 - Pages are file-based endpoints (e.g. `index.php`, `login.php`, `functies.php`, `kaarten.php`). Admin UI lives under `admin/`.
 - Database schema is in `DB/maarleveld_one_joti.sql` and includes tables like `Gebruikers`, `Groepen`, `Voslocaties`, `Voslog`, `Auto`, etc.
 

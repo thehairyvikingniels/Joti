@@ -49,7 +49,7 @@ $stmt->close();
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<title>Jotihunt - Instellingen</title>
+<title>Jotify - Instellingen</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>

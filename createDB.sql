@@ -38,6 +38,7 @@ CREATE TABLE `Auto` (
 CREATE TABLE `Auto_Bijrijders` (
   `auto` char(8) NOT NULL,
   `gebruiker_id` int(11) NOT NULL,
+  `is_bestuurder` tinyint(1) NOT NULL DEFAULT 0,
   `instaptijd` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -230,7 +231,37 @@ CREATE TABLE `Toewijzingen` (
   `type` varchar(32) NOT NULL,
   `referentie_id` int(11) NOT NULL,
   `timestamp` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_toewijzingen_gebruiker` FOREIGN KEY (`gebruiker_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Tabelstructuur voor tabel `Whiteboard_Categorieen`
+--
+
+CREATE TABLE IF NOT EXISTS `Whiteboard_Categorieen` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `naam` varchar(64) NOT NULL,
+  `kleur` varchar(16) NOT NULL DEFAULT '#3B82F6',
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Tabelstructuur voor tabel `Auto_Toewijzingen`
+--
+
+CREATE TABLE IF NOT EXISTS `Auto_Toewijzingen` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `auto` char(8) NOT NULL,
+  `type` varchar(32) NOT NULL,
+  `referentie_id` int(11) NOT NULL,
+  `timestamp` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`auto`) REFERENCES `Auto`(`kenteken`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------

@@ -1,7 +1,7 @@
-# Jotihunt Web App
+# Jotify Web App
 
 ### Short description
-A small procedural PHP + MySQL web application used by a scout group to run a local Jotihunt helper site. No framework; frontend uses W3.CSS, jQuery and FontAwesome; server side is plain PHP + mysqli.
+A small procedural PHP + MySQL web application used by a scout group to run a local Jotify helper site. No framework; frontend uses W3.CSS, jQuery and FontAwesome; server side is plain PHP + mysqli.
 
 ### Contents (high-level)
 - File-based PHP endpoints: index.php, home.php, kaarten.php, functies.php, admin/

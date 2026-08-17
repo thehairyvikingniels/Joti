@@ -9,6 +9,7 @@ if (empty($_SESSION['id'])){
 }
 
 require("dblogin.php");
+require_once("includes/globals.php");
 
 // GPS Toggle
 if (isset($_GET['gpstoggle'])){
@@ -231,18 +232,24 @@ if (isset($_POST['toggle_toewijzing'])) {
     $stmt_any->execute();
     $res_any = $stmt_any->get_result();
     
+    $stmt_car = $conn->prepare("SELECT auto FROM Auto_Bijrijders WHERE gebruiker_id = ?");
+    $stmt_car->bind_param("i", $user_id);
+    $stmt_car->execute();
+    $res_car = $stmt_car->get_result();
+    
     $unassigned_type = null;
     $unassigned_id = null;
     $unassigned_users = [];
     
-    if ($res_any->num_rows > 0) {
-        $conflict = $res_any->fetch_assoc();
-        $c_type = $conflict['type'];
-        $c_ref = $conflict['referentie_id'];
+    if ($res_any->num_rows > 0 || $res_car->num_rows > 0) {
+        $c_type = "";
+        $c_ref = "";
+        $c_name = "";
         
-        if (!$force) {
-            // We have a conflict
-            // Get name of conflict
+        if ($res_any->num_rows > 0) {
+            $conflict = $res_any->fetch_assoc();
+            $c_type = $conflict['type'];
+            $c_ref = $conflict['referentie_id'];
             $c_name = ucfirst($c_type) . " " . $c_ref; // Default
             if ($c_type == 'opdracht') {
                 $s = $conn->prepare("SELECT titel FROM Opdrachten WHERE id = ?");
@@ -258,8 +265,25 @@ if (isset($_POST['toggle_toewijzing'])) {
                 $r = $s->get_result();
                 if ($r->num_rows > 0) $c_name = "Hint: " . $r->fetch_assoc()['titel'];
                 $s->close();
+            } else if ($c_type == 'custom') {
+                $s = $conn->prepare("SELECT naam FROM Whiteboard_Categorieen WHERE id = ?");
+                $s->bind_param("i", $c_ref);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $c_name = $r->fetch_assoc()['naam'];
+                $s->close();
+            } else if ($c_type == 'hunt') {
+                $c_name = isset($vossen_names[$c_ref]) ? "Hunt: " . $vossen_names[$c_ref] : "Hunt " . $c_ref;
             }
-            
+        } else {
+            $conflict = $res_car->fetch_assoc();
+            $c_type = 'auto';
+            $c_ref = $conflict['auto'];
+            $c_name = "Auto: " . $c_ref;
+        }
+        
+        if (!$force) {
+            // We have a conflict
             // Get name of target
             $t_name = ucfirst($type) . " " . $ref_id;
             if ($type == 'opdracht') {
@@ -276,10 +300,20 @@ if (isset($_POST['toggle_toewijzing'])) {
                 $r = $s->get_result();
                 if ($r->num_rows > 0) $t_name = "Hint: " . $r->fetch_assoc()['titel'];
                 $s->close();
+            } else if ($type == 'custom') {
+                $s = $conn->prepare("SELECT naam FROM Whiteboard_Categorieen WHERE id = ?");
+                $s->bind_param("i", $ref_id);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $t_name = $r->fetch_assoc()['naam'];
+                $s->close();
+            } else if ($type == 'hunt') {
+                $t_name = isset($vossen_names[$ref_id]) ? "Hunt: " . $vossen_names[$ref_id] : "Hunt " . $ref_id;
             }
 
             echo json_encode(["status" => "conflict", "conflict_name" => $c_name, "target_name" => $t_name]);
             $stmt_any->close();
+            $stmt_car->close();
             exit();
         } else {
             // Force override: track what we unassigned so frontend can sync
@@ -288,6 +322,7 @@ if (isset($_POST['toggle_toewijzing'])) {
         }
     }
     $stmt_any->close();
+    $stmt_car->close();
 
     // If we reach here, we either have no conflict, or we have force=1
     if ($force) {
@@ -295,7 +330,13 @@ if (isset($_POST['toggle_toewijzing'])) {
         $stmt_del_all->bind_param("i", $user_id);
         $stmt_del_all->execute();
         $stmt_del_all->close();
-        if ($unassigned_type) {
+        
+        $stmt_del_auto = $conn->prepare("DELETE FROM Auto_Bijrijders WHERE gebruiker_id = ?");
+        $stmt_del_auto->bind_param("i", $user_id);
+        $stmt_del_auto->execute();
+        $stmt_del_auto->close();
+        
+        if ($unassigned_type && $unassigned_type != 'auto') {
             $unassigned_users = $get_users($conn, $unassigned_type, $unassigned_id);
         }
     }

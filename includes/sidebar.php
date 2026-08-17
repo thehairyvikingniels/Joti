@@ -40,6 +40,10 @@ $pagelist = array(
         'active' => null,
         'filename' => 'instellingen.php'
     ),
+    'whiteboard' => array(
+        'active' => null,
+        'filename' => 'whiteboard.php'
+    ),
     'autos' => array(
         'active' => null,
         'filename' => 'autos.php'
@@ -127,6 +131,7 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
     <a href="<?=$notInAdminfolder?>instellingen" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['instellingen']['active']?>"><i class="fas fa-cog fa-fw w-5 opacity-70"></i><span>Instellingen</span></a>
     <?php if ($priv > 0): ?>
     <a href="<?=$notInAdminfolder?>autos" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['autos']['active']?>"><i class="fas fa-car fa-fw w-5 opacity-70"></i><span>Auto's</span></a>
+    <a href="<?=$notInAdminfolder?>whiteboard" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['whiteboard']['active']?>"><i class="fas fa-chalkboard fa-fw w-5 opacity-70"></i><span>Whiteboard</span></a>
     <?php endif; ?>
     <?php if ($priv > 1): ?>
     <div class="px-5 pt-4 pb-2"><p class="text-xs font-bold uppercase tracking-wider opacity-50">Admin</p></div>
