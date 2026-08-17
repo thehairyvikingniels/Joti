@@ -8,7 +8,7 @@ if (isset($_SESSION['id']) && !empty($_SESSION['id'])) {
 
 require_once("dblogin.php");
 
-$groupName = 'Jotihunt';
+$groupName = 'Jotify';
 $stmt = $conn->prepare("SELECT Waarde FROM Site_Instellingen WHERE Instelling = 'GROUP_ID'");
 $stmt->execute();
 $res = $stmt->get_result();
@@ -62,7 +62,7 @@ $stmt->close();
       <div class="z-10 w-full max-w-md p-4">
         <div class="theme-card theme-text rounded-2xl border shadow-2xl overflow-hidden backdrop-blur-md" style="border-color: var(--theme-card-border);">
             <header class="p-6 text-center border-b" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
-              <h1 class="text-3xl font-bold text-white tracking-wider">Jotihunt</h1>
+              <h1 class="text-3xl font-bold text-white tracking-wider">Jotify</h1>
               <h5 class="text-sm text-white/80 mt-1 uppercase tracking-widest font-semibold">Login &mdash; <?= htmlspecialchars($groupName) ?></h5>
             </header>
             

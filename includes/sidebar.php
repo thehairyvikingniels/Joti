@@ -91,7 +91,7 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
 
 <aside id="mySidebar" class="w-64 theme-sidebar hidden md:flex flex-col flex-shrink-0 z-40 fixed md:relative h-full transition-transform transform -translate-x-full md:translate-x-0">
   <div class="h-14 flex items-center justify-between md:justify-center px-4 md:px-0 border-b border-black/10 bg-black/10">
-    <h1 class="text-lg font-bold tracking-wider theme-primary"><?= htmlspecialchars($siteSettings['GROUP_ID'] ? ($topbarGroupName ?? 'JOTIHUNT') : 'JOTIHUNT') ?></h1>
+    <h1 class="text-lg font-bold tracking-wider theme-primary"><?= htmlspecialchars($siteSettings['GROUP_ID'] ? ($topbarGroupName ?? 'JOTIFY') : 'JOTIFY') ?></h1>
     <button class="md:hidden text-white/70 hover:text-white" onclick="w3_close()"><i class="fas fa-times"></i></button>
   </div>
   

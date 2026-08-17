@@ -1,6 +1,6 @@
 <?php
 $vos = array();
-$topbarGroupName = 'Jotihunt';
+$topbarGroupName = 'Jotify';
 if (!empty($siteSettings['GROUP_ID'])) {
     $stmt_gn = $conn->prepare("SELECT naam FROM Groepen WHERE id = ?");
     $stmt_gn->bind_param("i", $siteSettings['GROUP_ID']);
