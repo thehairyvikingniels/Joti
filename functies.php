@@ -9,6 +9,7 @@ if (empty($_SESSION['id'])){
 }
 
 require("dblogin.php");
+require_once("includes/globals.php");
 
 // GPS Toggle
 if (isset($_GET['gpstoggle'])){
@@ -21,6 +22,30 @@ if (isset($_GET['gpstoggle'])){
   exit();
 }
 
+// Theme Switcher
+if (isset($_GET['set_theme'])) {
+    $newTheme = $_GET['set_theme'];
+    $valid_themes = ['light', 'dark', 'rose-gold', 'cyber', 'nature', 'coral'];
+    if (in_array($newTheme, $valid_themes)) {
+        $_SESSION['theme'] = $newTheme;
+        if (isset($_SESSION['id'])) {
+            $stmt = $conn->prepare("UPDATE Gebruikers SET theme=? WHERE id=?");
+            $stmt->bind_param("si", $newTheme, $_SESSION['id']);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+    exit();
+}
+
+// Save Map Settings to Session
+if (isset($_GET['save_map_settings'])) {
+    $settings = json_decode(file_get_contents('php://input'), true);
+    if (is_array($settings)) {
+        $_SESSION['map_settings'] = $settings;
+    }
+    exit();
+}
 // Zet een tijd in een leesbare vorm
 function time2str($ts) {
     if(!ctype_digit($ts)) {
@@ -153,6 +178,188 @@ if (isset($_POST['update_voslocatie'])) {
     exit();
 }
 
+// Toggle toewijzing
+if (isset($_POST['toggle_toewijzing'])) {
+    if (!isset($_SESSION['id']) || !isset($_SESSION['priv']) || $_SESSION['priv'] < 1) {
+        echo json_encode(["status" => "error", "message" => "Geen rechten"]);
+        exit();
+    }
+    
+    header('Content-Type: application/json');
+    $type = $_POST['type'] ?? '';
+    $ref_id = intval($_POST['referentie_id'] ?? 0);
+    $user_id = $_SESSION['id'];
+    $force = isset($_POST['force']) && $_POST['force'] == '1';
+    
+    if (!$type || !$ref_id) {
+        echo json_encode(["status" => "error"]);
+        exit();
+    }
+    
+    // Helper function to get assigned users
+    $get_users = function($conn, $t, $r) {
+        $stmt_users = $conn->prepare("SELECT g.id, g.voornaam, g.achternaam, g.profile_picture FROM Toewijzingen t JOIN Gebruikers g ON t.gebruiker_id = g.id WHERE t.type = ? AND t.referentie_id = ?");
+        $stmt_users->bind_param("si", $t, $r);
+        $stmt_users->execute();
+        $res_users = $stmt_users->get_result();
+        $users = $res_users->fetch_all(MYSQLI_ASSOC);
+        $stmt_users->close();
+        return $users;
+    };
+
+    // Check if already assigned to THIS exact item
+    $stmt = $conn->prepare("SELECT id FROM Toewijzingen WHERE gebruiker_id = ? AND type = ? AND referentie_id = ?");
+    $stmt->bind_param("isi", $user_id, $type, $ref_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stmt->close();
+    
+    if ($result->num_rows > 0) {
+        // Unassign THIS item
+        $stmt_del = $conn->prepare("DELETE FROM Toewijzingen WHERE gebruiker_id = ? AND type = ? AND referentie_id = ?");
+        $stmt_del->bind_param("isi", $user_id, $type, $ref_id);
+        $stmt_del->execute();
+        $stmt_del->close();
+        
+        $users = $get_users($conn, $type, $ref_id);
+        echo json_encode(["status" => "unassigned", "target_type" => $type, "target_id" => $ref_id, "users" => $users]);
+        exit();
+    }
+    
+    // Check if assigned to ANYTHING ELSE
+    $stmt_any = $conn->prepare("SELECT type, referentie_id FROM Toewijzingen WHERE gebruiker_id = ?");
+    $stmt_any->bind_param("i", $user_id);
+    $stmt_any->execute();
+    $res_any = $stmt_any->get_result();
+    
+    $stmt_car = $conn->prepare("SELECT auto FROM Auto_Bijrijders WHERE gebruiker_id = ?");
+    $stmt_car->bind_param("i", $user_id);
+    $stmt_car->execute();
+    $res_car = $stmt_car->get_result();
+    
+    $unassigned_type = null;
+    $unassigned_id = null;
+    $unassigned_users = [];
+    
+    if ($res_any->num_rows > 0 || $res_car->num_rows > 0) {
+        $c_type = "";
+        $c_ref = "";
+        $c_name = "";
+        
+        if ($res_any->num_rows > 0) {
+            $conflict = $res_any->fetch_assoc();
+            $c_type = $conflict['type'];
+            $c_ref = $conflict['referentie_id'];
+            $c_name = ucfirst($c_type) . " " . $c_ref; // Default
+            if ($c_type == 'opdracht') {
+                $s = $conn->prepare("SELECT titel FROM Opdrachten WHERE id = ?");
+                $s->bind_param("i", $c_ref);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $c_name = "Opdracht: " . $r->fetch_assoc()['titel'];
+                $s->close();
+            } else if ($c_type == 'hint') {
+                $s = $conn->prepare("SELECT titel FROM Hints WHERE id = ?");
+                $s->bind_param("i", $c_ref);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $c_name = "Hint: " . $r->fetch_assoc()['titel'];
+                $s->close();
+            } else if ($c_type == 'custom') {
+                $s = $conn->prepare("SELECT naam FROM Whiteboard_Categorieen WHERE id = ?");
+                $s->bind_param("i", $c_ref);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $c_name = $r->fetch_assoc()['naam'];
+                $s->close();
+            } else if ($c_type == 'hunt') {
+                $c_name = isset($vossen_names[$c_ref]) ? "Hunt: " . $vossen_names[$c_ref] : "Hunt " . $c_ref;
+            }
+        } else {
+            $conflict = $res_car->fetch_assoc();
+            $c_type = 'auto';
+            $c_ref = $conflict['auto'];
+            $c_name = "Auto: " . $c_ref;
+        }
+        
+        if (!$force) {
+            // We have a conflict
+            // Get name of target
+            $t_name = ucfirst($type) . " " . $ref_id;
+            if ($type == 'opdracht') {
+                $s = $conn->prepare("SELECT titel FROM Opdrachten WHERE id = ?");
+                $s->bind_param("i", $ref_id);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $t_name = "Opdracht: " . $r->fetch_assoc()['titel'];
+                $s->close();
+            } else if ($type == 'hint') {
+                $s = $conn->prepare("SELECT titel FROM Hints WHERE id = ?");
+                $s->bind_param("i", $ref_id);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $t_name = "Hint: " . $r->fetch_assoc()['titel'];
+                $s->close();
+            } else if ($type == 'custom') {
+                $s = $conn->prepare("SELECT naam FROM Whiteboard_Categorieen WHERE id = ?");
+                $s->bind_param("i", $ref_id);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $t_name = $r->fetch_assoc()['naam'];
+                $s->close();
+            } else if ($type == 'hunt') {
+                $t_name = isset($vossen_names[$ref_id]) ? "Hunt: " . $vossen_names[$ref_id] : "Hunt " . $ref_id;
+            }
+
+            echo json_encode(["status" => "conflict", "conflict_name" => $c_name, "target_name" => $t_name]);
+            $stmt_any->close();
+            $stmt_car->close();
+            exit();
+        } else {
+            // Force override: track what we unassigned so frontend can sync
+            $unassigned_type = $c_type;
+            $unassigned_id = $c_ref;
+        }
+    }
+    $stmt_any->close();
+    $stmt_car->close();
+
+    // If we reach here, we either have no conflict, or we have force=1
+    if ($force) {
+        $stmt_del_all = $conn->prepare("DELETE FROM Toewijzingen WHERE gebruiker_id = ?");
+        $stmt_del_all->bind_param("i", $user_id);
+        $stmt_del_all->execute();
+        $stmt_del_all->close();
+        
+        $stmt_del_auto = $conn->prepare("DELETE FROM Auto_Bijrijders WHERE gebruiker_id = ?");
+        $stmt_del_auto->bind_param("i", $user_id);
+        $stmt_del_auto->execute();
+        $stmt_del_auto->close();
+        
+        if ($unassigned_type && $unassigned_type != 'auto') {
+            $unassigned_users = $get_users($conn, $unassigned_type, $unassigned_id);
+        }
+    }
+    
+    // Assign
+    $stmt_ins = $conn->prepare("INSERT INTO Toewijzingen (gebruiker_id, type, referentie_id) VALUES (?, ?, ?)");
+    $stmt_ins->bind_param("isi", $user_id, $type, $ref_id);
+    $stmt_ins->execute();
+    $stmt_ins->close();
+    
+    $users = $get_users($conn, $type, $ref_id);
+    
+    echo json_encode([
+        "status" => "assigned", 
+        "target_type" => $type, 
+        "target_id" => $ref_id, 
+        "users" => $users,
+        "unassigned_type" => $unassigned_type,
+        "unassigned_id" => $unassigned_id,
+        "unassigned_users" => $unassigned_users
+    ]);
+    exit();
+}
   
 // elke x seconden gps locatie ophalen
 if (isset($_GET['lat']) && isset($_GET['lon'])) {
@@ -192,6 +399,9 @@ if (isset($_GET['lat']) && isset($_GET['lon'])) {
 
 // Invulgegevens voor homebase (afvinken)
 if (isset($_GET['hunthintgedaan'])){
+    if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
+        exit();
+    }
     $stmt = $conn->prepare("UPDATE Voslocaties SET ingeleverd='1', ingeleverd_door=? WHERE id=?");
     $hunt_id = intval($_GET['hunthintgedaan']);
     $stmt->bind_param("ii", $_SESSION['id'], $hunt_id);
@@ -208,29 +418,33 @@ if (isset($_GET['hunthintgedaan'])){
 
 // Invulgegevens voor homebase (tabel tonen)
 if (isset($_GET['invulgegevens'])){
+    if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
+        exit();
+    }
     $stmt = $conn->prepare("SELECT * FROM Voslocaties WHERE ingeleverd='0' ORDER BY ingestuurd_op DESC");
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
-        echo "<table style='width:100%'>";
+        echo "<table class='w-full text-sm text-left theme-text'>";
+        echo "<thead class='text-xs uppercase theme-card-header opacity-80'>";
         echo "<tr>";
-        echo "  <th>Code</th>";
-        echo "  <th>Type</th>";
-        echo "  <th>Tijd</th>";
-        echo "  <th></th>";
-        echo "</tr>";
+        echo "  <th class='px-4 py-2'>Code</th>";
+        echo "  <th class='px-4 py-2'>Type</th>";
+        echo "  <th class='px-4 py-2'>Tijd</th>";
+        echo "  <th class='px-4 py-2'></th>";
+        echo "</tr></thead><tbody>";
         while($row = $result->fetch_assoc()) {
-            echo "<tr>";
-            echo "  <td>".htmlspecialchars($row['code'])."</td>";
-            echo "  <td>".htmlspecialchars($row['type'])."</td>";
-            echo "  <td>".date("H:i",strtotime($row['ingestuurd_op']))."</td>";
-            echo "  <td><i class=\"fas fa-trash-alt\" onclick=\"document.getElementById('modal01').style.display='block';document.getElementById('opgestuurdurl').href='functies?hunthintgedaan=".$row['id']."';\"></i></td>";
+            echo "<tr class='border-b hover:opacity-80 transition-opacity' style='border-color: var(--theme-card-border);'>";
+            echo "  <td class='px-4 py-2 font-medium'>".htmlspecialchars($row['code'])."</td>";
+            echo "  <td class='px-4 py-2'>".htmlspecialchars($row['type'])."</td>";
+            echo "  <td class='px-4 py-2'>".date("H:i",strtotime($row['ingestuurd_op']))."</td>";
+            echo "  <td class='px-4 py-2 text-right'><i class=\"fas fa-trash-alt text-red-500 cursor-pointer hover:text-red-700\" onclick=\"document.getElementById('modal01').style.display='block';document.getElementById('opgestuurdurl').href='functies?hunthintgedaan=".$row['id']."';\"></i></td>";
             echo "</tr>"; 
         }
-        echo "</table>";
+        echo "</tbody></table>";
     } else {
-        echo "<p>Hier verschijnen hunts die ingeleverd moeten worden bij de officiële jotihunt website</p>";
+        echo "<p class=\"m-4\">Hier verschijnen hunts die ingeleverd moeten worden bij de officiële jotihunt website</p>";
     }
     $stmt->close();
 }
@@ -270,7 +484,7 @@ if (isset($_GET['autos'])){
   
     $cars_found = false;
     if ($result && $result->num_rows > 0) {
-        echo "<table style='width:100%' class='w3-table-all'>";
+        echo "<div class='space-y-2'>";
         while($row = $result->fetch_assoc()) {
             $date1 = new DateTime($row['geotijd']);
             $now = new DateTime();
@@ -279,14 +493,13 @@ if (isset($_GET['autos'])){
           
             if($minutes_since < 15){ // Show cars active in last 15 minutes
                 $cars_found = true;
-                echo '<tr>';
-                echo '  <td><i class="fas fa-car-side"></i> '.htmlspecialchars($row['kenteken']).'</td>';
-                echo '  <td><i class="fas fa-users"></i></i> '.htmlspecialchars($row['bijrijders']).'</td>';
-                echo '  <td><i class="fas fa-map-marker-alt"></i> <i>'.time2str($row['geotijd']).'</i></td>';
-                echo '</tr>';
+                echo '<div class="flex items-center justify-between p-3 border rounded theme-card" style="border-color: var(--theme-card-border);">';
+                echo '  <span class="font-semibold text-sm theme-text"><i class="fas fa-car-side opacity-70 mr-1"></i> '.htmlspecialchars($row['kenteken']).' <span class="text-xs font-normal opacity-70 ml-2">('.htmlspecialchars($row['bijrijders']).')</span></span>';
+                echo '  <span class="text-[10px] uppercase tracking-wider bg-green-500/10 text-green-600 border border-green-500/20 px-2 py-0.5 rounded-sm font-bold">Actief <span class="font-normal lowercase">('.time2str($row['geotijd']).')</span></span>';
+                echo '</div>';
             }
         }
-        echo "</table>";
+        echo "</div>";
     }
     if (!$cars_found){
         echo "<p>Er zijn nu geen autos onderweg...</p>";
@@ -351,39 +564,36 @@ if (isset($_GET['gebeurtenissen'])){
     $num = intval($_GET['gebeurtenissen']);
     $data = array_slice($data, 0, $num);
     
-    echo '<table class="w3-table w3-striped w3-white" id="gebeurtenissentabel">';
+    echo '<table class="w-full text-sm text-left theme-text" id="gebeurtenissentabel"><tbody>';
     
     // In tabel zetten
     foreach($data as $element){
         switch ($element["type"]) {
             case "Opdracht": 
-                $fa = "fa fa-bell w3-text-teal"; 
+                $fa = "fa fa-bell text-teal-500 text-lg"; 
                 $url = "opdrachten"; 
                 break;
             case "Hint": 
-                $fa = "fas fa-question-circle w3-text-blue"; 
+                $fa = "fas fa-question-circle text-blue-500 text-lg"; 
                 $url = "hints"; 
                 break;
             case "Nieuws": 
-                $fa = "far fa-newspaper w3-text-black"; 
+                $fa = "far fa-newspaper text-gray-500 text-lg"; 
                 $url = "nieuws"; 
                 break;
             default: 
                 // Hunt, Spot, etc.
-                $fa = "fas fa-bullseye w3-text-red"; 
+                $fa = "fas fa-bullseye text-red-500 text-lg"; 
                 $url = "kaarten"; 
                 break; 
         }
-        echo '<tr onclick="location.href=\''.$url.'\'" style="cursor:pointer;">';
-        echo '<td><i class="'.$fa.' w3-large"></i> '.htmlspecialchars($element['type']).'</td>';
-        echo '<td>'.htmlspecialchars($element['titel']).'</td>';
-        echo '<td><i>'.time2str($element['datum']).'</i></td>';
+        echo '<tr class="border-b hover:opacity-80 cursor-pointer transition-opacity" style="border-color: var(--theme-card-border);" onclick="location.href=\''.$url.'\'">';
+        echo '<td class="px-5 py-4 w-12"><i class="'.$fa.'"></i></td>';
+        echo '<td class="px-5 py-4 font-medium">'.htmlspecialchars($element['type']).': '.htmlspecialchars($element['titel']).'</td>';
+        echo '<td class="px-5 py-4 text-right text-xs opacity-60 whitespace-nowrap">'.time2str($element['datum']).'</td>';
         echo '</tr>';
     }
-    echo "</table>";
-    echo "<center><span id='meerknop' class='w3-button w3-green w3-round-xlarge' onclick='gebeurtenissen(". ($num+5) .")'>Meer resultaten</span></center>";
+    echo "</tbody></table>";
+    echo "<div class='mt-4 flex justify-center'><button id='meerknop' class='px-4 py-2 theme-bg-primary text-white text-sm font-semibold rounded hover:opacity-90 transition' onclick='gebeurtenissen(". ($num+5) .")'>Meer resultaten</button></div>";
 }
-
-
-
 ?>

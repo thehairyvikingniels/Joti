@@ -45,191 +45,127 @@ $stmt->close();
 ?>
 
 <!DOCTYPE html>
-
-<html>
-
-<title>Jotihunt - Nieuws</title>
-
+<html lang="nl">
+<head>
+<title>Jotify - Nieuws</title>
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
-
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
-
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
-
-<style>
-
-html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
-
-</style>
-
-<body class="w3-light-grey">
-
-<!-- Topbar -->
-<?php include_once('includes/topbar.php') ?>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<?php include_once('includes/theme.php'); ?>
+</head>
+<body class="flex h-screen overflow-hidden">
 
 <!-- Sidebar -->
 <?php include_once('includes/sidebar.php') ?>
 
-<!-- !PAGE CONTENT! -->
-<div class="w3-main" style="margin-left:200px;margin-top:43px;">
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+  <!-- Topbar -->
+  <?php include_once('includes/topbar.php') ?>
+
+  <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
 
+    <div class="space-y-6">
+    <?php
+    // Get news items
+    $stmt = $conn->prepare("SELECT * FROM Nieuws ORDER BY datum DESC");
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-  <!-- Header -->
+    if ($result->num_rows > 0) {
+      echo '<div class="space-y-6">';
 
-  <header class="w3-container" style="padding-top:22px">
+      while($row = $result->fetch_assoc()) {
+        $content = $row['inhoud'];
+        $doc=new DOMDocument();
+        @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $content); // Ensure UTF-8 is parsed correctly
+        $imgNodes = $doc->getElementsByTagName('img');
 
-    <h5><b><i class="far fa-newspaper fa-fw"></i> Nieuws</b></h5>
+        foreach($imgNodes as $node) {
+          // Tailwind responsive image
+          $existingClass = $node->getAttribute('class');
+          $node->setAttribute('class', trim($existingClass . ' max-w-full h-auto rounded-lg shadow-sm'));
+          $node->removeAttribute('width');
+          $node->removeAttribute('height');
+        }
 
-  </header>
+        // Get inner HTML of the loaded doc, skipping html and body tags
+        $bodyNodes = $doc->getElementsByTagName('body');
+        $htmlContent = '';
+        if ($bodyNodes->length > 0) {
+            foreach ($bodyNodes->item(0)->childNodes as $child) {
+                $htmlContent .= $doc->saveHTML($child);
+            }
+        } else {
+            $htmlContent = $content;
+        }
 
-
-
-  <div class="w3-row-padding w3-margin-bottom">
-
-  <?php
-  // Get news items
-  $stmt = $conn->prepare("SELECT * FROM Nieuws ORDER BY datum DESC");
-  $stmt->execute();
-  $result = $stmt->get_result();
-
-  $siteSettings = array();
-
-  if ($result->num_rows > 0) {
-    echo '<div class="w3-container">';
-
-    echo '<ul class="w3-ul w3-card-4 w3-white">';
-    while($row = $result->fetch_assoc()) {
-      $content = $row['inhoud'];
-      $doc=new DOMDocument();
-      @$doc->loadHTML($content);
-      $imgNodes = $doc->getElementsByTagName('img');
-
-      foreach($imgNodes as $node) {
-        $node->setAttribute('width', '100%');
-        $node->removeAttribute('height');
+        echo '
+        <article class="theme-card rounded border shadow-sm overflow-hidden" id="nieuws-'.$row['id'].'">
+          <header class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h3 class="text-xl font-bold">'.$row['titel'].'</h3>
+            <span class="text-sm font-medium opacity-80">'.time2str($row['datum']).'</span>
+          </header>
+          <div class="p-6 prose max-w-none prose-img:rounded-xl prose-a:text-blue-600 hover:prose-a:text-blue-500">
+            '.$htmlContent.'
+          </div>
+        </article>
+        ';
       }
-
-      echo '
-      <li class="w3-padding-16" id="nieuws-'.$row['id'].'">
-        <div class="w3-bar w3-blue-gray w3-padding w3-round-xlarge">
-          <span class="w3-xlarge">'.$row['titel'].'</span><span style="float: right;">'.time2str($row['datum']).'</span>
-        </div>
-        <p>'.$doc->saveHTML().'</p>
-      </li>
-      ';
-      
+      echo "</div>";
+    } else {
+        echo '<div class="theme-card rounded border shadow-sm p-6 text-center opacity-70">
+                <i class="far fa-folder-open text-4xl mb-3 block"></i>
+                <p>Geen nieuwsberichten gevonden.</p>
+              </div>';
     }
-    echo "</ul>";
-    echo "</div>";
-  }
-  $stmt->close();
-
-
-  ?>
-
-  </div>
+    $stmt->close();
+    ?>
+    </div>
+  </main>
 
   <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
 
-
-
-  <!-- End page content -->
-
 </div>
-
 
 <script>
 
-
-
-if ("<?php echo $_SESSION['gps']?>" == "true"){
-
+if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
   setInterval(function() {
-
     GPSrefresh();
-
   }, 5555);
-
 }
 
-  
-
- 
-
- function GPSrefresh() {
-
+function GPSrefresh() {
     if (navigator.geolocation) {
-
         navigator.geolocation.getCurrentPosition(showPosition);
-
     } else {
-
         console.log("Geolocation is not supported by this browser.");
-
     }
-
     function showPosition(position) {
-
-     console.log("Latitude: " + position.coords.latitude + 
-
-      "<br>Longitude: " + position.coords.longitude);
-
+      console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
       
-
-      
-
+      var xmlhttp;
       if (window.XMLHttpRequest) {
-
-            // code for IE7+, Firefox, Chrome, Opera, Safari
-
             xmlhttp = new XMLHttpRequest();
-
-        } else {
-
-            // code for IE6, IE5
-
+      } else {
             xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-
-        }
-
-        xmlhttp.onreadystatechange = function() {
-
+      }
+      xmlhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
-
             }
-
-        };
-
-        xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-
-        xmlhttp.send();
-
+      };
+      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
+      xmlhttp.send();
     }
-
-   
-
-   
-
-
-
- } 
-
-  
-
-  
-
+} 
 </script>
 
-
-
 </body>
-
 </html>

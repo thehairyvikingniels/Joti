@@ -30,6 +30,8 @@ $groups = array();
 foreach($data as $key => $row) {
   $row = str_replace("<tr>","",$row);
   $column = explode("td>", $row);
+  // skip rows that don't have enough columns (header, empty, malformed rows)
+  if (count($column) < 6) continue;
   // get icon URL
   $groups[$key]["url"] = substr($column[0], strpos($column[0], 'src="')+5);
   $groups[$key]["url"] = substr($groups[$key]["url"], 0, strpos($groups[$key]["url"], '"'));

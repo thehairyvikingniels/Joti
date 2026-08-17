@@ -68,5 +68,71 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
         $stmt->close();
     }
     die();
+
+} elseif (isset($_GET['delete_profile_picture'])) {
+    $stmt = $conn->prepare("UPDATE Gebruikers SET profile_picture=NULL WHERE id=?");
+    $stmt->bind_param("i", $_SESSION['id']);
+    $stmt->execute();
+    $stmt->close();
+    header("Location: instellingen.php?e=" . urlencode("Profielfoto verwijderd") . "&t=profielfoto#profielfoto");
+    die();
+
+} elseif (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+    $fileTmpPath = $_FILES['profile_picture']['tmp_name'];
+    $fileType = mime_content_type($fileTmpPath);
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    
+    if (in_array($fileType, $allowedTypes)) {
+        if (!function_exists('imagecreatefromjpeg')) {
+            $e = "De server mist de PHP GD extensie. Installeer php-gd om afbeeldingen te uploaden.";
+            header("Location: instellingen.php?e=" . urlencode($e) . "&t=profielfoto#profielfoto");
+            die();
+        }
+        
+        $hash = bin2hex(random_bytes(8));
+        
+        if ($fileType == 'image/jpeg') $src = imagecreatefromjpeg($fileTmpPath);
+        elseif ($fileType == 'image/png') $src = imagecreatefrompng($fileTmpPath);
+        elseif ($fileType == 'image/webp') $src = imagecreatefromwebp($fileTmpPath);
+        
+        if ($src) {
+            $width = imagesx($src);
+            $height = imagesy($src);
+            $size = min($width, $height);
+            $x = ($width - $size) / 2;
+            $y = ($height - $size) / 2;
+            
+            $high_res = imagecreatetruecolor(512, 512);
+            $white = imagecolorallocate($high_res, 255, 255, 255);
+            imagefill($high_res, 0, 0, $white);
+            imagecopyresampled($high_res, $src, 0, 0, $x, $y, 512, 512, $size, $size);
+            imagejpeg($high_res, __DIR__ . "/media/profiles/{$hash}_high.jpg", 90);
+            
+            $low_res = imagecreatetruecolor(128, 128);
+            $white = imagecolorallocate($low_res, 255, 255, 255);
+            imagefill($low_res, 0, 0, $white);
+            imagecopyresampled($low_res, $src, 0, 0, $x, $y, 128, 128, $size, $size);
+            imagejpeg($low_res, __DIR__ . "/media/profiles/{$hash}_low.jpg", 80);
+            
+            imagedestroy($src);
+            imagedestroy($high_res);
+            imagedestroy($low_res);
+            
+            $stmt = $conn->prepare("UPDATE Gebruikers SET profile_picture=? WHERE id=?");
+            $stmt->bind_param("si", $hash, $_SESSION['id']);
+            if ($stmt->execute()) {
+                $e = "Profielfoto succesvol aangepast!";
+            } else {
+                $e = "Database fout: " . $stmt->error;
+            }
+            $stmt->close();
+        } else {
+            $e = "Fout bij verwerken afbeelding.";
+        }
+    } else {
+        $e = "Ongeldig bestandstype. Alleen JPG, PNG en WebP zijn toegestaan.";
+    }
+    header("Location: instellingen.php?e=" . urlencode($e) . "&t=profielfoto#profielfoto");
+    die();
 }
 ?>

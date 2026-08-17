@@ -8,13 +8,16 @@ if (!isset($_SESSION['id'])){
 }
 
 require("dblogin.php");
-require_once("functies.php");
-
 
 // Auto verwijderen
 if (isset($_GET['delauto'])){
-  $stmt_del = $conn->prepare("DELETE FROM Auto WHERE kenteken=?");
-  $stmt_del->bind_param("s", $_GET['delauto']);
+  if ($_SESSION['priv'] > 1) {
+    $stmt_del = $conn->prepare("DELETE FROM Auto WHERE kenteken=?");
+    $stmt_del->bind_param("s", $_GET['delauto']);
+  } else {
+    $stmt_del = $conn->prepare("DELETE FROM Auto WHERE kenteken=? AND eigenaar=?");
+    $stmt_del->bind_param("si", $_GET['delauto'], $_SESSION['id']);
+  }
   
   if ($stmt_del->execute()) {
     $stmt_del->close();
@@ -70,6 +73,11 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
+if (!isset($priv) || $priv < 1) {
+    header("Location: home");
+    exit();
+}
+
 
 // In of uitstappen als bijrijder
 if (isset($_POST['carid'])) {
@@ -90,156 +98,170 @@ if (isset($_POST['carid'])) {
 ?>
 
 <!DOCTYPE html>
-<html>
-<title>Jotihunt - Auto's</title>
+<html lang="nl">
+<head>
+<title>Jotify - Auto's</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="shortcut icon" type="image/png" href="media/geusje.png"/>
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
-
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="includes/numberPlate.css">
-<style>
-html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
-</style>
-<body class="w3-light-grey">
+<?php include_once('includes/theme.php'); ?>
+</head>
+<body class="flex h-screen overflow-hidden">
 
-<?php include_once('includes/topbar.php') ?>
-
+<!-- Sidebar -->
 <?php include_once('includes/sidebar.php') ?>
 
-<div class="w3-main" style="margin-left:200px;margin-top:43px;">
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+  <!-- Topbar -->
+  <?php include_once('includes/topbar.php') ?>
 
-  <header class="w3-container" style="padding-top:22px">
-    <h5><b><i class="fas fa-car fa-fw"></i>Auto's</b></h5>
-    <div class="w3-row">
-      <div class="w3-col l6 m12 s12 w3-padding">
-        <div class="w3-card-4 w3-white w3-padding">
-          <h5>Auto aanmaken</h5>
-          <form method="POST">    
-            <center>
-              <div class="form-control">
-                <div class="car-license">
-                  <abbr title="Netherlands" class="car-license__country-code">
-                    <svg class="svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20" height="20"
-                          aria-labelledby="euSymbol" role="img">
-                            <title id="euSymbol">EU symbol</title>
-                      <g id="s" transform="translate(150,30)" fill="#fc0">
-                        <g id="c">
-                          <path id="t" d="M 0,-20 V 0 H 10" transform="rotate(18 0,-20)"/>
-                          <use xlink:href="#t" transform="scale(-1,1)"/>
-                        </g>
-                        <use xlink:href="#c" transform="rotate(72)"/>
-                        <use xlink:href="#c" transform="rotate(144)"/>
-                        <use xlink:href="#c" transform="rotate(216)"/>
-                        <use xlink:href="#c" transform="rotate(288)"/>
+  <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
+
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      
+      <!-- Auto Aanmaken & Tabel -->
+      <div class="theme-card rounded border shadow-sm p-5 overflow-hidden">
+        <h3 class="text-lg font-bold mb-4">Auto aanmaken</h3>
+        <form method="POST" class="mb-6">    
+          <div class="flex flex-col items-center justify-center">
+            <div class="form-control mb-4">
+              <div class="car-license shadow-sm">
+                <abbr title="Netherlands" class="car-license__country-code">
+                  <svg class="svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20" height="20" aria-labelledby="euSymbol" role="img">
+                    <title id="euSymbol">EU symbol</title>
+                    <g id="s" transform="translate(150,30)" fill="#fc0">
+                      <g id="c">
+                        <path id="t" d="M 0,-20 V 0 H 10" transform="rotate(18 0,-20)"/>
+                        <use xlink:href="#t" transform="scale(-1,1)"/>
                       </g>
-                      <use xlink:href="#s" transform="rotate(30 150,150) rotate(330 150,30)"/>
-                      <use xlink:href="#s" transform="rotate(60 150,150) rotate(300 150,30)"/>
-                      <use xlink:href="#s" transform="rotate(90 150,150) rotate(270 150,30)"/>
-                      <use xlink:href="#s" transform="rotate(120 150,150) rotate(240 150,30)"/>
-                      <use xlink:href="#s" transform="rotate(150 150,150) rotate(210 150,30)"/>
-                      <use xlink:href="#s" transform="rotate(180 150,150) rotate(180 150,30)"/>
-                      <use xlink:href="#s" transform="rotate(210 150,150) rotate(150 150,30)"/>
-                      <use xlink:href="#s" transform="rotate(240 150,150) rotate(120 150,30)"/>
-                      <use xlink:href="#s" transform="rotate(270 150,150) rotate(90 150,30)"/>
-                      <use xlink:href="#s" transform="rotate(300 150,150) rotate(60 150,30)"/>
-                      <use xlink:href="#s" transform="rotate(330 150,150) rotate(30 150,30)"/>
-                    </svg>
-                    <span>NL</span>
-                  </abbr>
-                    <div class="car-license__form-control">
-                      <input type="text" class="car-license__input" id="input-kenteken" maxlength="8" autocomplete="off" name="kenteken" default="GE-LU-KT">  
-                      <span class="valid-message"></span>
-                    </div>
+                      <use xlink:href="#c" transform="rotate(72)"/>
+                      <use xlink:href="#c" transform="rotate(144)"/>
+                      <use xlink:href="#c" transform="rotate(216)"/>
+                      <use xlink:href="#c" transform="rotate(288)"/>
+                    </g>
+                    <use xlink:href="#s" transform="rotate(30 150,150) rotate(330 150,30)"/>
+                    <use xlink:href="#s" transform="rotate(60 150,150) rotate(300 150,30)"/>
+                    <use xlink:href="#s" transform="rotate(90 150,150) rotate(270 150,30)"/>
+                    <use xlink:href="#s" transform="rotate(120 150,150) rotate(240 150,30)"/>
+                    <use xlink:href="#s" transform="rotate(150 150,150) rotate(210 150,30)"/>
+                    <use xlink:href="#s" transform="rotate(180 150,150) rotate(180 150,30)"/>
+                    <use xlink:href="#s" transform="rotate(210 150,150) rotate(150 150,30)"/>
+                    <use xlink:href="#s" transform="rotate(240 150,150) rotate(120 150,30)"/>
+                    <use xlink:href="#s" transform="rotate(270 150,150) rotate(90 150,30)"/>
+                    <use xlink:href="#s" transform="rotate(300 150,150) rotate(60 150,30)"/>
+                    <use xlink:href="#s" transform="rotate(330 150,150) rotate(30 150,30)"/>
+                  </svg>
+                  <span>NL</span>
+                </abbr>
+                <div class="car-license__form-control">
+                  <input type="text" class="car-license__input" id="input-kenteken" maxlength="8" autocomplete="off" name="kenteken" default="GE-LU-KT">  
+                  <span class="valid-message"></span>
                 </div>
               </div>
-            </center>
-            <center><button id="kentekenKnop" class="w3-button w3-disabled w3-ripple w3-margin w3-green" disabled>Aanmaken</button></center>
-          </form>
-          <hr>
-          <table class="w3-table-all" style="width:100%">
-            <tr class="w3-hide-small w3-hide-medium">
-              <th>Kenteken</th>
-              <th>Inzittenden</th>
-              <th>Eigenaar</th>
-              <th></th>
-            </tr>
-            <?php
-            $sql = "
-            SELECT 
-              CONCAT(UPPER(SUBSTRING(ge.voornaam,1,1)),LOWER(SUBSTRING(ge.voornaam,2))) as eigenaar,
-              ge.id as id,
-              a.kenteken as kenteken,
-              GROUP_CONCAT(CONCAT(UPPER(SUBSTRING(gb.voornaam,1,1)),LOWER(SUBSTRING(gb.voornaam,2))) SEPARATOR ', ') as inzittenden
-            FROM Auto a
-            LEFT JOIN Auto_Bijrijders ab
-              on a.kenteken = ab.auto
-            LEFT JOIN Gebruikers gb
-              on gb.id = ab.gebruiker_id
-            LEFT JOIN Gebruikers ge
-              on ge.id = a.eigenaar
-            GROUP BY a.kenteken
-            ";
-            
-            $stmt_table = $conn->prepare($sql);
-            $stmt_table->execute();
-            $result_table = $stmt_table->get_result();
+            </div>
+            <button id="kentekenKnop" class="bg-green-600 text-white font-bold py-2 px-6 rounded hover:bg-green-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>Aanmaken</button>
+          </div>
+        </form>
 
-            if ($result_table->num_rows > 0) {
-              // output data of each row
-              while($row = $result_table->fetch_assoc()) {
-                echo "<tr>";
-                echo "  <td>".strtoupper(htmlspecialchars($row['kenteken']))."</td>";
-                echo "  <td class='w3-hide-small w3-hide-medium'>".htmlspecialchars($row['inzittenden'])."</td>";
-                echo "  <td>".htmlspecialchars($row['eigenaar'])."</td>";
-                if ($_SESSION['id'] == $row['id']){
-                  echo " <td class='w3-right'><a href='autos?delauto=".urlencode($row['kenteken'])."'><i class=\"fas fa-trash\"></i></a></td>";
-                } else {
-                  echo "<td></td>";
+        <hr class="my-6 border-gray-200" style="border-color: var(--theme-card-border);">
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="text-xs uppercase theme-card-header opacity-80">
+              <tr>
+                <th class="px-4 py-3">Kenteken</th>
+                <th class="px-4 py-3 hidden md:table-cell">Inzittenden</th>
+                <th class="px-4 py-3">Eigenaar</th>
+                <th class="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y" style="border-color: var(--theme-card-border);">
+              <?php
+              $sql = "
+              SELECT 
+                CONCAT(UPPER(SUBSTRING(ge.voornaam,1,1)),LOWER(SUBSTRING(ge.voornaam,2))) as eigenaar,
+                ge.id as id,
+                a.kenteken as kenteken,
+                GROUP_CONCAT(CONCAT(UPPER(SUBSTRING(gb.voornaam,1,1)),LOWER(SUBSTRING(gb.voornaam,2))) SEPARATOR ', ') as inzittenden
+              FROM Auto a
+              LEFT JOIN Auto_Bijrijders ab
+                on a.kenteken = ab.auto
+              LEFT JOIN Gebruikers gb
+                on gb.id = ab.gebruiker_id
+              LEFT JOIN Gebruikers ge
+                on ge.id = a.eigenaar
+              GROUP BY a.kenteken
+              ";
+              
+              $stmt_table = $conn->prepare($sql);
+              $stmt_table->execute();
+              $result_table = $stmt_table->get_result();
+
+              if ($result_table->num_rows > 0) {
+                while($row = $result_table->fetch_assoc()) {
+                  echo "<tr class='hover:opacity-80 transition-opacity'>";
+                  echo "  <td class='px-4 py-3 font-semibold'>".strtoupper(htmlspecialchars($row['kenteken']))."</td>";
+                  echo "  <td class='px-4 py-3 hidden md:table-cell text-sm'>".htmlspecialchars($row['inzittenden'])."</td>";
+                  echo "  <td class='px-4 py-3'>".htmlspecialchars($row['eigenaar'])."</td>";
+                  echo "  <td class='px-4 py-3 text-right'>";
+                  if ($_SESSION['id'] == $row['id']) {
+                    echo "    <a href='autos?delauto=".urlencode($row['kenteken'])."' class='text-red-500 hover:text-red-700 transition'><i class=\"fas fa-trash\"></i></a>";
+                  }
+                  echo "  </td>";
+                  echo "</tr>";
+                  echo "<tr class='md:hidden bg-black/5'>";
+                  echo "  <td colspan='4' class='px-4 py-2 text-xs italic opacity-80'>".htmlspecialchars($row['inzittenden'])."</td>";
+                  echo "</tr>";
                 }
-                echo "</tr>";
-                echo "<tr class='w3-hide-large'>";
-                echo "  <td colspan='4'>".htmlspecialchars($row['inzittenden'])."</td>";
-                echo "</tr>";
+              } else {
+                  echo "<tr><td colspan='4' class='px-4 py-4 text-center opacity-70'>Geen auto's gevonden.</td></tr>";
               }
-            }
-            $stmt_table->close();
-            ?>
+              $stmt_table->close();
+              ?>
+            </tbody>
           </table>
         </div>
       </div>
-      <div class="w3-col l6 m6 s12 w3-padding">
-        <div class="w3-card-4 w3-white w3-padding">
-          <h5>Stap in / uit</h5>
-          <form method="POST">
-            <select class="w3-select" name="carid">
-              <option value="geen" selected>Geen</option>
-              <?php
-              $sql_drop = "SELECT a.kenteken, a.eigenaar, b.voornaam FROM Auto as a INNER JOIN Gebruikers as b ON a.eigenaar = b.id ORDER BY b.voornaam ASC";
-              $stmt_drop = $conn->prepare($sql_drop);
-              $stmt_drop->execute();
-              $result_drop = $stmt_drop->get_result();
-              
-              if ($result_drop->num_rows > 0) {
-                while($row = $result_drop->fetch_assoc()) {
-                  echo "<option value=\"".htmlspecialchars($row['kenteken'])."\">Auto ".htmlspecialchars($row['kenteken'])." (".ucfirst(htmlspecialchars($row['voornaam'])).")</option>";
-                }
+
+      <!-- Stap in / Uit -->
+      <div class="theme-card rounded border shadow-sm p-5">
+        <h3 class="text-lg font-bold mb-4">Stap in / uit</h3>
+        <form method="POST">
+          <select class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm cursor-pointer mb-4" name="carid">
+            <option value="geen" selected>Geen (Uitstappen)</option>
+            <?php
+            $sql_drop = "SELECT a.kenteken, a.eigenaar, b.voornaam FROM Auto as a INNER JOIN Gebruikers as b ON a.eigenaar = b.id ORDER BY b.voornaam ASC";
+            $stmt_drop = $conn->prepare($sql_drop);
+            $stmt_drop->execute();
+            $result_drop = $stmt_drop->get_result();
+            
+            if ($result_drop->num_rows > 0) {
+              while($row = $result_drop->fetch_assoc()) {
+                echo "<option value=\"".htmlspecialchars($row['kenteken'])."\">Auto ".htmlspecialchars($row['kenteken'])." (".ucfirst(htmlspecialchars($row['voornaam'])).")</option>";
               }
-              $stmt_drop->close();
-            ?>
-            </select>  
-            <center><button type="submit" class="w3-button w3-green w3-margin">Vroem!</button></center>
-          </form>
-        </div>
+            }
+            $stmt_drop->close();
+          ?>
+          </select>  
+          <div class="text-center">
+            <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded hover:bg-blue-700 transition shadow-sm"><i class="fas fa-car-side mr-2"></i>Vroem!</button>
+          </div>
+        </form>
       </div>
+
     </div>
-  </header>
+  </main>
 
+  <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
-
-  </div>
+</div>
 
 <script type="text/javascript" src="includes/numberPlate.js"></script>
 <script>
@@ -249,7 +271,7 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
   }, 5555);
 }
   
- function GPSrefresh() {
+function GPSrefresh() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(showPosition);
     } else {
@@ -257,25 +279,22 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
     }
     
     function showPosition(position) {
-      console.log("Latitude: " + position.coords.latitude + 
-      "\nLongitude: " + position.coords.longitude);
+      console.log("Latitude: " + position.coords.latitude + "\nLongitude: " + position.coords.longitude);
       
+      var xmlhttp;
       if (window.XMLHttpRequest) {
-            // code for IE7+, Firefox, Chrome, Opera, Safari
             xmlhttp = new XMLHttpRequest();
-        } else {
-            // code for IE6, IE5
+      } else {
             xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-        xmlhttp.onreadystatechange = function() {
+      }
+      xmlhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
-               // Succes logica
             }
-        };
-        xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-        xmlhttp.send();
+      };
+      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
+      xmlhttp.send();
     }
- } 
+} 
 </script>
 
 </body>

@@ -1,7 +1,7 @@
-# Jotihunt Web App
+# Jotify Web App
 
 ### Short description
-A small procedural PHP + MySQL web application used by a scout group to run a local Jotihunt helper site. No framework; frontend uses W3.CSS, jQuery and FontAwesome; server side is plain PHP + mysqli.
+A small procedural PHP + MySQL web application used by a scout group to run a local Jotify helper site. No framework; frontend uses W3.CSS, jQuery and FontAwesome; server side is plain PHP + mysqli.
 
 ### Contents (high-level)
 - File-based PHP endpoints: index.php, home.php, kaarten.php, functies.php, admin/
@@ -16,7 +16,7 @@ For use by all members of a scout group and associates. Groups may fork the repo
 - PHP 8.2 (other versions untested)
 - MySQL / MariaDB
 - Webserver or PHP built-in server
-- Enable required PHP extensions for mysqli and DOM (used in templates)
+- Enable required PHP extensions for mysqli, DOM (used in templates), and cURL (used for Mapbox routing APIs in maps.php)
 
 ### Quick start (local dev)
 1. Create the database from the SQL file:
