@@ -106,7 +106,8 @@ CREATE TABLE `Gebruikers` (
   `lon` decimal(9,6) DEFAULT NULL,
   `geotijd` datetime DEFAULT NULL,
   `theme` varchar(32) NOT NULL DEFAULT 'light',
-  `profile_picture` varchar(255) DEFAULT NULL
+  `profile_picture` varchar(255) DEFAULT NULL,
+  `notification_prefs` json DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -308,6 +309,7 @@ CREATE TABLE `Notification_Subscriptions` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `endpoint` text NOT NULL,
+  `device_name` varchar(255) DEFAULT 'Onbekend apparaat',
   `p256dh` varchar(255) NOT NULL,
   `auth` varchar(255) NOT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()

@@ -606,25 +606,47 @@ if (isset($_GET['gebeurtenissen'])){
  * @param string $initiator The script or context queueing this
  * @param string|null $send_before ISO date string or null
  */
-function send_push_notification($to_user, $title, $message, $url = '/', $initiator = 'system', $send_before = null) {
+function send_push_notification($to_user, $title, $message, $url = '/', $initiator = 'system', $send_before = null, $channel = null) {
     global $conn;
     
     $users = [];
     if ($to_user === 'ALL') {
-        $res = $conn->query("SELECT DISTINCT user_id FROM Notification_Subscriptions");
+        $res = $conn->query("SELECT DISTINCT s.user_id, g.notification_prefs FROM Notification_Subscriptions s JOIN Gebruikers g ON s.user_id = g.id");
         while ($row = $res->fetch_assoc()) {
-            $users[] = (int)$row['user_id'];
+            $users[$row['user_id']] = $row['notification_prefs'];
         }
     } else {
-        $users = is_array($to_user) ? $to_user : [$to_user];
+        $target_ids = is_array($to_user) ? $to_user : [$to_user];
+        if (empty($target_ids)) return;
+        
+        $in = str_repeat('?,', count($target_ids) - 1) . '?';
+        $stmt = $conn->prepare("SELECT id, notification_prefs FROM Gebruikers WHERE id IN ($in)");
+        $stmt->bind_param(str_repeat('i', count($target_ids)), ...$target_ids);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $users[$row['id']] = $row['notification_prefs'];
+        }
+        $stmt->close();
     }
     
     if (empty($users)) return;
     
     $stmt = $conn->prepare("INSERT INTO Notification_Backlog (user_id, title, message, url, initiator, send_before) VALUES (?, ?, ?, ?, ?, ?)");
     
-    foreach ($users as $u) {
-        $u_int = (int)$u;
+    foreach ($users as $u_id => $prefs_json) {
+        if ($channel !== null) {
+            $prefs = $prefs_json ? json_decode($prefs_json, true) : [];
+            // Defaults
+            $default_val = in_array($channel, ['welkomsberichten', 'assignment_changes']) ? true : false;
+            $enabled = isset($prefs[$channel]) ? (bool)$prefs[$channel] : $default_val;
+            
+            if (!$enabled) {
+                continue; // Skip this user because they disabled this channel
+            }
+        }
+        
+        $u_int = (int)$u_id;
         $stmt->bind_param("isssss", $u_int, $title, $message, $url, $initiator, $send_before);
         $stmt->execute();
     }

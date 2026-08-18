@@ -16,15 +16,15 @@ function urlB64ToUint8Array(base64String) {
 function subscribeUserToPush() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     console.warn('Push messaging is not supported');
-    return;
+    return Promise.reject('Push messaging is not supported');
   }
 
   if (!window.VAPID_PUBLIC_KEY) {
     console.error('VAPID_PUBLIC_KEY is not defined.');
-    return;
+    return Promise.reject('VAPID_PUBLIC_KEY is not defined.');
   }
 
-  navigator.serviceWorker.register('/sw.js')
+  return navigator.serviceWorker.register('/sw.js')
     .then(function(registration) {
       console.log('Service Worker registered with scope:', registration.scope);
       return navigator.serviceWorker.ready;
@@ -47,16 +47,39 @@ function subscribeUserToPush() {
       } else {
         console.error('Failed to subscribe the user: ', err);
       }
+      throw err;
     });
 }
 
 function sendSubscriptionToBackEnd(subscription) {
+  let deviceName = 'Onbekend apparaat';
+  if (navigator.userAgent) {
+      const ua = navigator.userAgent;
+      let browser = "Onbekend";
+      if (ua.includes("Firefox/")) browser = "Firefox";
+      else if (ua.includes("Chrome/")) browser = "Chrome";
+      else if (ua.includes("Safari/")) browser = "Safari";
+      else if (ua.includes("Edge/")) browser = "Edge";
+      
+      let os = "Onbekend OS";
+      if (ua.includes("Win")) os = "Windows";
+      else if (ua.includes("Mac")) os = "macOS";
+      else if (ua.includes("Linux")) os = "Linux";
+      else if (ua.includes("Android")) os = "Android";
+      else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
+
+      deviceName = browser + " op " + os;
+  }
+  
+  const payload = subscription.toJSON();
+  payload.device_name = deviceName;
+
   return fetch('/api/subscribe.php', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(subscription)
+    body: JSON.stringify(payload)
   })
   .then(function(response) {
     if (!response.ok) {
@@ -71,14 +94,24 @@ function sendSubscriptionToBackEnd(subscription) {
   });
 }
 
-// Request permission and subscribe automatically if possible, or bind to a button if you prefer.
-// For Jotify, we'll ask automatically when the script loads.
-if (Notification.permission === 'default') {
-  Notification.requestPermission().then((permission) => {
-    if (permission === 'granted') {
-      subscribeUserToPush();
-    }
-  });
-} else if (Notification.permission === 'granted') {
-  subscribeUserToPush();
-}
+window.requestAndSubscribeToPush = function() {
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then((permission) => {
+      if (permission === 'granted') {
+        subscribeUserToPush().then(() => {
+          window.location.reload();
+        }).catch(() => {
+          alert('Er is een fout opgetreden bij het abonneren.');
+        });
+      }
+    });
+  } else if (Notification.permission === 'granted') {
+    subscribeUserToPush().then(() => {
+      window.location.reload();
+    }).catch(() => {
+      alert('Er is een fout opgetreden bij het abonneren.');
+    });
+  } else {
+    alert("Meldingen zijn geblokkeerd door je browser. Sta ze toe in je browserinstellingen.");
+  }
+};
