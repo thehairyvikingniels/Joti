@@ -6,6 +6,7 @@ date_default_timezone_set('Europe/Amsterdam');
 $output = "";
 
 require_once("../dblogin.php");
+require_once("../functies.php");
 
 $datumtijd = date('Y-m-d H:i:s');
 
@@ -30,6 +31,9 @@ foreach($data['data'] as $item) {
 
     $news->bind_param("isss", $id, $title, $content, $pubTime);
     $news->execute();
+    if ($news->affected_rows === 1) {
+        send_push_notification('ALL', 'Nieuwsbericht', $title, "/nieuws#nieuws-{$id}", 'cron/articles', null, 'nieuws');
+    }
 
   } else if ($item['type'] == 'assignment') {
 
@@ -42,6 +46,9 @@ foreach($data['data'] as $item) {
 
     $assignment->bind_param("issssi", $id, $title, $content, $pubTime, $endTime, $maxPoints);
     $assignment->execute();
+    if ($assignment->affected_rows === 1) {
+        send_push_notification('ALL', 'Nieuwe Opdracht', $title, "/opdrachten#opdracht-{$id}", 'cron/articles', null, 'opdrachten');
+    }
 
   } else if ($item['type'] == 'hint') {
 
@@ -52,6 +59,9 @@ foreach($data['data'] as $item) {
 
     $hint->bind_param("isss", $id, $title, $content, $pubTime);
     $hint->execute();
+    if ($hint->affected_rows === 1) {
+        send_push_notification('ALL', 'Nieuwe Hint', $title, "/hints#hint-{$id}", 'cron/articles', null, 'hints');
+    }
   }
 }
 

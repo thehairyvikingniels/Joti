@@ -6,6 +6,7 @@ date_default_timezone_set('Europe/Amsterdam');
 $output = "";
 
 require_once("../dblogin.php");
+require_once("../functies.php");
 
 $datumtijd = date('Y-m-d H:i:s');
 
@@ -49,6 +50,23 @@ if ($statusChanged) {
       $stmt->bind_param("ssi", $dt, $foxName, $status);
       if (!$stmt->execute()) {
           log2DB("Error inserting for {$foxName}: " . $stmt->error . "<br>");
+      } else {
+          // Check if this specific fox changed in this iteration
+          foreach($data["data"] as $v) {
+              if (ucfirst(strtolower($v['name'])) == $foxName && strtotime($lastupdate) < strtotime($v["updated_at"])) {
+                  $status_nl = $v['status'] == 'red' ? 'Rood' : ($v['status'] == 'orange' ? 'Oranje' : 'Groen');
+                  send_push_notification(
+                      'ALL', 
+                      "Vosstatus {$foxName}", 
+                      "De status van {$foxName} is nu {$status_nl}.",
+                      '/vossen',
+                      'cron/areas',
+                      null,
+                      'vosstatus'
+                  );
+                  break;
+              }
+          }
       }
   }
   $stmt->close();

@@ -86,6 +86,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) 
         $stmt->bind_param("sssddssi", $type, $deelgebied, $ingestuurd_op, $lat, $lon, $code, $opmerking, $ingeleverd_door);
         
         if ($stmt->execute()) {
+            send_push_notification('ALL', 'Nieuwe Voslocatie', "Nieuwe {$type} toegevoegd voor {$deelgebied}.", '/voslocaties', 'voslocaties', null, 'locatiestatus');
             $message = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6 shadow-sm">
                             <span onclick="this.parentElement.style.display=\'none\'" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">
                                 <i class="fas fa-times opacity-70 hover:opacity-100 transition"></i>

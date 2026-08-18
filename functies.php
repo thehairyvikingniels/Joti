@@ -221,6 +221,8 @@ if (isset($_POST['toggle_toewijzing'])) {
         $stmt_del->execute();
         $stmt_del->close();
         
+        send_push_notification($user_id, "Taak gewijzigd", "Je bent van een taak verwijderd.", "/whiteboard", "functies/toewijzing", null, "assignment_changes");
+        
         $users = $get_users($conn, $type, $ref_id);
         echo json_encode(["status" => "unassigned", "target_type" => $type, "target_id" => $ref_id, "users" => $users]);
         exit();
@@ -347,6 +349,8 @@ if (isset($_POST['toggle_toewijzing'])) {
     $stmt_ins->execute();
     $stmt_ins->close();
     
+    send_push_notification($user_id, "Taak gewijzigd", "Je bent aan een taak toegewezen.", "/whiteboard", "functies/toewijzing", null, "assignment_changes");
+    
     $users = $get_users($conn, $type, $ref_id);
     
     echo json_encode([
@@ -408,6 +412,17 @@ if (isset($_GET['hunthintgedaan'])){
   
     if ($stmt->execute()) {
         $stmt->close();
+        
+        $stmt_info = $conn->prepare("SELECT type, code FROM Voslocaties WHERE id = ?");
+        $stmt_info->bind_param("i", $hunt_id);
+        $stmt_info->execute();
+        $res_info = $stmt_info->get_result();
+        if ($res_info->num_rows > 0) {
+            $row_info = $res_info->fetch_assoc();
+            send_push_notification('ALL', 'Voslocatie Ingeleverd', "{$row_info['type']} {$row_info['code']} is succesvol ingeleverd bij de Jotihunt.", '/voslocaties', 'functies/ingeleverd', null, 'locatiestatus');
+        }
+        $stmt_info->close();
+        
         header("Location: home");
         die();
     } else {

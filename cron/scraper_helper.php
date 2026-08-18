@@ -5,6 +5,7 @@ date_default_timezone_set('Europe/Amsterdam');
 $output = "";
 
 require_once("../dblogin.php");
+require_once("../functies.php");
 
 $datumtijd = date('Y-m-d H:i:s');
 $status_code = 200;
@@ -107,7 +108,7 @@ if ($json_start !== false && $json_end !== false && $status_code === 200) {
 
         // UPDATE OR INSERT HUNTS
         if (isset($data['hunts']) && is_array($data['hunts'])) {
-            $stmt_check = $conn->prepare("SELECT id FROM Voslocaties WHERE code = ? AND type = 'Hunt'");
+            $stmt_check = $conn->prepare("SELECT id, status FROM Voslocaties WHERE code = ? AND type = 'Hunt'");
             $stmt_insert = $conn->prepare("INSERT INTO Voslocaties (ingestuurd_op, type, deelgebied, ingeleverd, coordinaat_x, coordinaat_y, code, toegekende_punten, status) VALUES (?, 'Hunt', ?, 1, 0.000000, 0.000000, ?, ?, ?)");
             $stmt_update = $conn->prepare("UPDATE Voslocaties SET ingeleverd = 1, toegekende_punten = ?, status = ? WHERE code = ? AND type = 'Hunt'");
 
@@ -126,8 +127,22 @@ if ($json_start !== false && $json_end !== false && $status_code === 200) {
                         $result = $stmt_check->get_result();
 
                         if ($result->num_rows > 0) {
+                            $row = $result->fetch_assoc();
                             $stmt_update->bind_param("iss", $punten, $status, $code);
                             $stmt_update->execute();
+                            
+                            // Check if status changed
+                            if ($row['status'] !== $status && $status !== '') {
+                                send_push_notification(
+                                    'ALL',
+                                    "Hunt Status Gewijzigd",
+                                    "De status van hunt $code is nu '$status'.",
+                                    '/voslocaties',
+                                    'cron/scraper',
+                                    null,
+                                    'locatiestatus'
+                                );
+                            }
                         } else {
                             $stmt_insert->bind_param("sssis", $tijd, $gebied, $code, $punten, $status);
                             $stmt_insert->execute();
