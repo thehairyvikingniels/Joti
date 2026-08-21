@@ -5,8 +5,8 @@ define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');
 $output = "";
 
-require_once("../dblogin.php");
-require_once("../functies.php");
+require_once(__DIR__ . "/../dblogin.php");
+require_once(__DIR__ . "/../functies.php");
 
 $datumtijd = date('Y-m-d H:i:s');
 

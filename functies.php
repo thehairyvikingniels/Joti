@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (empty($_SESSION['id'])){
+if (empty($_SESSION['id']) && php_sapi_name() !== 'cli' && !defined('NAME')){
   header("Location: index.php");
   exit();
 }

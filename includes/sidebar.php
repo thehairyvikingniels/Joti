@@ -114,7 +114,7 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
           <p class="text-xs opacity-70"><?php echo $roleNames[$userPriv] ?? "Onbekend"; ?></p>
       </div>
     </div>
-    <a href="logout" class="opacity-70 hover:opacity-100 hover:text-red-500 transition-colors" title="Uitloggen">
+    <a href="/logout" class="opacity-70 hover:opacity-100 hover:text-red-500 transition-colors" title="Uitloggen">
       <i class="fas fa-sign-out-alt text-xl"></i>
     </a>
   </div>
