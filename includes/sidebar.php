@@ -1,4 +1,7 @@
 <?php
+if (isset($_SESSION['kiosk_id'])) {
+    return;
+}
 $pagelist = array(
     'home' => array(
         'active' => null,

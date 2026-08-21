@@ -8,7 +8,8 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['priv'])) {
 }
 
 $priv = $_SESSION['priv'];
-$is_guest = ($priv < 1); // Guests can view? The user said: "Guests can't see the board but can be on it."
+$is_kiosk = isset($_SESSION['kiosk_id']);
+$is_guest = ($priv < 1 && !$is_kiosk); // Guests can't see the board unless they are a Kiosk
 if ($is_guest) {
     header("Location: home");
     exit();

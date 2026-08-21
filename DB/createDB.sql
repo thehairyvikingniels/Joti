@@ -445,6 +445,23 @@ ALTER TABLE `Cronlogs`
 --
 ALTER TABLE `Voslocaties`
   ADD CONSTRAINT `Voslocaties_ibfk_1` FOREIGN KEY (`ingeleverd_door`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+--
+-- Tabelstructuur voor tabel `kiosk_devices`
+--
+
+CREATE TABLE IF NOT EXISTS `kiosk_devices` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `auth_token` varchar(64) NOT NULL,
+  `naam` varchar(255) NOT NULL,
+  `doel_pagina` varchar(255) NOT NULL,
+  `rechten` int(11) NOT NULL DEFAULT 0,
+  `ip_whitelist` varchar(255) DEFAULT NULL,
+  `refresh_interval` int(11) NOT NULL DEFAULT 0,
+  `laatst_gezien` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `auth_token` (`auth_token`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

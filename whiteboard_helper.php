@@ -1,7 +1,12 @@
 <?php
 session_start();
-if (!isset($_SESSION['id']) || !isset($_SESSION['priv']) || $_SESSION['priv'] < 1) {
-    echo json_encode(["status" => "error", "message" => "Geen rechten"]);
+$is_kiosk = isset($_SESSION['kiosk_id']);
+$kiosk_priv = $_SESSION['kiosk_priv'] ?? 0;
+$user_priv = $_SESSION['priv'] ?? 0;
+
+if (!isset($_SESSION['id']) || ($user_priv < 1 && (!$is_kiosk || $kiosk_priv < 1))) {
+    http_response_code(403);
+    echo json_encode(["status" => "error", "message" => "Geen rechten voor bewerken (403 Forbidden)"]);
     exit();
 }
 

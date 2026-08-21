@@ -1,4 +1,7 @@
 <?php
+if (isset($_SESSION['kiosk_id'])) {
+    return;
+}
 $vos = array();
 $topbarGroupName = 'Jotify';
 if (!empty($siteSettings['GROUP_ID'])) {

@@ -1,3 +1,29 @@
+const CACHE_NAME = 'jotihunt-kiosk-v1';
+const OFFLINE_URL = '/offline.html';
+
+self.addEventListener('install', function(event) {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(function(cache) {
+      return cache.add(new Request(OFFLINE_URL, { cache: 'reload' }));
+    })
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', function(event) {
+  event.waitUntil(clients.claim());
+});
+
+self.addEventListener('fetch', function(event) {
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(function() {
+        return caches.match(OFFLINE_URL);
+      })
+    );
+  }
+});
+
 self.addEventListener('push', function(event) {
   if (!(self.Notification && self.Notification.permission === 'granted')) {
     return;

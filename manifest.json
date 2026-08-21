@@ -1,0 +1,15 @@
+{
+  "name": "Jotihunt Kiosk",
+  "short_name": "Jotihunt",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#3B82F6",
+  "icons": [
+    {
+      "src": "media/geusje.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ]
+}
