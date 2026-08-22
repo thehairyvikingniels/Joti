@@ -8,7 +8,7 @@ if (!isset($_SESSION['id'])){
 }
 
 require("dblogin.php");
-
+require_once("functies.php");
 // Get userdata
 $stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
 $stmt->bind_param("i", $_SESSION['id']);
@@ -23,7 +23,7 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
-if (!isset($priv) || $priv < 1) {
+if (!isset($priv) || ($priv < 1 && !isset($_SESSION['kiosk_id']))) {
     header("Location: home");
     exit();
 }

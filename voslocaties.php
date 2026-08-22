@@ -128,7 +128,7 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
-if (!isset($priv) || $priv < 1) {
+if (!isset($priv) || ($priv < 1 && !isset($_SESSION['kiosk_id']))) {
     header("Location: home");
     exit();
 }

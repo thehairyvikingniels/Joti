@@ -50,6 +50,10 @@
                 echo ' | Build: unknown';
             }
         }
+        
+        if (isset($_SESSION['kiosk_id']) && !empty($_SESSION['kiosk_naam'])) {
+            echo ' | Kiosk: ' . htmlspecialchars($_SESSION['kiosk_naam']);
+        }
         ?>
       </p>
     </div>

@@ -3,9 +3,24 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (empty($_SESSION['id']) && php_sapi_name() !== 'cli' && !defined('NAME')){
+// Online check for service worker
+if (isset($_GET['onlinecheck'])) {
+    http_response_code(200);
+    echo "OK";
+    exit();
+}
+
+if (empty($_SESSION['id']) && empty($_SESSION['kiosk_id']) && php_sapi_name() !== 'cli' && !defined('NAME')){
   header("Location: index.php");
   exit();
+}
+
+// Fallback variabelen voor kiosk sessies
+if (isset($_SESSION['kiosk_id'])) {
+    $priv = $_SESSION['kiosk_priv'] ?? 0;
+    $vn = $_SESSION['kiosk_naam'] ?? 'Kiosk';
+    $usr_lat = 51.98769228691746;
+    $usr_lon = 5.876286397679744;
 }
 
 require("dblogin.php");

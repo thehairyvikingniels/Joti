@@ -37,7 +37,7 @@ $stmt->close();
 
 
 // Insert voslocaties after using hints form
-if (isset($_POST['subarea']) && isset($_POST['rdX']) && isset($_POST['rdY'])) {
+if (isset($priv) && $priv > 0 && isset($_POST['subarea']) && isset($_POST['rdX']) && isset($_POST['rdY'])) {
   $latlon = rdtowgs($_POST['rdX'], $_POST['rdY']);
   $ingestuurd_op = date("Y-m-d H:i:s");
   $code = $_POST['subarea'] . " " . $_POST['rdX'] . " " . $_POST['rdY'];
@@ -159,33 +159,36 @@ if (isset($_POST['subarea']) && isset($_POST['rdX']) && isset($_POST['rdY'])) {
 
             $subareas = $vossen;
 
-            echo '<div class="bg-black/5 p-4 border-t grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" style="border-color: var(--theme-card-border);">';
-            foreach ($subareas as $key => $subarea) {
-              $unique_id = htmlspecialchars($row['id'] . '_' . $subarea);
+            if (isset($priv) && $priv > 0) {
+              echo '<div class="bg-black/5 p-4 border-t grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" style="border-color: var(--theme-card-border);">';
+              foreach ($subareas as $key => $subarea) {
+                $unique_id = htmlspecialchars($row['id'] . '_' . $subarea);
 
+                echo '
+                    <form action="hints.php" method="POST" class="flex-1">
+                      <div class="theme-card rounded border p-3 flex flex-wrap items-center gap-2 shadow-sm" style="border-color: var(--theme-card-border);">
+                        <div class="w-16 flex-shrink-0 text-center font-bold text-xs py-1.5 rounded uppercase tracking-wide shadow-sm" style="background-color:' . htmlspecialchars(getFoxColor($subarea)) . '; color: black;">
+                          ' . ucfirst(htmlspecialchars($subarea)) . '
+                        </div>
+                        
+                        <div class="flex-1 flex min-w-[120px] gap-2">
+                          <input type="number" class="w-1/2 border rounded px-2 py-1 text-sm text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" id="rdX_' . $unique_id . '" name="rdX" placeholder="rdX">
+                          <input type="number" class="w-1/2 border rounded px-2 py-1 text-sm text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" id="rdY_' . $unique_id . '" name="rdY" placeholder="rdY">
+                        </div>
+                        
+                        <input type="hidden" id="subarea_' . $unique_id . '" name="subarea" value="' . htmlspecialchars($subarea) . '"> 
+                        
+                        <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                          <button type="button" class="flex-1 sm:flex-none text-xs bg-teal-600 hover:bg-teal-700 text-white font-bold py-1.5 px-3 rounded transition shadow-sm">Probeer</button>
+                          <button type="submit" class="flex-1 sm:flex-none text-xs bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-3 rounded transition shadow-sm">Opslaan</button>
+                        </div>
+                      </div>
+                    </form>';
+              }
               echo '
-                  <form action="hints.php" method="POST" class="flex-1">
-                    <div class="theme-card rounded border p-3 flex flex-wrap items-center gap-2 shadow-sm" style="border-color: var(--theme-card-border);">
-                      <div class="w-16 flex-shrink-0 text-center font-bold text-xs py-1.5 rounded uppercase tracking-wide shadow-sm" style="background-color:' . htmlspecialchars(getFoxColor($subarea)) . '; color: black;">
-                        ' . ucfirst(htmlspecialchars($subarea)) . '
-                      </div>
-                      
-                      <div class="flex-1 flex min-w-[120px] gap-2">
-                        <input type="number" class="w-1/2 border rounded px-2 py-1 text-sm text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" id="rdX_' . $unique_id . '" name="rdX" placeholder="rdX">
-                        <input type="number" class="w-1/2 border rounded px-2 py-1 text-sm text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" id="rdY_' . $unique_id . '" name="rdY" placeholder="rdY">
-                      </div>
-                      
-                      <input type="hidden" id="subarea_' . $unique_id . '" name="subarea" value="' . htmlspecialchars($subarea) . '"> 
-                      
-                      <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-                        <button type="button" class="flex-1 sm:flex-none text-xs bg-teal-600 hover:bg-teal-700 text-white font-bold py-1.5 px-3 rounded transition shadow-sm">Probeer</button>
-                        <button type="submit" class="flex-1 sm:flex-none text-xs bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 px-3 rounded transition shadow-sm">Opslaan</button>
-                      </div>
-                    </div>
-                  </form>';
+                  </div>';
             }
             echo '
-                </div>
               </div>';
           }
         } else {

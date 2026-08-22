@@ -48,6 +48,9 @@
             })
             .catch(err => {
                 console.warn("[Kiosk] Status check failed:", err.message);
+                if (window.location.pathname !== '/offline.php') {
+                    window.location.href = '/offline.php';
+                }
             })
             .finally(() => {
                 // Schedule next status check with random jitter
@@ -69,8 +72,8 @@
         if (intervalSeconds <= 0) return;
 
         // Listen for user interaction events to reset activity timer
-        ['mousemove', 'touchstart', 'scroll', 'keydown'].forEach(eventType => {
-            window.addEventListener(eventType, resetActivity, { passive: true });
+        ['mousemove', 'mousedown', 'click', 'touchstart', 'scroll', 'keydown', 'input', 'pointerdown'].forEach(eventType => {
+            window.addEventListener(eventType, resetActivity, { passive: true, capture: true });
         });
 
         idleTimer = setInterval(() => {

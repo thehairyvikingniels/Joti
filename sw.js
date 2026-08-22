@@ -1,5 +1,5 @@
-const CACHE_NAME = 'jotihunt-kiosk-v1';
-const OFFLINE_URL = '/offline.html';
+const CACHE_NAME = 'jotihunt-kiosk-v4';
+const OFFLINE_URL = '/offline.php';
 
 self.addEventListener('install', function(event) {
   event.waitUntil(
@@ -11,7 +11,19 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('activate', function(event) {
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(
+        cacheNames.map(function(cacheName) {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(function() {
+      return clients.claim();
+    })
+  );
 });
 
 self.addEventListener('fetch', function(event) {
@@ -19,6 +31,21 @@ self.addEventListener('fetch', function(event) {
     event.respondWith(
       fetch(event.request).catch(function() {
         return caches.match(OFFLINE_URL);
+      })
+    );
+  } else if (event.request.destination === 'image') {
+    event.respondWith(
+      caches.match(event.request).then(function(cachedResponse) {
+        const networkFetch = fetch(event.request).then(function(response) {
+          const cacheCopy = response.clone();
+          caches.open(CACHE_NAME).then(function(cache) {
+            cache.put(event.request, cacheCopy);
+          });
+          return response;
+        }).catch(function() {
+          return cachedResponse;
+        });
+        return cachedResponse || networkFetch;
       })
     );
   }

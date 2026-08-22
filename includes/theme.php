@@ -171,6 +171,15 @@ $themeConfig = getThemeConfig($theme);
 <link rel="manifest" href="/manifest.json">
 <script>window.VAPID_PUBLIC_KEY = '<?= htmlspecialchars($siteSettings['VAPID_PUBLIC_KEY'] ?? '') ?>';</script>
 <script src="js/push.js?v=2"></script>
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').catch(function(err) {
+            console.warn('ServiceWorker registration failed: ', err);
+        });
+    });
+}
+</script>
 <?php if (isset($_SESSION['kiosk_id'])): ?>
 <script src="/includes/kiosk_controller.js?v=1"></script>
 <?php endif; ?>

@@ -23,7 +23,7 @@ if (isset($_GET['auth'])) {
         die("Ongeldige authenticatie token.");
     }
 
-    $stmt = $conn->prepare("SELECT id, auth_token, naam, doel_pagina, rechten, ip_whitelist, refresh_interval FROM kiosk_devices WHERE auth_token = ?");
+    $stmt = $conn->prepare("SELECT id, auth_token, naam, doel_pagina, rechten, ip_whitelist, refresh_interval FROM Kiosk_Accounts WHERE auth_token = ?");
     $stmt->bind_param("s", $token);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -49,8 +49,8 @@ if (isset($_GET['auth'])) {
         $_SESSION['naam'] = $row['naam'];
 
         // Update laatst_gezien
-        $stmt_update = $conn->prepare("UPDATE kiosk_devices SET laatst_gezien = NOW() WHERE id = ?");
-        $stmt_update->bind_param("i", $row['id']);
+        $stmt_update = $conn->prepare("UPDATE Kiosk_Accounts SET laatst_gezien = NOW(), laatst_ip = ? WHERE id = ?");
+        $stmt_update->bind_param("si", $clientIP, $row['id']);
         $stmt_update->execute();
         $stmt_update->close();
 
@@ -80,13 +80,14 @@ if (isset($_GET['action']) && $_GET['action'] === 'status') {
     $kioskId = (int)$_SESSION['kiosk_id'];
 
     // Update laatst_gezien
-    $stmt_update = $conn->prepare("UPDATE kiosk_devices SET laatst_gezien = NOW() WHERE id = ?");
-    $stmt_update->bind_param("i", $kioskId);
+    $clientIP = getClientIP();
+    $stmt_update = $conn->prepare("UPDATE Kiosk_Accounts SET laatst_gezien = NOW(), laatst_ip = ? WHERE id = ?");
+    $stmt_update->bind_param("si", $clientIP, $kioskId);
     $stmt_update->execute();
     $stmt_update->close();
 
     // Fetch current settings
-    $stmt = $conn->prepare("SELECT doel_pagina, refresh_interval, rechten FROM kiosk_devices WHERE id = ?");
+    $stmt = $conn->prepare("SELECT doel_pagina, refresh_interval, rechten FROM Kiosk_Accounts WHERE id = ?");
     $stmt->bind_param("i", $kioskId);
     $stmt->execute();
     $result = $stmt->get_result();

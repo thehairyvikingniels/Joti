@@ -1,3 +1,15 @@
+<?php
+require("dblogin.php");
+$stmt = $conn->prepare("SELECT Waarde FROM Site_Instellingen WHERE Instelling = 'GROUP_LOGO_SMALL_URL'");
+$stmt->execute();
+$res = $stmt->get_result();
+$logoUrl = "media/geusje.png"; // fallback
+if ($res->num_rows > 0) {
+    $row = $res->fetch_assoc();
+    $logoUrl = $row['Waarde'];
+}
+$stmt->close();
+?>
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -19,8 +31,8 @@
 </head>
 <body class="bg-gray-900 text-gray-100 flex items-center justify-center h-screen p-4">
     <div class="bg-gray-800 border border-gray-700 rounded-xl p-8 max-w-md w-full text-center shadow-2xl space-y-6">
-        <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto text-3xl mb-2">
-            <i class="fas fa-wifi-slash"></i>
+        <div class="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center mx-auto overflow-hidden shadow-inner p-2 border border-gray-600">
+            <img src="/<?= htmlspecialchars($logoUrl) ?>" class="w-full h-full object-contain filter grayscale opacity-80" alt="Offline Logo">
         </div>
 
         <div>
@@ -41,7 +53,7 @@
             </div>
         </div>
 
-        <button onclick="checkConnection()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition duration-200 flex items-center justify-center gap-2">
+        <button onclick="checkConnection()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition duration-200 flex items-center justify-center gap-2 shadow-lg">
             <i class="fas fa-sync-alt"></i> Nu opnieuw proberen
         </button>
     </div>
@@ -60,11 +72,15 @@
         }, 1000);
 
         function checkConnection() {
-            fetch('/kiosk.php?action=status', { cache: 'no-store' })
+            fetch('/functies.php?onlinecheck=1', { cache: 'no-store' })
                 .then(response => {
                     if (response.ok || response.status === 401) {
-                        // Connection restored! Reload page
-                        window.location.reload();
+                        // Connection restored! Redirect back
+                        if (document.referrer && new URL(document.referrer).origin === window.location.origin) {
+                            window.location.href = document.referrer;
+                        } else {
+                            window.location.href = '/';
+                        }
                     }
                 })
                 .catch(() => {
