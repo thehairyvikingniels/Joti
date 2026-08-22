@@ -1,4 +1,5 @@
 <?php
+// Manages kiosk and service accounts: create, edit, delete, regenerate tokens, and configure target pages and permissions.
 define("PAGE_NAME", "a_serviceaccounts");
 session_start();
 
@@ -11,7 +12,7 @@ if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
   exit();
 }
 
-require("../dblogin.php");
+require_once('../dblogin.php');
 require_once(__DIR__ . '/../includes/helpers.php');
 
 // Huidige gebruiker rechten ophalen (voor sidebar)

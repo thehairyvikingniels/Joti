@@ -1,4 +1,5 @@
 <?php
+// Manages kiosk authentication via tokenized URLs, enforces IP whitelists, and serves a JSON polling status endpoint.
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

@@ -1,4 +1,5 @@
 <?php
+// Full-screen map dashboard with interactive control panels for filtering sub-areas, game halves, radius circles, and vehicles.
 define("PAGE_NAME", "kaarten");
 session_start();
 
@@ -7,7 +8,7 @@ if (!isset($_SESSION['id'])){
   exit(); 
 }
 
-require("dblogin.php");
+require_once('dblogin.php');
 require_once("functies.php");
 // Get userdata
 $stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");

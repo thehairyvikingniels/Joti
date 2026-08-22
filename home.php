@@ -1,4 +1,5 @@
 <?php
+// Primary dashboard displaying game score, leaderboard standing, hunt/hint metrics, vehicle statuses, and recent event feeds.
 define("PAGE_NAME", "home");
 session_start();
 
@@ -8,7 +9,7 @@ if (!isset($_SESSION['id'])){
 
 }
 
-require("dblogin.php");
+require_once('dblogin.php');
 require_once("functies.php");
 
 
@@ -620,4 +621,4 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
 
   
 
-</script>
+</script>

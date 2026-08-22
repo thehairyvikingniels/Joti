@@ -1,4 +1,5 @@
 <?php
+// Searchable and sortable directory of participating scout groups with locations, subareas, and distance calculations.
 define("PAGE_NAME", "groepen");
 session_start();
 
@@ -8,7 +9,7 @@ if (!isset($_SESSION['id'])){
 
 }
 
-require("dblogin.php");
+require_once('dblogin.php');
 require_once("functies.php");
 
 
@@ -237,4 +238,4 @@ function GPSrefresh() {
 </script>
 
 </body>
-</html>
+</html>

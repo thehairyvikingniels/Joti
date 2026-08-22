@@ -1,4 +1,5 @@
 <?php
+// Visual status timelines, duration breakdowns, and hunt counts for each fox team across both event halves.
 define("PAGE_NAME", "vossen");
 
 session_start();
@@ -8,7 +9,7 @@ if (!isset($_SESSION['id'])) {
     exit();
 }
 
-require("dblogin.php");
+require_once('dblogin.php');
 require_once("functies.php");
 
 $stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
@@ -594,4 +595,4 @@ function GPSrefresh() {
 } 
 </script>
 </body>
-</html>
+</html>

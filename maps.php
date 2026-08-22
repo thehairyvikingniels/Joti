@@ -1,4 +1,5 @@
 <?php
+// Standalone Mapbox map interface displaying markers and routes for fox locations, scout groups, and hunting vehicles.
 session_start();
 if (!isset($_SESSION['id']) || !isset($_SESSION['priv']) || $_SESSION['priv'] < 1) {
     header("Location: index.php");
@@ -60,7 +61,7 @@ if (isset($_GET['punt_lat'])){
   $lon = $_GET['punt_lon'];
 }
 
-require("dblogin.php");
+require_once('dblogin.php');
 
 // Get global site settings for game times
 $stmt = $conn->prepare("SELECT * FROM Site_Instellingen WHERE Instelling IN ('FOXEXCHANGE_STARTDATE', 'FOXEXCHANGE_ENDDATE', 'API_KEY_MAPBOX')");

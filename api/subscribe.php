@@ -1,4 +1,5 @@
 <?php
+// API endpoint for registering, updating, or removing Web Push notification subscriptions for the current user.
 session_start();
 header('Content-Type: application/json');
 

@@ -1,6 +1,7 @@
 <?php
+// Handles user authentication and registration, validates credentials, upgrades password hashes, and initializes sessions.
 session_start();
-require('dblogin.php');
+require_once('dblogin.php');
 
 if (isset($_POST['pswd1'])){
   if ((empty($_POST['voornaam'])) OR (empty($_POST['achternaam'])) OR (empty($_POST['email'])) OR (empty($_POST['gebruikersnaam'])) OR (empty($_POST['pswd0'])) OR (empty($_POST['pswd1']))){

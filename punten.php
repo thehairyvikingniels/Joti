@@ -1,4 +1,5 @@
 <?php
+// Score breakdowns and ranking information for the user's team alongside the full Jotihunt leaderboard.
 define("PAGE_NAME", "punten");
 session_start();
 
@@ -6,7 +7,7 @@ if (!isset($_SESSION['id'])){
   header("Location: index");
 }
 
-require("dblogin.php");
+require_once('dblogin.php');
 
 
 // Get userdata
@@ -276,4 +277,4 @@ function GPSrefresh() {
 </script>
 
 </body>
-</html>
+</html>

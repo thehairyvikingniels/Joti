@@ -1,4 +1,5 @@
 <?php
+// Superadmin interface for viewing, updating, adding, and deleting global site configuration key-value settings.
 define("PAGE_NAME", "sa_settings");
 session_start();
 
@@ -7,7 +8,7 @@ if (!isset($_SESSION['id'])) {
     exit();
 }
 
-require("../dblogin.php");
+require_once('../dblogin.php');
 require_once("../functies.php");
 
 

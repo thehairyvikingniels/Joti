@@ -1,4 +1,5 @@
 <?php
+// Displays published news articles and announcements with formatted content and timestamps.
 define("PAGE_NAME", "nieuws");
 
 session_start();
@@ -9,7 +10,7 @@ if (!isset($_SESSION['id'])){
 
 }
 
-require("dblogin.php");
+require_once('dblogin.php');
 require_once("functies.php");
 
 
@@ -168,4 +169,4 @@ function GPSrefresh() {
 </script>
 
 </body>
-</html>
+</html>

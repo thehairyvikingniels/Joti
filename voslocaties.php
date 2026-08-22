@@ -1,4 +1,5 @@
 <?php
+// Form and interface for submitting new fox sightings using GPS coordinates, Dutch RD coordinates, or scout group presets.
 define("PAGE_NAME", "voslocaties");
 
 session_start();
@@ -8,7 +9,7 @@ if (!isset($_SESSION['id'])) {
     exit();
 }
 
-require("dblogin.php");
+require_once('dblogin.php');
 require_once("functies.php");
 
 $message = '';

@@ -1,4 +1,5 @@
 <?php
+// Administrative dashboard for composing and dispatching web push notifications and viewing the notification backlog.
 define("PAGE_NAME", "sa_notifications");
 session_start();
 
@@ -7,7 +8,7 @@ if (!isset($_SESSION['id'])){
   exit();
 }
 
-require("../dblogin.php");
+require_once('../dblogin.php');
 require_once(__DIR__ . '/../functies.php');
 
 // Huidige gebruiker rechten ophalen

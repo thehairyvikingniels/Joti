@@ -1,4 +1,5 @@
 <?php
+// Renders the navigation sidebar with page links filtered by user privilege level, active page highlighting, and group branding.
 if (isset($_SESSION['kiosk_id'])) {
     return;
 }

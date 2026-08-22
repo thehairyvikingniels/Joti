@@ -4,6 +4,7 @@
     <div class="text-center text-sm text-gray-500 theme-text opacity-80">
       <p>
         <a href="https://nielsmaarleveld.nl" class="font-medium hover:underline theme-primary">Niels Maarleveld</a> - &copy; <?php echo date("Y");?> 
+// Renders the site footer with author copyright, Git commit build metadata, and active kiosk details.
         <?php
         if (!function_exists('getGitBuildInfo')) {
             function getGitBuildInfo() {

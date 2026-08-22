@@ -1,4 +1,5 @@
 <?php
+// Vehicle management interface for registering new hunt cars, deleting vehicles, and joining or leaving as passengers.
 define("PAGE_NAME", "autos");
 session_start();
 
@@ -7,7 +8,7 @@ if (!isset($_SESSION['id'])){
   exit();
 }
 
-require("dblogin.php");
+require_once('dblogin.php');
 
 // Auto verwijderen
 if (isset($_GET['delauto'])){
@@ -298,4 +299,4 @@ function GPSrefresh() {
 </script>
 
 </body>
-</html>
+</html>

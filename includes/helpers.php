@@ -1,4 +1,5 @@
 <?php
+// Utility functions for converting timestamps into human-readable relative time strings.
 
 if (!function_exists('time2str')) {
     function time2str($ts) {

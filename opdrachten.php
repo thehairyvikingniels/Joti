@@ -1,4 +1,5 @@
 <?php
+// Displays game assignments and challenges with their time limits, completion statuses, and formatted instructions.
 define("PAGE_NAME", "opdrachten");
 
 session_start();
@@ -9,7 +10,7 @@ if (!isset($_SESSION['id'])) {
 
 }
 
-require("dblogin.php");
+require_once('dblogin.php');
 require_once("functies.php");
 
 // Get userdata
@@ -379,4 +380,4 @@ $stmt->close();
 
 </body>
 
-</html>
+</html>

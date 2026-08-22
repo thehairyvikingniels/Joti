@@ -1,4 +1,5 @@
 <?php
+// Administrative interface for viewing registered users, modifying privilege levels, resetting passwords, and deleting accounts.
 define("PAGE_NAME", "a_users");
 session_start();
 
@@ -11,7 +12,7 @@ if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
   exit();
 }
 
-require("../dblogin.php");
+require_once('../dblogin.php');
 require_once(__DIR__ . '/../includes/helpers.php');
 
 // Huidige gebruiker rechten ophalen
@@ -620,4 +621,4 @@ function GPSrefresh() {
 </script>
 
 </body>
-</html>
+</html>

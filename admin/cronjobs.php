@@ -1,4 +1,5 @@
 <?php
+// Displays cron job statuses, schedules, and recent execution history with controls to toggle jobs on or off.
 define("PAGE_NAME", "a_cronjobs");
 
 session_start();
@@ -10,7 +11,7 @@ if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
   header("Location: ../home");
   exit();
 }
-require("../dblogin.php");
+require_once('../dblogin.php');
 
 $stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
 $stmt->bind_param("i", $_SESSION['id']);

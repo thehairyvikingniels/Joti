@@ -1,10 +1,11 @@
 <?php
+// Displays published puzzle hints and provides a form for submitting solved RD coordinates as new hint locations.
 define("PAGE_NAME", "hints");
 session_start();
 if (!isset($_SESSION['id'])) {
   header("Location: index");
 }
-require("dblogin.php");
+require_once('dblogin.php');
 require_once("functies.php");
 
 

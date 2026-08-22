@@ -1,4 +1,5 @@
 <?php
+// Legacy AJAX router providing utility functions, coordinate transformations, time formatting, and push notification dispatch.
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -23,7 +24,7 @@ if (isset($_SESSION['kiosk_id'])) {
     $usr_lon = 5.876286397679744;
 }
 
-require("dblogin.php");
+require_once('dblogin.php');
 require_once("includes/globals.php");
 
 // GPS Toggle

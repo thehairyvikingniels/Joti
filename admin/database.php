@@ -1,4 +1,5 @@
 <?php
+// Sortable list of all submitted fox locations (hints, hunts, spots, predictions) with view, edit, and delete controls.
 define("PAGE_NAME", "a_database");
 session_start();
 
@@ -7,7 +8,7 @@ if (!isset($_SESSION['id'])) {
     exit();
 }
 
-require("../dblogin.php");
+require_once('../dblogin.php');
 require_once("../functies.php");
 
 // Get userdata

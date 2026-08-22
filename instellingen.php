@@ -1,4 +1,5 @@
 <?php
+// User account settings page for updating profile details, password, API key, avatar, and push notification preferences.
 define("PAGE_NAME", "instellingen");
 session_start();
 
@@ -8,7 +9,7 @@ if (!isset($_SESSION['id'])){
 
 }
 
-require("dblogin.php");
+require_once('dblogin.php');
 require_once("functies.php");
 
 
@@ -469,4 +470,4 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
 
 </body>
 
-</html>
+</html>

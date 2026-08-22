@@ -1,4 +1,5 @@
 <?php
+// Interactive tactical whiteboard for organizing real-time assignments of members and vehicles to fox hunting areas.
 define("PAGE_NAME", "whiteboard");
 session_start();
 
@@ -15,7 +16,7 @@ if ($is_guest) {
     exit();
 }
 
-require("dblogin.php");
+require_once('dblogin.php');
 require_once('includes/globals.php');
 
 // Fetch data

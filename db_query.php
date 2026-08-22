@@ -1,5 +1,6 @@
 <?php
-require 'dblogin.php';
+// Debug utility that prints database column structure and types for inspection.
+require_once('dblogin.php');
 $res = $conn->query("SHOW COLUMNS FROM Groepen");
 while ($row = $res->fetch_assoc()) {
     echo $row['Field'] . " - " . $row['Type'] . "\n";

@@ -1,4 +1,5 @@
 <?php
+// AJAX handler for whiteboard assignments: moves users and vehicles between tasks and manages custom categories.
 session_start();
 $is_kiosk = isset($_SESSION['kiosk_id']);
 $kiosk_priv = $_SESSION['kiosk_priv'] ?? 0;
@@ -10,7 +11,7 @@ if (!isset($_SESSION['id']) || ($user_priv < 1 && (!$is_kiosk || $kiosk_priv < 1
     exit();
 }
 
-require_once("dblogin.php");
+require_once('dblogin.php');
 require_once("functies.php");
 
 header('Content-Type: application/json');
