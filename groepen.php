@@ -1,54 +1,7 @@
 <?php
 // Searchable and sortable directory of participating scout groups with locations, subareas, and distance calculations.
 define("PAGE_NAME", "groepen");
-session_start();
-
-if (!isset($_SESSION['id'])){
-
-  header("Location: index");
-
-}
-
-require_once('dblogin.php');
-require_once("functies.php");
-
-
-// Get userdata
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $vn = $row['voornaam'];
-      $priv = $row['priv'];
-
-      if ($row['lat']) {
-        $usr_lat = $row['lat'];
-        $usr_lon = $row['lon'];
-      } else {
-        // LAT LON van RB bij geen persoonlijke latlon
-        $usr_lat = 51.98769228691746;
-        $usr_lon = 5.876286397679744;
-      }
-    }
-}
-$stmt->close();
-
-
-// Get global site settings
-$siteSettings = array();
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $siteSettings[$row['Instelling']] = $row['Waarde'];
-  }
-}
-$stmt->close();
+require_once('includes/auth.php');
 
 ?>
 
@@ -76,7 +29,6 @@ $stmt->close();
   <?php include_once('includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
     <div class="mb-6 sticky top-[4.5rem] z-20">
       <div class="theme-card rounded border shadow-sm p-4 flex justify-between gap-4 items-center">
@@ -238,4 +190,4 @@ function GPSrefresh() {
 </script>
 
 </body>
-</html>
+</html>

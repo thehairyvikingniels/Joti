@@ -1,56 +1,11 @@
 <?php
 // Superadmin interface for viewing, updating, adding, and deleting global site configuration key-value settings.
 define("PAGE_NAME", "sa_settings");
-session_start();
-
-if (!isset($_SESSION['id'])) {
-    header("Location: ../index");
-    exit();
-}
-
-require_once('../dblogin.php');
-require_once("../functies.php");
-
-
-// Get userdata
-$stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    $vn = $row['voornaam'];
-    $priv = $row['priv'];
-} else {
-    // Failsafe als de gebruiker niet (meer) bestaat
-    session_destroy();
-    header("Location: ../index");
-    exit();
-}
-$stmt->close();
-
+require_once(__DIR__ . '/../includes/auth.php');
 if ($priv < 3) {
     header("Location: ../home");
     exit();
 }
-
-// Get global site settings (voor het inladen van eventuele basis-variabelen)
-$stmt_settings = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen");
-$stmt_settings->execute();
-$result_settings = $stmt_settings->get_result();
-$siteSettings = array();
-
-if ($result_settings->num_rows > 0) {
-    while($row = $result_settings->fetch_assoc()) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-} else {
-    echo "0 results";
-    $stmt_settings->close();
-    exit();
-}
-$stmt_settings->close();
 
 $succes_message = '';
 $error_message = '';
@@ -195,7 +150,6 @@ $stmt_groups->close();
   <?php include_once('../includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
     <div class="space-y-6 mb-24 max-w-5xl">
       <?php if (!empty($succes_message)): ?>

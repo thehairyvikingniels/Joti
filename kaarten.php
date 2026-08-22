@@ -1,46 +1,7 @@
 <?php
 // Full-screen map dashboard with interactive control panels for filtering sub-areas, game halves, radius circles, and vehicles.
 define("PAGE_NAME", "kaarten");
-session_start();
-
-if (!isset($_SESSION['id'])){
-  header("Location: index");
-  exit(); 
-}
-
-require_once('dblogin.php');
-require_once("functies.php");
-// Get userdata
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $vn = $row['voornaam'];
-      $priv = $row['priv'];
-    }
-}
-$stmt->close();
-
-if (!isset($priv) || ($priv < 1 && !isset($_SESSION['kiosk_id']))) {
-    header("Location: home");
-    exit();
-}
-
-// Get global site settings
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-        $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-}
-$stmt->close();
-
+require_once('includes/auth.php');
 
 // Check if there are any fox locations within the last 24 hours to enable the radius checkbox
 $stmt = $conn->prepare("SELECT id FROM Voslocaties WHERE ingestuurd_op >= NOW() - INTERVAL 24 HOUR LIMIT 1");

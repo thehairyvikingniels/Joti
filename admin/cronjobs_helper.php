@@ -1,12 +1,6 @@
 <?php
 // AJAX endpoint returning cron job statuses and execution logs in JSON format, and handling cron job toggle requests.
-session_start();
-if (!isset($_SESSION['id'])) {
-    header("Location: ../index");
-    exit();
-}
-require_once('../dblogin.php');
-
+require_once(__DIR__ . '/../includes/auth.php');
 // API Endpoint: Haal alle cronjobs op
 if (isset($_GET['cronjobs'])) {
     $return = array();

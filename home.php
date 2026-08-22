@@ -1,51 +1,7 @@
 <?php
 // Primary dashboard displaying game score, leaderboard standing, hunt/hint metrics, vehicle statuses, and recent event feeds.
 define("PAGE_NAME", "home");
-session_start();
-
-if (!isset($_SESSION['id'])){
-
-  header("Location: index");
-
-}
-
-require_once('dblogin.php');
-require_once("functies.php");
-
-
-if (isset($_GET['refresh'])){
-
-  header("Refresh: 30; URL=home?refresh");
-
-}
-
-
-// Get userdata
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $vn = $row['voornaam'];
-    $priv = $row['priv'];
-  }
-}
-$stmt->close();
-
-// Get global site settings
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $siteSettings[$row['Instelling']] = $row['Waarde'];
-  }
-}
-$stmt->close();
-
+require_once('includes/auth.php');
 
 // Get hints
 $stmt = $conn->prepare("SELECT id, count(*) as NUM FROM Voslocaties WHERE type='Hint' GROUP BY ingestuurd_op");
@@ -61,7 +17,6 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
-
 // Get hunts
 $stmt = $conn->prepare("SELECT id, count(*) as NUM FROM Voslocaties WHERE type='Hunt'");
 $stmt->execute();
@@ -75,7 +30,6 @@ if ($result->num_rows > 0) {
   $huntaantal = "0";
 }
 $stmt->close();
-
 
 // Get points for Geuzen
 $stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')");
@@ -181,8 +135,6 @@ $stmt->close();
           <h3 class="text-3xl font-bold"><?php echo $hintaantal; ?></h3>
         </div>
       </div>
-
-
 
       <!-- Panels -->
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
@@ -363,15 +315,11 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
 
 <script src="https://www.gstatic.com/firebasejs/7.0.0/firebase-app.js"></script>
 
-
-
 <!-- TODO: Add SDKs for Firebase products that you want to use
 
      https://firebase.google.com/docs/web/setup#available-libraries -->
 
 <script src="https://www.gstatic.com/firebasejs/7.0.0/firebase-analytics.js"></script>
-
-
 
 <script>
   // Your web app's Firebase configuration
@@ -541,8 +489,6 @@ function invulgegevens(str = "6") {
 
   <script>
 
-
-
 if ("<?php echo $_SESSION['gps']?>" == "true"){
 
   GPSrefresh();
@@ -613,12 +559,10 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
 
    
 
-
-
  } 
 
   
 
   
 
-</script>
+</script>

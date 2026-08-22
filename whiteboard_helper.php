@@ -1,18 +1,12 @@
 <?php
 // AJAX handler for whiteboard assignments: moves users and vehicles between tasks and manages custom categories.
-session_start();
-$is_kiosk = isset($_SESSION['kiosk_id']);
-$kiosk_priv = $_SESSION['kiosk_priv'] ?? 0;
-$user_priv = $_SESSION['priv'] ?? 0;
+require_once('includes/auth.php');
 
-if (!isset($_SESSION['id']) || ($user_priv < 1 && (!$is_kiosk || $kiosk_priv < 1))) {
+if ($priv < 1 && (!$is_kiosk || ($_SESSION['kiosk_priv'] ?? 0) < 1)) {
     http_response_code(403);
     echo json_encode(["status" => "error", "message" => "Geen rechten voor bewerken (403 Forbidden)"]);
     exit();
 }
-
-require_once('dblogin.php');
-require_once("functies.php");
 
 header('Content-Type: application/json');
 

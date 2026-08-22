@@ -1,62 +1,7 @@
 <?php
 // Administrative interface for viewing registered users, modifying privilege levels, resetting passwords, and deleting accounts.
 define("PAGE_NAME", "a_users");
-session_start();
-
-if (!isset($_SESSION['id'])){
-  header("Location: ../index");
-  exit();
-}
-if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
-  header("Location: ../home");
-  exit();
-}
-
-require_once('../dblogin.php');
-require_once(__DIR__ . '/../includes/helpers.php');
-
-// Huidige gebruiker rechten ophalen
-$stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    $vn = $row['voornaam'];
-    $priv = $row['priv'];
-} else {
-    // Fallback als de account niet meer bestaat
-    session_destroy();
-    header("Location: ../index");
-    exit();
-}
-$stmt->close();
-
-// Controleer admin rechten
-if ($priv < 2){
-  header("Location: ../home");
-  exit();
-}
-
-// Get global site settings
-$stmt_settings = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt_settings->execute();
-$result_settings = $stmt_settings->get_result();
-$siteSettings = array();
-
-if ($result_settings->num_rows > 0) {
-    while($row = $result_settings->fetch_assoc()) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-} else {
-    echo "0 results";
-    $stmt_settings->close();
-    exit();
-}
-$stmt_settings->close();
-
-
+require_once(__DIR__ . '/../includes/auth.php');
 // Gebruiker updaten of verwijderen
 if (isset($_POST["user"]) && isset($_POST['priv'])){
     $target_user_id = intval($_POST['user']);
@@ -293,7 +238,6 @@ $stmt_users->close();
   <?php include_once('../includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
     <div class="space-y-6 mb-24">
       
@@ -621,4 +565,4 @@ function GPSrefresh() {
 </script>
 
 </body>
-</html>
+</html>

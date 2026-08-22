@@ -1,22 +1,14 @@
 <?php
 // Interactive tactical whiteboard for organizing real-time assignments of members and vehicles to fox hunting areas.
 define("PAGE_NAME", "whiteboard");
-session_start();
+require_once('includes/auth.php');
 
-if (!isset($_SESSION['id']) || !isset($_SESSION['priv'])) {
-    header("Location: index");
-    exit();
-}
-
-$priv = $_SESSION['priv'];
-$is_kiosk = isset($_SESSION['kiosk_id']);
 $is_guest = ($priv < 1 && !$is_kiosk); // Guests can't see the board unless they are a Kiosk
 if ($is_guest) {
     header("Location: home");
     exit();
 }
 
-require_once('dblogin.php');
 require_once('includes/globals.php');
 
 // Fetch data
@@ -278,7 +270,6 @@ function renderCar($kenteken, $car, $users) {
     return $html;
 }
 
-
 ?>
 <!DOCTYPE html>
 <html lang="nl">
@@ -453,8 +444,6 @@ function renderCar($kenteken, $car, $users) {
                     <?php endforeach; ?>
                 </div>
             </div>
-
-
 
             <!-- Hints -->
             <div class="col-span-full mt-4">

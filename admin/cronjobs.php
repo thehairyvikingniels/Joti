@@ -2,56 +2,11 @@
 // Displays cron job statuses, schedules, and recent execution history with controls to toggle jobs on or off.
 define("PAGE_NAME", "a_cronjobs");
 
-session_start();
-if (!isset($_SESSION['id'])){
-  header("Location: ../index");
-  exit();
-}
-if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
-  header("Location: ../home");
-  exit();
-}
-require_once('../dblogin.php');
-
-$stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $vn = $row['voornaam'];
-      $priv = $row['priv'];
-    }
-} else {
-    session_destroy();
-    header("Location: ../index");
-    exit();
-}
-$stmt->close();
-
+require_once(__DIR__ . '/../includes/auth.php');
 if ($priv < 2){
   header("Location: ../home");
   exit();
 }
-
-// Get global site settings
-$stmt_settings = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen");
-$stmt_settings->execute();
-$result_settings = $stmt_settings->get_result();
-
-$siteSettings = array();
-
-if ($result_settings->num_rows > 0) {
-    while($row = $result_settings->fetch_assoc()) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-} else {
-    echo "0 results";
-    $stmt_settings->close();
-    exit();
-}
-$stmt_settings->close();
 
 // Dit lijkt een overblijfsel van a_users.php, maar is voor de veiligheid toch omgezet naar een prepared statement.
 if (isset($_POST["user"]) && isset($_POST['priv'])){
@@ -89,7 +44,6 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
   <?php include_once('../includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
     <div class="space-y-6 mb-24">
       <div class="theme-card rounded border shadow-sm overflow-hidden w-full max-w-5xl">

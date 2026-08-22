@@ -1,33 +1,7 @@
 <?php
 // Administrative dashboard for composing and dispatching web push notifications and viewing the notification backlog.
 define("PAGE_NAME", "sa_notifications");
-session_start();
-
-if (!isset($_SESSION['id'])){
-  header("Location: ../index");
-  exit();
-}
-
-require_once('../dblogin.php');
-require_once(__DIR__ . '/../functies.php');
-
-// Huidige gebruiker rechten ophalen
-$stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    $vn = $row['voornaam'];
-    $priv = $row['priv'];
-} else {
-    session_destroy();
-    header("Location: ../index");
-    exit();
-}
-$stmt->close();
-
+require_once(__DIR__ . '/../includes/auth.php');
 // Controleer admin rechten
 if ($priv < 2){
   header("Location: ../home");

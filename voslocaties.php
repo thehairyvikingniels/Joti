@@ -2,15 +2,7 @@
 // Form and interface for submitting new fox sightings using GPS coordinates, Dutch RD coordinates, or scout group presets.
 define("PAGE_NAME", "voslocaties");
 
-session_start();
-
-if (!isset($_SESSION['id'])) {
-    header("Location: index");
-    exit();
-}
-
-require_once('dblogin.php');
-require_once("functies.php");
+require_once('includes/auth.php');
 
 $message = '';
 
@@ -116,34 +108,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) 
     }
 }
 
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $vn = $row['voornaam'];
-    $priv = $row['priv'];
-  }
-}
-$stmt->close();
-
-if (!isset($priv) || ($priv < 1 && !isset($_SESSION['kiosk_id']))) {
+if ($priv < 1) {
     header("Location: home");
     exit();
 }
-
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $siteSettings[$row['Instelling']] = $row['Waarde'];
-  }
-}
-$stmt->close();
 
 $groups = [];
 $stmt_groups = $conn->prepare("SELECT id, naam, deelgebied FROM Groepen ORDER BY deelgebied, naam");

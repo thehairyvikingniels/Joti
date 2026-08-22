@@ -1,49 +1,7 @@
 <?php
 // User account settings page for updating profile details, password, API key, avatar, and push notification preferences.
 define("PAGE_NAME", "instellingen");
-session_start();
-
-if (!isset($_SESSION['id'])){
-
-  header("Location: index");
-
-}
-
-require_once('dblogin.php');
-require_once("functies.php");
-
-
-// get userdata
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $vn = $row['voornaam'];
-      $an = $row['achternaam'];
-      $email = $row['email'];
-      $api = $row['api'];
-      $priv = $row['priv'];
-      $username = $row['gebruikersnaam'];
-      $profile_picture = $row['profile_picture'] ?? null;
-    }
-}
-$stmt->close();
-
-
-// Get global site settings
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-}
-$stmt->close();
+require_once('includes/auth.php');
 
 // Fetch subscriptions
 $stmt = $conn->prepare("SELECT id, endpoint, device_name FROM Notification_Subscriptions WHERE user_id=?");
@@ -94,7 +52,6 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
   <?php include_once('includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       
@@ -386,8 +343,6 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
 
 <script>
 
-
-
 if ("<?php echo $_SESSION['gps']?>" == "true"){
 
   setInterval(function() {
@@ -456,8 +411,6 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
 
    
 
-
-
  } 
 
   
@@ -466,8 +419,6 @@ if ("<?php echo $_SESSION['gps']?>" == "true"){
 
 </script>
 
-
-
 </body>
 
-</html>
+</html>

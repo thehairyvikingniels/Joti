@@ -2,47 +2,7 @@
 // Visual status timelines, duration breakdowns, and hunt counts for each fox team across both event halves.
 define("PAGE_NAME", "vossen");
 
-session_start();
-
-if (!isset($_SESSION['id'])) {
-    header("Location: index");
-    exit();
-}
-
-require_once('dblogin.php');
-require_once("functies.php");
-
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-        $vn = $row['voornaam'];
-        $priv = $row['priv'];
-    }
-}
-$stmt->close();
-
-if (!isset($priv) || ($priv < 1 && !isset($_SESSION['kiosk_id']))) {
-    header("Location: home");
-    exit();
-}
-
-// Get global site settings
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-$siteSettings = array();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-}
-$stmt->close();
+require_once('includes/auth.php');
 
 // Fetch game and fox exchange times from settings
 $stmt = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen WHERE Instelling IN ('GAME_STARTDATE', 'GAME_ENDDATE', 'FOXEXCHANGE_STARTDATE', 'FOXEXCHANGE_ENDDATE')");
@@ -63,7 +23,6 @@ $game_end_str = $settings['GAME_ENDDATE'] ?? '2025-10-12 12:00:00';
 $fox_exchange_start_str = $settings['FOXEXCHANGE_STARTDATE'] ?? '2025-10-11 22:45:00';
 $fox_exchange_end_str = $settings['FOXEXCHANGE_ENDDATE'] ?? '2025-10-11 23:15:00';
 
-
 $game_start_time = new DateTime($game_start_str);
 $game_end_time = new DateTime($game_end_str);
 $fox_exchange_start_time = new DateTime($fox_exchange_start_str);
@@ -75,7 +34,6 @@ $total_duration_seconds = $game_end_time->getTimestamp() - $game_start_time->get
 if ($total_duration_seconds <= 0) {
     $total_duration_seconds = 1; // Prevent division by zero
 }
-
 
 // Fetch all voslog data
 $stmt = $conn->prepare("SELECT * FROM Voslog WHERE datumtijd >= ? AND datumtijd <= ? ORDER BY datumtijd ASC");
@@ -209,7 +167,6 @@ foreach ($fox_teams as $team) {
         }
     }
 }
-
 
 ?>
 <!DOCTYPE html>
@@ -385,7 +342,6 @@ foreach ($fox_teams as $team) {
   <?php include_once('includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
     <div class="space-y-6">
       
@@ -595,4 +551,4 @@ function GPSrefresh() {
 } 
 </script>
 </body>
-</html>
+</html>

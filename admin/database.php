@@ -1,55 +1,11 @@
 <?php
 // Sortable list of all submitted fox locations (hints, hunts, spots, predictions) with view, edit, and delete controls.
 define("PAGE_NAME", "a_database");
-session_start();
-
-if (!isset($_SESSION['id'])) {
-    header("Location: ../index");
-    exit();
-}
-
-require_once('../dblogin.php');
-require_once("../functies.php");
-
-// Get userdata
-$stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-        $vn = $row['voornaam'];
-        $priv = $row['priv'];
-    }
-} else {
-    session_destroy();
-    header("Location: ../index");
-    exit();
-}
-$stmt->close();
-
+require_once(__DIR__ . '/../includes/auth.php');
 if ($priv < 2) {
     header("Location: ../home");
     exit();
 }
-
-// Get global site settings
-$stmt_settings = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen");
-$stmt_settings->execute();
-$result_settings = $stmt_settings->get_result();
-$siteSettings = array();
-
-if ($result_settings->num_rows > 0) {
-    while ($row_settings = $result_settings->fetch_assoc()) {
-        $siteSettings[$row_settings['Instelling']] = $row_settings['Waarde'];
-    }
-} else {
-    echo "0 results for settings";
-    $stmt_settings->close();
-    exit();
-}
-$stmt_settings->close();
 
 // Fetch Voslocaties
 $stmt_vos = $conn->prepare("SELECT * FROM Voslocaties ORDER BY ingestuurd_op DESC");
@@ -87,7 +43,6 @@ $result_voslocaties = $stmt_vos->get_result();
   <?php include_once('../includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
     <div class="space-y-6 mb-24">
       <div class="theme-card rounded border shadow-sm overflow-hidden w-full">

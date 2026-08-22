@@ -1,41 +1,7 @@
 <?php
 // Displays published puzzle hints and provides a form for submitting solved RD coordinates as new hint locations.
 define("PAGE_NAME", "hints");
-session_start();
-if (!isset($_SESSION['id'])) {
-  header("Location: index");
-}
-require_once('dblogin.php');
-require_once("functies.php");
-
-
-// Get userdata
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while ($row = $result->fetch_assoc()) {
-    $vn = $row['voornaam'];
-    $priv = $row['priv'];
-  }
-}
-$stmt->close();
-
-
-// Get global site settings
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while ($row = $result->fetch_assoc()) {
-    $siteSettings[$row['Instelling']] = $row['Waarde'];
-  }
-}
-$stmt->close();
-
+require_once('includes/auth.php');
 
 // Insert voslocaties after using hints form
 if (isset($priv) && $priv > 0 && isset($_POST['subarea']) && isset($_POST['rdX']) && isset($_POST['rdY'])) {
@@ -52,7 +18,6 @@ if (isset($priv) && $priv > 0 && isset($_POST['subarea']) && isset($_POST['rdX']
   }
   $stmt->close();
 }
-
 
 ?>
 <!DOCTYPE html>
@@ -81,7 +46,6 @@ if (isset($priv) && $priv > 0 && isset($_POST['subarea']) && isset($_POST['rdX']
     <?php include_once('includes/topbar.php') ?>
 
     <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
       <div class="space-y-6 mb-12">
         <?php
