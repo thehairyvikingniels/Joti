@@ -311,21 +311,9 @@ window.onload = function() {
   kaartveranderen();
 };
 
-if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
-  setInterval(GPSrefresh, 5555);
-}
-
-function GPSrefresh() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    }
-}
-
-function showPosition(position) {
-    const xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", `functies.php?lat=${position.coords.latitude}&lon=${position.coords.longitude}`, true);
-    xmlhttp.send();
-}
+</script>
+<script src="js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');
 </script>
 
 </body>

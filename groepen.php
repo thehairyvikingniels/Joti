@@ -58,9 +58,9 @@ require_once('includes/auth.php');
       echo '<ul id="tableSearchTable" class="divide-y" style="border-color: var(--theme-card-border);">';
       while($row = $result->fetch_assoc()) {
         $color = getFoxColor(ucfirst($row['deelgebied']));
-        $distance = round(latlon_dist($row['lat'], $row['lon'], $usr_lat, $usr_lon)/1000, 1);
+        $distance = round(latlon_dist($row['lat'], $row['lon'], $user_lat, $user_lon)/1000, 1);
         
-        echo '<li class="p-4 md:p-6 hover:bg-black/5 transition" meta-name="'.htmlspecialchars($row['naam']).'" meta-subarea="'.htmlspecialchars($row['deelgebied']).'" meta-distance="'.latlon_dist($row['lat'], $row['lon'], $usr_lat, $usr_lon).'">';
+        echo '<li class="p-4 md:p-6 hover:bg-black/5 transition" meta-name="'.htmlspecialchars($row['naam']).'" meta-subarea="'.htmlspecialchars($row['deelgebied']).'" meta-distance="'.latlon_dist($row['lat'], $row['lon'], $user_lat, $user_lon).'">';
         
         echo '  <div class="theme-card-header text-white px-4 py-2 rounded mb-4 flex items-center shadow-sm" style="background-color: var(--theme-sidebar-active);">';
         echo '    <span class="text-xs font-bold px-2 py-1 rounded text-black uppercase tracking-wider shadow-sm" style="background-color:'.$color.'">'.htmlspecialchars($row['deelgebied']).'</span>';
@@ -103,91 +103,10 @@ require_once('includes/auth.php');
   <?php require_once('includes/footer.php') ?>
 </div>
 
-<script>
-// search function for groups
-function tableSearch() {
-  var input, ul, items, metaName;
-  input = document.getElementById("tableSearchInput");
-  ul = document.getElementById("tableSearchTable");
-  items = ul.getElementsByTagName("li");
+<script src="js/groepen.js"></script>
 
-  // Loop through all LI's, and hide those who don't match the search query
-  for (var i = 0; i < items.length; i++) {
-    metaName = items[i].getAttribute("meta-name").toUpperCase();
-    if (metaName.includes(input.value.toUpperCase())) {
-      items[i].style.display = "";
-    } else {
-      items[i].style.display = "none";
-    }
-  }
-}
-
-function sortTable(metaType) {
-  var table, rows, switching, i, x, y, shouldSwitch;
-  table = document.getElementById("tableSearchTable");
-  switching = true;
-
-  while (switching) {
-    switching = false;
-    rows = table.getElementsByTagName("li");
-
-    for (i = 0; i < (rows.length - 1); i++) {
-      shouldSwitch = false;
-      x = rows[i].getAttribute(metaType);
-      y = rows[i + 1].getAttribute(metaType);
-
-      if (metaType == "meta-distance") {
-        if (parseFloat(x) > parseFloat(y)) {
-          shouldSwitch = true;
-          break;
-        }
-      } else {
-        if (x.toLowerCase() > y.toLowerCase()) {
-          shouldSwitch = true;
-          break;
-        }
-      }
-    }
-    if (shouldSwitch) {
-      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-      switching = true;
-    }
-  }
-}
-</script>
-
-<script>
-if ("<?php echo $_SESSION['gps']?>" == "true"){
-  setInterval(function() {
-    GPSrefresh();
-  }, 5555);
-}
-
-function GPSrefresh() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    } else {
-        console.log("Geolocation is not supported by this browser.");
-    }
-
-    function showPosition(position) {
-      console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
-      
-      var xmlhttp;
-      if (window.XMLHttpRequest) {
-            xmlhttp = new XMLHttpRequest();
-      } else {
-            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-      }
-      xmlhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-            }
-      };
-      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-      xmlhttp.send();
-    }
-} 
-</script>
+<script src="js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 
 </body>
 </html>
