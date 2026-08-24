@@ -1,15 +1,8 @@
 <?php
+// Form and interface for submitting new fox sightings using GPS coordinates, Dutch RD coordinates, or scout group presets.
 define("PAGE_NAME", "voslocaties");
 
-session_start();
-
-if (!isset($_SESSION['id'])) {
-    header("Location: index");
-    exit();
-}
-
-require("dblogin.php");
-require_once("functies.php");
+require_once('includes/auth.php');
 
 $message = '';
 
@@ -21,7 +14,7 @@ $message = '';
  * @param float $rd_y The RD Y-coordinate.
  * @return array An associative array containing 'lat' and 'lon'.
  */
-function convertRDtoLatLon($rd_x, $rd_y) {
+function convert_rd_to_lat_lon($rd_x, $rd_y) {
     $X0 = 155000;
     $Y0 = 463000;
     $phi0 = 52.15517440;
@@ -40,15 +33,15 @@ function convertRDtoLatLon($rd_x, $rd_y) {
     return ['lat' => $lat, 'lon' => $lon];
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_fox_location'])) {
     // Sanitize and retrieve form data
     $coord_type = $_POST['coord_type'] ?? '';
     $type = $_POST['type'] ?? '';
-    $deelgebied = $_POST['deelgebied'] ?? '';
-    $datumtijd_str = $_POST['datumtijd'] ?? '';
+    $fox_team = $_POST['fox_team'] ?? '';
+    $datetime_str = $_POST['datetime'] ?? '';
     $code = $_POST['code'] ?? null;
-    $opmerking = $_POST['opmerking'] ?? null;
-    $ingeleverd_door = $_SESSION['id'];
+    $remarks = $_POST['remarks'] ?? null;
+    $submitted_by = $_SESSION['id'];
 
     $lat = 0.0;
     $lon = 0.0;
@@ -60,7 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) 
         $rd_x = filter_input(INPUT_POST, 'rd_x', FILTER_VALIDATE_FLOAT);
         $rd_y = filter_input(INPUT_POST, 'rd_y', FILTER_VALIDATE_FLOAT);
         if ($rd_x && $rd_y) {
-            $converted_coords = convertRDtoLatLon($rd_x, $rd_y);
+            $converted_coords = convert_rd_to_lat_lon($rd_x, $rd_y);
             $lat = $converted_coords['lat'];
             $lon = $converted_coords['lon'];
         }
@@ -79,14 +72,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) 
         }
     }
 
-    $ingestuurd_op = str_replace('T', ' ', $datumtijd_str) . ':00';
+    $submitted_at = str_replace('T', ' ', $datetime_str) . ':00';
 
     if ($lat && $lon) {
         $stmt = $conn->prepare("INSERT INTO Voslocaties (type, deelgebied, ingestuurd_op, coordinaat_x, coordinaat_y, code, opmerking, ingeleverd_door, ingeleverd) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)");
-        $stmt->bind_param("sssddssi", $type, $deelgebied, $ingestuurd_op, $lat, $lon, $code, $opmerking, $ingeleverd_door);
+        $stmt->bind_param("sssddssi", $type, $fox_team, $submitted_at, $lat, $lon, $code, $remarks, $submitted_by);
         
         if ($stmt->execute()) {
-            send_push_notification('ALL', 'Nieuwe Voslocatie', "Nieuwe {$type} toegevoegd voor {$deelgebied}.", '/voslocaties', 'voslocaties', null, 'locatiestatus');
+            send_push_notification('ALL', 'Nieuwe Voslocatie', "Nieuwe {$type} toegevoegd voor {$fox_team}.", '/voslocaties', 'voslocaties', null, 'locatiestatus');
             $message = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6 shadow-sm">
                             <span onclick="this.parentElement.style.display=\'none\'" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">
                                 <i class="fas fa-times opacity-70 hover:opacity-100 transition"></i>
@@ -115,34 +108,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) 
     }
 }
 
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $vn = $row['voornaam'];
-    $priv = $row['priv'];
-  }
-}
-$stmt->close();
-
-if (!isset($priv) || ($priv < 1 && !isset($_SESSION['kiosk_id']))) {
+if ($priv < 1) {
     header("Location: home");
     exit();
 }
-
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $siteSettings[$row['Instelling']] = $row['Waarde'];
-  }
-}
-$stmt->close();
 
 $groups = [];
 $stmt_groups = $conn->prepare("SELECT id, naam, deelgebied FROM Groepen ORDER BY deelgebied, naam");
@@ -277,14 +246,14 @@ if (isset($siteSettings['GROUP_ID'])) {
             
             <div>
               <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Datum & Tijd</label>
-              <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="datetime-local" name="datumtijd" value="<?php echo date('Y-m-d\TH:i'); ?>" required>
+              <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="datetime-local" name="datetime" value="<?php echo date('Y-m-d\TH:i'); ?>" required>
             </div>
           </div>
 
           <div class="space-y-6">
             <div>
               <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Vossenteam (Deelgebied)</label>
-              <select class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white" name="deelgebied" required>
+              <select class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white" name="fox_team" required>
                 <option value="" disabled selected>Kies een team</option>
                 <?php
                 foreach ($vossen_names as $fox) {
@@ -311,13 +280,13 @@ if (isset($siteSettings['GROUP_ID'])) {
             
             <div>
               <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Opmerking (optioneel)</label>
-              <textarea class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm resize-y" name="opmerking" rows="3" maxlength="128"></textarea>
+              <textarea class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm resize-y" name="remarks" rows="3" maxlength="128"></textarea>
             </div>
           </div>
         </div>
         
         <div class="mt-8 border-t pt-6" style="border-color: var(--theme-card-border);">
-          <button type="submit" name="submit_voslocatie" class="theme-bg-primary text-white font-bold py-3 px-8 rounded shadow-sm hover:opacity-90 transition"><i class="fas fa-plus mr-2"></i>Locatie Toevoegen</button>
+          <button type="submit" name="submit_fox_location" class="theme-bg-primary text-white font-bold py-3 px-8 rounded shadow-sm hover:opacity-90 transition"><i class="fas fa-plus mr-2"></i>Locatie Toevoegen</button>
         </div>
       </form>
     </div>
@@ -345,35 +314,9 @@ if (isset($siteSettings['GROUP_ID'])) {
 </div>
   
 <script>
-if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
-  setInterval(function() {
-    GPSrefresh();
-  }, 5555);
-}
- 
-function GPSrefresh() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    } else {
-        console.log("Geolocation is not supported by this browser.");
-    }
-    function showPosition(position) {
-      console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
-      
-      var xmlhttp;
-      if (window.XMLHttpRequest) {
-            xmlhttp = new XMLHttpRequest();
-      } else {
-            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-      }
-      xmlhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-            }
-      };
-      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-      xmlhttp.send();
-    }
-}
+</script>
+<script src="js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');
 
 /**
  * Toggles the visibility of coordinate input fields based on user selection.

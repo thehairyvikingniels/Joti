@@ -1,4 +1,5 @@
 <?php
+// Master cron scheduler that queries due scheduled tasks and executes them asynchronously via CLI or HTTP.
 $sleep = intval(@$_GET['sleep']);
 sleep($sleep);
 
@@ -8,7 +9,7 @@ define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');
 $output = "";
 
-require_once("../dblogin.php");
+require_once('../dblogin.php');
 
 $sql = "SELECT 
   cj.*,

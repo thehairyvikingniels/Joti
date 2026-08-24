@@ -1,7 +1,8 @@
 <?php
-session_start();
-if (!isset($_SESSION['id']) || !isset($_SESSION['priv']) || $_SESSION['priv'] < 1) {
-    header("Location: index.php");
+// Standalone Mapbox map interface displaying markers and routes for fox locations, scout groups, and hunting vehicles.
+require_once('includes/auth.php');
+if ($priv < 1) {
+    header("Location: home");
     exit();
 }
 ?>
@@ -60,25 +61,11 @@ if (isset($_GET['punt_lat'])){
   $lon = $_GET['punt_lon'];
 }
 
-require("dblogin.php");
-
-// Get global site settings for game times
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen WHERE Instelling IN ('FOXEXCHANGE_STARTDATE', 'FOXEXCHANGE_ENDDATE', 'API_KEY_MAPBOX')");
-$stmt->execute();
-$result = $stmt->get_result();
-
-$siteSettings = array();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-        $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-}
-$stmt->close();
+// Removed functies.php include because it intercepts GET variables and echoes HTML into JS
 
 // If halves haven't been set, use these default values
-$helft1_end = isset($siteSettings['FOXEXCHANGE_STARTDATE']) ? new DateTime($siteSettings['FOXEXCHANGE_STARTDATE']) : new DateTime('2025-10-11T22:45:00+02:00');
-$helft2_start = isset($siteSettings['FOXEXCHANGE_ENDDATE']) ? new DateTime($siteSettings['FOXEXCHANGE_ENDDATE']) : new DateTime('2025-10-12T23:15:00+02:00');
+$helft1_end = !empty($siteSettings['FOXEXCHANGE_STARTDATE']) ? new DateTime($siteSettings['FOXEXCHANGE_STARTDATE']) : new DateTime('2025-10-11T22:45:00+02:00');
+$helft2_start = !empty($siteSettings['FOXEXCHANGE_ENDDATE']) ? new DateTime($siteSettings['FOXEXCHANGE_ENDDATE']) : new DateTime('2025-10-12T23:15:00+02:00');
 
 
 

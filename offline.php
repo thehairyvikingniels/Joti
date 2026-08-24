@@ -1,5 +1,6 @@
 <?php
-require("dblogin.php");
+// Offline fallback screen that periodically checks server connectivity and redirects once the connection is restored.
+require_once('dblogin.php');
 $stmt = $conn->prepare("SELECT Waarde FROM Site_Instellingen WHERE Instelling = 'GROUP_LOGO_SMALL_URL'");
 $stmt->execute();
 $res = $stmt->get_result();

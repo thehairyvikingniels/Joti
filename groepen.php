@@ -1,53 +1,7 @@
 <?php
+// Searchable and sortable directory of participating scout groups with locations, subareas, and distance calculations.
 define("PAGE_NAME", "groepen");
-session_start();
-
-if (!isset($_SESSION['id'])){
-
-  header("Location: index");
-
-}
-
-require("dblogin.php");
-require_once("functies.php");
-
-
-// Get userdata
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $vn = $row['voornaam'];
-      $priv = $row['priv'];
-
-      if ($row['lat']) {
-        $usr_lat = $row['lat'];
-        $usr_lon = $row['lon'];
-      } else {
-        // LAT LON van RB bij geen persoonlijke latlon
-        $usr_lat = 51.98769228691746;
-        $usr_lon = 5.876286397679744;
-      }
-    }
-}
-$stmt->close();
-
-
-// Get global site settings
-$siteSettings = array();
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $siteSettings[$row['Instelling']] = $row['Waarde'];
-  }
-}
-$stmt->close();
+require_once('includes/auth.php');
 
 ?>
 
@@ -75,7 +29,6 @@ $stmt->close();
   <?php include_once('includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
     <div class="mb-6 sticky top-[4.5rem] z-20">
       <div class="theme-card rounded border shadow-sm p-4 flex justify-between gap-4 items-center">
@@ -105,9 +58,9 @@ $stmt->close();
       echo '<ul id="tableSearchTable" class="divide-y" style="border-color: var(--theme-card-border);">';
       while($row = $result->fetch_assoc()) {
         $color = getFoxColor(ucfirst($row['deelgebied']));
-        $distance = round(latlon_dist($row['lat'], $row['lon'], $usr_lat, $usr_lon)/1000, 1);
+        $distance = round(latlon_dist($row['lat'], $row['lon'], $user_lat, $user_lon)/1000, 1);
         
-        echo '<li class="p-4 md:p-6 hover:bg-black/5 transition" meta-name="'.htmlspecialchars($row['naam']).'" meta-subarea="'.htmlspecialchars($row['deelgebied']).'" meta-distance="'.latlon_dist($row['lat'], $row['lon'], $usr_lat, $usr_lon).'">';
+        echo '<li class="p-4 md:p-6 hover:bg-black/5 transition" meta-name="'.htmlspecialchars($row['naam']).'" meta-subarea="'.htmlspecialchars($row['deelgebied']).'" meta-distance="'.latlon_dist($row['lat'], $row['lon'], $user_lat, $user_lon).'">';
         
         echo '  <div class="theme-card-header text-white px-4 py-2 rounded mb-4 flex items-center shadow-sm" style="background-color: var(--theme-sidebar-active);">';
         echo '    <span class="text-xs font-bold px-2 py-1 rounded text-black uppercase tracking-wider shadow-sm" style="background-color:'.$color.'">'.htmlspecialchars($row['deelgebied']).'</span>';
@@ -149,91 +102,10 @@ $stmt->close();
   <?php require_once('includes/footer.php') ?>
 </div>
 
-<script>
-// search function for groups
-function tableSearch() {
-  var input, ul, items, metaName;
-  input = document.getElementById("tableSearchInput");
-  ul = document.getElementById("tableSearchTable");
-  items = ul.getElementsByTagName("li");
+<script src="js/groepen.js"></script>
 
-  // Loop through all LI's, and hide those who don't match the search query
-  for (var i = 0; i < items.length; i++) {
-    metaName = items[i].getAttribute("meta-name").toUpperCase();
-    if (metaName.includes(input.value.toUpperCase())) {
-      items[i].style.display = "";
-    } else {
-      items[i].style.display = "none";
-    }
-  }
-}
-
-function sortTable(metaType) {
-  var table, rows, switching, i, x, y, shouldSwitch;
-  table = document.getElementById("tableSearchTable");
-  switching = true;
-
-  while (switching) {
-    switching = false;
-    rows = table.getElementsByTagName("li");
-
-    for (i = 0; i < (rows.length - 1); i++) {
-      shouldSwitch = false;
-      x = rows[i].getAttribute(metaType);
-      y = rows[i + 1].getAttribute(metaType);
-
-      if (metaType == "meta-distance") {
-        if (parseFloat(x) > parseFloat(y)) {
-          shouldSwitch = true;
-          break;
-        }
-      } else {
-        if (x.toLowerCase() > y.toLowerCase()) {
-          shouldSwitch = true;
-          break;
-        }
-      }
-    }
-    if (shouldSwitch) {
-      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-      switching = true;
-    }
-  }
-}
-</script>
-
-<script>
-if ("<?php echo $_SESSION['gps']?>" == "true"){
-  setInterval(function() {
-    GPSrefresh();
-  }, 5555);
-}
-
-function GPSrefresh() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    } else {
-        console.log("Geolocation is not supported by this browser.");
-    }
-
-    function showPosition(position) {
-      console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
-      
-      var xmlhttp;
-      if (window.XMLHttpRequest) {
-            xmlhttp = new XMLHttpRequest();
-      } else {
-            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-      }
-      xmlhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-            }
-      };
-      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-      xmlhttp.send();
-    }
-} 
-</script>
+<script src="js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 
 </body>
 </html>

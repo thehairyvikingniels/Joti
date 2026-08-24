@@ -1,40 +1,7 @@
 <?php
+// Displays published puzzle hints and provides a form for submitting solved RD coordinates as new hint locations.
 define("PAGE_NAME", "hints");
-session_start();
-if (!isset($_SESSION['id'])) {
-  header("Location: index");
-}
-require("dblogin.php");
-require_once("functies.php");
-
-
-// Get userdata
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while ($row = $result->fetch_assoc()) {
-    $vn = $row['voornaam'];
-    $priv = $row['priv'];
-  }
-}
-$stmt->close();
-
-
-// Get global site settings
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while ($row = $result->fetch_assoc()) {
-    $siteSettings[$row['Instelling']] = $row['Waarde'];
-  }
-}
-$stmt->close();
-
+require_once('includes/auth.php');
 
 // Insert voslocaties after using hints form
 if (isset($priv) && $priv > 0 && isset($_POST['subarea']) && isset($_POST['rdX']) && isset($_POST['rdY'])) {
@@ -51,7 +18,6 @@ if (isset($priv) && $priv > 0 && isset($_POST['subarea']) && isset($_POST['rdX']
   }
   $stmt->close();
 }
-
 
 ?>
 <!DOCTYPE html>
@@ -80,7 +46,6 @@ if (isset($priv) && $priv > 0 && isset($_POST['subarea']) && isset($_POST['rdX']
     <?php include_once('includes/topbar.php') ?>
 
     <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
       <div class="space-y-6 mb-12">
         <?php
@@ -202,37 +167,8 @@ if (isset($priv) && $priv > 0 && isset($_POST['subarea']) && isset($_POST['rdX']
     <?php require_once('includes/footer.php') ?>
   </div>
 
-  <script>
-    if ("<?php echo $_SESSION['gps'] ?>" == "true") {
-      setInterval(function () {
-        GPSrefresh();
-      }, 5555);
-    }
-
-    function GPSrefresh() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-      } else {
-        console.log("Geolocation is not supported by this browser.");
-      }
-      function showPosition(position) {
-        console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
-
-        var xmlhttp;
-        if (window.XMLHttpRequest) {
-          xmlhttp = new XMLHttpRequest();
-        } else {
-          xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-        xmlhttp.onreadystatechange = function () {
-          if (this.readyState == 4 && this.status == 200) {
-          }
-        };
-        xmlhttp.open("GET", "functies.php?lat=" + position.coords.latitude + "&lon=" + position.coords.longitude, true);
-        xmlhttp.send();
-      }
-    } 
-  </script>
+  <script src="js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 
   <script>
     const currentUserId = <?= isset($_SESSION['id']) ? $_SESSION['id'] : 0 ?>;

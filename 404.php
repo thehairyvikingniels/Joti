@@ -1,5 +1,6 @@
 <?php
-require("dblogin.php");
+// Branded 404 error page informing the user that the requested page was not found.
+require_once('dblogin.php');
 $stmt = $conn->prepare("SELECT Waarde FROM Site_Instellingen WHERE Instelling = 'GROUP_LOGO_SMALL_URL'");
 $stmt->execute();
 $res = $stmt->get_result();

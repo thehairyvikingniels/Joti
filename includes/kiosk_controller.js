@@ -1,3 +1,4 @@
+// Polls the kiosk status endpoint to handle remote redirects and automatic page refreshes for idle kiosk devices.
 (function() {
     console.log("[Kiosk] Kiosk Controller active");
 

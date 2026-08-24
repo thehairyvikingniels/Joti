@@ -1,10 +1,11 @@
 <?php
+// Runs the Python portal scraper, updates group points, assignments, and hunt statuses, and dispatches notifications.
 define("NAME", "jotiPortal"); 
 define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');
 $output = "";
 
-require_once("../dblogin.php");
+require_once('../dblogin.php');
 require_once("../functies.php");
 
 $datumtijd = date('Y-m-d H:i:s');

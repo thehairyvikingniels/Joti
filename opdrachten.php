@@ -1,46 +1,8 @@
 <?php
+// Displays game assignments and challenges with their time limits, completion statuses, and formatted instructions.
 define("PAGE_NAME", "opdrachten");
 
-session_start();
-
-if (!isset($_SESSION['id'])) {
-
-    header("Location: index");
-
-}
-
-require("dblogin.php");
-require_once("functies.php");
-
-// Get userdata
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $vn = $row['voornaam'];
-        $priv = $row['priv'];
-    }
-}
-$stmt->close();
-
-
-// Get global site settings
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-$siteSettings = array();
-
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-}
-$stmt->close();
-
+require_once('includes/auth.php');
 
 ?>
 
@@ -70,7 +32,6 @@ $stmt->close();
         <?php include_once('includes/topbar.php') ?>
 
         <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
             <div class="space-y-6">
                 <?php
@@ -193,37 +154,8 @@ $stmt->close();
         <?php require_once('includes/footer.php') ?>
     </div>
 
-    <script>
-        if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true") {
-            setInterval(function () {
-                GPSrefresh();
-            }, 5555);
-        }
-
-        function GPSrefresh() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(showPosition);
-            } else {
-                console.log("Geolocation is not supported by this browser.");
-            }
-            function showPosition(position) {
-                console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
-
-                var xmlhttp;
-                if (window.XMLHttpRequest) {
-                    xmlhttp = new XMLHttpRequest();
-                } else {
-                    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-                }
-                xmlhttp.onreadystatechange = function () {
-                    if (this.readyState == 4 && this.status == 200) {
-                    }
-                };
-                xmlhttp.open("GET", "functies.php?lat=" + position.coords.latitude + "&lon=" + position.coords.longitude, true);
-                xmlhttp.send();
-            }
-        } 
-    </script>
+    <script src="js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 
     <script>
         const currentUserId = <?= isset($_SESSION['id']) ? $_SESSION['id'] : 0 ?>;

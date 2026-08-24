@@ -1,3 +1,4 @@
+// Service worker providing offline navigation caching, Web Push notification display, and notification click routing.
 const CACHE_NAME = 'jotihunt-kiosk-v4';
 const OFFLINE_URL = '/offline.php';
 

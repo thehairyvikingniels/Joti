@@ -1,11 +1,6 @@
 <?php
-session_start();
-if (!isset($_SESSION['id'])) {
-    header("Location: index");
-    die();
-}
-require("dblogin.php");
-
+// AJAX handler for user profile updates, password changes, API token regeneration, avatar uploads, and notification preferences.
+require_once('includes/auth.php');
 if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['lastname']) && !empty($_POST['email'])) {
     
     // Profielgegevens updaten

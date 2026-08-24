@@ -1,4 +1,5 @@
 <?php
+// Footer component
 require_once(__DIR__ . '/helpers.php');
 ?>
 <div id="site-footer-wrapper" class="mt-auto flex-shrink-0">

@@ -1,48 +1,7 @@
 <?php
+// Score breakdowns and ranking information for the user's team alongside the full Jotihunt leaderboard.
 define("PAGE_NAME", "punten");
-session_start();
-
-if (!isset($_SESSION['id'])){
-  header("Location: index");
-}
-
-require("dblogin.php");
-
-
-// Get userdata
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $vn = $row['voornaam'];
-      $priv = $row['priv'];
-    }
-}
-$stmt->close();
-
-if (!isset($priv) || ($priv < 1 && !isset($_SESSION['kiosk_id']))) {
-    header("Location: home");
-    exit();
-}
-
-
-// Get global site settings
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-$siteSettings = array();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-}
-$stmt->close();
-
+require_once('includes/auth.php');
 
 // Get scout group count
 $stmt = $conn->prepare("SELECT id, count(*) as NUM FROM Groepen");
@@ -57,7 +16,6 @@ if ($result->num_rows > 0) {
   $groepaantal = "E?";
 }
 $stmt->close();
-
 
 // Get score from points table for 'Geuzen'
 $stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')");
@@ -115,7 +73,6 @@ $stmt->close();
   <?php include_once('includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
       <!-- Your Team Score Card -->
@@ -242,37 +199,8 @@ $stmt->close();
   <?php require_once('includes/footer.php') ?>
 </div>
 
-<script>
-if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
-  setInterval(function() {
-    GPSrefresh();
-  }, 5555);
-}
-
-function GPSrefresh() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    } else {
-        console.log("Geolocation is not supported by this browser.");
-    }
-    function showPosition(position) {
-      console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
-      
-      var xmlhttp;
-      if (window.XMLHttpRequest) {
-            xmlhttp = new XMLHttpRequest();
-      } else {
-            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-      }
-      xmlhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-            }
-      };
-      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-      xmlhttp.send();
-    }
-} 
-</script>
+<script src="js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 
 </body>
 </html>

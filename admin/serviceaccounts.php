@@ -1,34 +1,11 @@
 <?php
+// Manages kiosk and service accounts: create, edit, delete, regenerate tokens, and configure target pages and permissions.
 define("PAGE_NAME", "a_serviceaccounts");
-session_start();
-
-if (!isset($_SESSION['id'])){
-  header("Location: ../index");
-  exit();
-}
-if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
+require_once(__DIR__ . '/../includes/auth.php');
+if ($priv < 2) {
   header("Location: ../home");
   exit();
 }
-
-require("../dblogin.php");
-require_once(__DIR__ . '/../includes/helpers.php');
-
-// Huidige gebruiker rechten ophalen (voor sidebar)
-$stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    $vn = $row['voornaam'];
-    $priv = $row['priv'];
-} else {
-    session_destroy();
-    header("Location: ../index");
-    exit();
-}
-$stmt->close();
 
 $succes = false;
 $error_msg = "";

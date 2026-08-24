@@ -1,4 +1,5 @@
 <?php
+// Terminates the current user session, clears session cookies, and redirects to the landing page.
 session_start();
 
 $_SESSION = array();

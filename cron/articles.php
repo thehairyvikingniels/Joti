@@ -1,4 +1,5 @@
 <?php
+// Syncs news articles, assignments, and hints from the Jotihunt API into the database and triggers push notifications.
 define("NAME", "articles");
 define("JOTI_URL", "https://jotihunt.nl");
 define("START_TIME", microtime(true));

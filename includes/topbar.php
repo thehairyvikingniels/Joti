@@ -1,4 +1,5 @@
 <?php
+// Renders the top navigation header with page title, real-time fox statuses, GPS sharing toggle, and user profile info.
 if (isset($_SESSION['kiosk_id'])) {
     return;
 }

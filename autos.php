@@ -1,52 +1,7 @@
 <?php
+// Vehicle management interface for registering new hunt cars, deleting vehicles, and joining or leaving as passengers.
 define("PAGE_NAME", "autos");
-session_start();
-
-if (!isset($_SESSION['id'])){
-  header("Location: index");
-  exit();
-}
-
-require("dblogin.php");
-
-// Auto verwijderen
-if (isset($_GET['delauto'])){
-  if ($_SESSION['priv'] > 1) {
-    $stmt_del = $conn->prepare("DELETE FROM Auto WHERE kenteken=?");
-    $stmt_del->bind_param("s", $_GET['delauto']);
-  } else {
-    $stmt_del = $conn->prepare("DELETE FROM Auto WHERE kenteken=? AND eigenaar=?");
-    $stmt_del->bind_param("si", $_GET['delauto'], $_SESSION['id']);
-  }
-  
-  if ($stmt_del->execute()) {
-    $stmt_del->close();
-    header("Location: autos");
-    exit();
-  } else {
-    echo "Error updating record: " . $stmt_del->error;
-    $stmt_del->close();
-  }
-}
-
-// Get global site settings
-$stmt_settings = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt_settings->execute();
-$result_settings = $stmt_settings->get_result();
-$siteSettings = array();
-
-if ($result_settings->num_rows > 0) {
-    while($row = $result_settings->fetch_assoc()) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-} else {
-    echo "0 results";
-    $stmt_settings->close();
-    exit();
-}
-$stmt_settings->close();
-
-
+require_once('includes/auth.php');
 // Auto toevoegen
 if (isset($_POST['kenteken'])){
   $stmt_ins = $conn->prepare("INSERT INTO Auto (eigenaar, kenteken) VALUES (?, ?) ON DUPLICATE KEY UPDATE eigenaar = eigenaar");
@@ -57,7 +12,6 @@ if (isset($_POST['kenteken'])){
   }
   $stmt_ins->close();
 }
-
 
 // Gebruikersgegevens ophalen
 $stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
@@ -77,7 +31,6 @@ if (!isset($priv) || ($priv < 1 && !isset($_SESSION['kiosk_id']))) {
   header("Location: home");
   exit();
 }
-
 
 // In of uitstappen als bijrijder
 if (isset($_POST['carid'])) {
@@ -122,7 +75,6 @@ if (isset($_POST['carid'])) {
   <?php include_once('includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       
@@ -263,38 +215,8 @@ if (isset($_POST['carid'])) {
 </div>
 
 <script type="text/javascript" src="includes/numberPlate.js"></script>
-<script>
-if ("<?php echo $_SESSION['gps']?>" == "true"){
-  setInterval(function() {
-    GPSrefresh();
-  }, 5555);
-}
-  
-function GPSrefresh() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    } else {
-        console.log("Geolocation is not supported by this browser.");
-    }
-    
-    function showPosition(position) {
-      console.log("Latitude: " + position.coords.latitude + "\nLongitude: " + position.coords.longitude);
-      
-      var xmlhttp;
-      if (window.XMLHttpRequest) {
-            xmlhttp = new XMLHttpRequest();
-      } else {
-            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-      }
-      xmlhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-            }
-      };
-      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-      xmlhttp.send();
-    }
-} 
-</script>
+<script src="js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 
 </body>
 </html>

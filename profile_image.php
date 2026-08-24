@@ -1,4 +1,5 @@
 <?php
+// Delivers user profile images in requested resolutions with HTTP caching headers.
 session_start();
 if (!isset($_SESSION['id'])) {
     header("HTTP/1.0 403 Forbidden");
