@@ -251,8 +251,8 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
     // auto-open welcome modal on page load and force 7s read-delay with countdown
     (function() {
       window.addEventListener('load', function() {
-        var modal = document.getElementById('welcomeModal');
-        var modalContent = document.getElementById('welcomeModalContent');
+        const modal = document.getElementById('welcomeModal');
+        const modalContent = document.getElementById('welcomeModalContent');
         if (!modal) return;
         
         modal.classList.remove('hidden');
@@ -262,19 +262,19 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
           modalContent.classList.remove('-translate-y-4');
         }, 10);
 
-        var closeBtn = document.getElementById('welcomeClose');
-        var progress = document.getElementById('welcomeProgress');
-        var countdownEl = document.getElementById('closeCountdown');
-        var duration = 7000; // milliseconds
-        var start = Date.now();
+        const closeBtn = document.getElementById('welcomeClose');
+        const progress = document.getElementById('welcomeProgress');
+        const countdownEl = document.getElementById('closeCountdown');
+        const duration = 7000; // milliseconds
+        const start = Date.now();
 
-        var raf;
+        let raf;
         function tick() {
-          var elapsed = Date.now() - start;
-          var pct = Math.min(100, (elapsed / duration) * 100);
+          const elapsed = Date.now() - start;
+          const pct = Math.min(100, (elapsed / duration) * 100);
           progress.style.width = pct + '%';
 
-          var remaining = Math.max(0, Math.ceil((duration - elapsed) / 1000));
+          const remaining = Math.max(0, Math.ceil((duration - elapsed) / 1000));
           if (remaining > 0) {
             countdownEl.textContent = '(' + remaining + 's)';
           } else {
@@ -322,7 +322,7 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
 
 <script>
   // Your web app's Firebase configuration
-  var firebaseConfig = {
+  const firebaseConfig = {
     apiKey: "<?php echo addslashes($siteSettings['API_KEY_FIREBASE'] ?? ''); ?>",
     authDomain: "jotihunt-1539122761269.firebaseapp.com",
     databaseURL: "https://jotihunt-1539122761269.firebaseio.com",
@@ -337,154 +337,83 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
   firebase.analytics();
 </script>
 
-    </body>
-
-</html>
-
 <script>
+async function gebeurtenissen(str = '6') {
+  const icon = document.getElementById('gebeurtenissen_icon');
+  if (icon) icon.classList.add('w3-spin');
+  try {
+    const response = await fetch('functies.php?gebeurtenissen=' + encodeURIComponent(str));
+    if (response.ok) {
+      const html = await response.text();
+      const el = document.getElementById('gebeurtenissen');
+      if (el) el.innerHTML = html;
+    }
+  } catch (err) {
+    console.error('Error fetching gebeurtenissen:', err);
+  } finally {
+    if (icon) {
+      setTimeout(() => { icon.classList.remove('w3-spin'); }, 1000);
+    }
+  }
+}
 
-setInterval(function() {
+async function autosonderweg(str = '6') {
+  const icon = document.getElementById('autosonderweg_icon');
+  if (icon) icon.classList.add('w3-spin');
+  try {
+    const response = await fetch('functies.php?autos=' + encodeURIComponent(str));
+    if (response.ok) {
+      const html = await response.text();
+      const el = document.getElementById('autosonderweg');
+      if (el) el.innerHTML = html;
+    }
+  } catch (err) {
+    console.error('Error fetching autos:', err);
+  } finally {
+    if (icon) {
+      setTimeout(() => { icon.classList.remove('w3-spin'); }, 1000);
+    }
+  }
+}
 
-  invulgegevens();
+<?php if ($priv > 0): ?>
+async function invulgegevens(str = '6') {
+  const icon = document.getElementById('invulgegevens_icon');
+  if (icon) icon.classList.add('w3-spin');
+  try {
+    const response = await fetch('functies.php?invulgegevens=' + encodeURIComponent(str));
+    if (response.ok) {
+      const html = await response.text();
+      const el = document.getElementById('invulgegevens');
+      if (el) el.innerHTML = html;
+    }
+  } catch (err) {
+    console.error('Error fetching invulgegevens:', err);
+  } finally {
+    if (icon) {
+      setTimeout(() => { icon.classList.remove('w3-spin'); }, 1000);
+    }
+  }
+}
+<?php endif; ?>
 
+document.addEventListener('DOMContentLoaded', () => {
   gebeurtenissen();
-
   autosonderweg();
-
-}, 11111);
-
-  
-
-  
-
-// Overzicht - Gebeurtenissen ophalen
-
-window.onload = gebeurtenissen();
-
-function gebeurtenissen(str = "6") {
-
-  var icon = document.getElementById("gebeurtenissen_icon");
-
-  icon.classList.add("w3-spin");
-
-  var xhttp;
-
-  xhttp = new XMLHttpRequest();
-
-  xhttp.onreadystatechange = function() {
-
-    if (this.readyState == 4 && this.status == 200) {
-
-      document.getElementById("gebeurtenissen").innerHTML = this.responseText;
-
-      setTimeout(function() {
-
-        
-
-      icon.classList.remove("w3-spin");
-
-      }, 1000);
-
-      
-
-    }
-
-  };
-
-  xhttp.open("GET", "functies.php?gebeurtenissen="+str, true);
-
-  xhttp.send();
-
-}
-
- 
-
-  
-
-// Overzicht - Auto's ophalen
-
-window.onload = autosonderweg();
-
-function autosonderweg(str = "6") {
-
-  var icon = document.getElementById("autosonderweg_icon");
-
-  icon.classList.add("w3-spin");
-
-  var xhttp;
-
-  xhttp = new XMLHttpRequest();
-
-  xhttp.onreadystatechange = function() {
-
-    if (this.readyState == 4 && this.status == 200) {
-
-      document.getElementById("autosonderweg").innerHTML = this.responseText;
-
-      setTimeout(function() {
-
-        
-
-      icon.classList.remove("w3-spin");
-
-      }, 1000);
-
-      
-
-    }
-
-  };
-
-  xhttp.open("GET", "functies.php?autos="+str, true);
-
-  xhttp.send();
-
-}
-
-  
-
-<?php if ($priv > 0){ echo '
-
-// Overzicht -Invulgegevens ophalen
-
-window.onload = invulgegevens();
-
-function invulgegevens(str = "6") {
-
-  var icon = document.getElementById("invulgegevens_icon");
-
-  icon.classList.add("w3-spin");
-
-  var xhttp;
-
-  xhttp = new XMLHttpRequest();
-
-  xhttp.onreadystatechange = function() {
-
-    if (this.readyState == 4 && this.status == 200) {
-
-      document.getElementById("invulgegevens").innerHTML = this.responseText;
-
-      setTimeout(function() {
-
-        
-
-      icon.classList.remove("w3-spin");
-
-      }, 1000);
-
-    }
-
-  };
-
-  xhttp.open("GET", "functies.php?invulgegevens="+str, true);
-
-  xhttp.send();
-
-}
-
-';}?>  
-  </script>
-
-  <script src="js/gps.js"></script>
+  <?php if ($priv > 0): ?>
+  invulgegevens();
+  <?php endif; ?>
+  setInterval(() => {
+    gebeurtenissen();
+    autosonderweg();
+    <?php if ($priv > 0): ?>
+    invulgegevens();
+    <?php endif; ?>
+  }, 11111);
+});
+</script>
+
+<script src="js/gps.js"></script>
 <script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
+</body>
+</html>

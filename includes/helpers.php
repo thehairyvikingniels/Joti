@@ -182,3 +182,85 @@ if (!function_exists('getGitBuildInfo')) {
         return $info;
     }
 }
+/**
+ * Retrieve color and typography configuration for a given theme name.
+ *
+ * @param string $theme Theme identifier
+ * @return array{bg: string, text: string, sidebar_bg: string, sidebar_text: string, sidebar_active: string, card_bg: string, card_border: string, primary: string, font: string}
+ */
+if (!function_exists('getThemeConfig')) {
+    function getThemeConfig(string $theme): array {
+        $config = [];
+        
+        switch ($theme) {
+            case 'dark':
+                $config['bg'] = '#111827';
+                $config['text'] = '#F3F4F6';
+                $config['sidebar_bg'] = '#000000';
+                $config['sidebar_text'] = '#D1D5DB';
+                $config['sidebar_active'] = '#1F2937';
+                $config['card_bg'] = '#1F2937';
+                $config['card_border'] = '#374151';
+                $config['primary'] = '#3B82F6';
+                $config['font'] = "'Inter', sans-serif";
+                break;
+            case 'rose-gold':
+                $config['bg'] = '#FFF5F7';
+                $config['text'] = '#702459';
+                $config['sidebar_bg'] = '#FFE4E6';
+                $config['sidebar_text'] = '#831843';
+                $config['sidebar_active'] = '#FCC2D7';
+                $config['card_bg'] = '#FFFFFF';
+                $config['card_border'] = '#FBCFE8';
+                $config['primary'] = '#D53F8C';
+                $config['font'] = "'Quicksand', sans-serif";
+                break;
+            case 'cyber':
+                $config['bg'] = '#000000';
+                $config['text'] = '#22C55E';
+                $config['sidebar_bg'] = '#0A0A0A';
+                $config['sidebar_text'] = '#16A34A';
+                $config['sidebar_active'] = '#14532D';
+                $config['card_bg'] = '#050505';
+                $config['card_border'] = '#22C55E';
+                $config['primary'] = '#4ADE80';
+                $config['font'] = "'JetBrains Mono', monospace";
+                break;
+            case 'nature':
+                $config['bg'] = '#F0FDF4';
+                $config['text'] = '#14532D';
+                $config['sidebar_bg'] = '#14532D';
+                $config['sidebar_text'] = '#DCFCE7';
+                $config['sidebar_active'] = '#166534';
+                $config['card_bg'] = '#FFFFFF';
+                $config['card_border'] = '#BBF7D0';
+                $config['primary'] = '#16A34A';
+                $config['font'] = "'Merriweather', serif";
+                break;
+            case 'coral':
+                $config['bg'] = '#FFF7ED';
+                $config['text'] = '#7C2D12';
+                $config['sidebar_bg'] = '#9A3412';
+                $config['sidebar_text'] = '#FFEDD5';
+                $config['sidebar_active'] = '#7C2D12';
+                $config['card_bg'] = '#FFFFFF';
+                $config['card_border'] = '#FED7AA';
+                $config['primary'] = '#EA580C';
+                $config['font'] = "'Outfit', sans-serif";
+                break;
+            case 'light':
+            default:
+                $config['bg'] = '#F3F4F6';
+                $config['text'] = '#111827';
+                $config['sidebar_bg'] = '#1F2937';
+                $config['sidebar_text'] = '#E5E7EB';
+                $config['sidebar_active'] = '#374151';
+                $config['card_bg'] = '#FFFFFF';
+                $config['card_border'] = '#E5E7EB';
+                $config['primary'] = '#3B82F6';
+                $config['font'] = "'Inter', sans-serif";
+                break;
+        }
+        return $config;
+    }
+}

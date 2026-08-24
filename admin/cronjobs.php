@@ -145,134 +145,97 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
 </div>
 
 <script>
-if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
-  setInterval(function() {
-    GPSrefresh();
-  }, 5555);
-}
+let countAmont = document.getElementsByClassName('cronTimer').length;
 
-setInterval(function() {
-  TimerRefresh();
+setInterval(() => {
+    TimerRefresh();
 }, 1000);
 
-var countAmont = document.getElementsByClassName('cronTimer').length;
-
-setInterval(function() {
-  CronRefresh();
+setInterval(() => {
+    CronRefresh();
 }, 6000);
 
-function toggleCron(name) {
-  var xmlhttp;
-  if (window.XMLHttpRequest) {
-        xmlhttp = new XMLHttpRequest();
-  } else {
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-  }
-  xmlhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          CronRefresh();
+async function toggleCron(name) {
+    try {
+        const response = await fetch('cronjobs_helper.php?toggleCron=' + encodeURIComponent(name));
+        if (response.ok) {
+            CronRefresh();
         }
-  };
-  xmlhttp.open("GET","cronjobs_helper.php?toggleCron="+encodeURIComponent(name),true);
-  xmlhttp.send();
+    } catch (err) {
+        console.error('Error toggling cronjob:', err);
+    }
 }
 
 function TimerRefresh() {
-  for (let i = 0; i < countAmont; i++) {
-    var timer = document.getElementById("cron_exec_next_" + i);
-    var cron_enabled = document.getElementById("cron_enabled_" + i);
+    for (let i = 0; i < countAmont; i++) {
+        const timer = document.getElementById('cron_exec_next_' + i);
+        const cron_enabled = document.getElementById('cron_enabled_' + i);
+        if (!timer || !cron_enabled) continue;
 
-    if (cron_enabled.innerHTML.includes("off")) {
-      timer.innerHTML = " - disabled - ";
-      timer.className = "font-medium opacity-50";
-    } else {
-      timer.className = "font-medium text-blue-600 dark:text-blue-400";
-      if (timer.innerHTML !== "executing..." && timer.innerHTML !== "Onbekend" && timer.innerHTML !== " - disabled - ") {
-        let currentSecs = parseInt(timer.innerHTML);
-        if(!isNaN(currentSecs)) {
-            currentSecs--;
-            if (currentSecs <= 0) {
-              timer.innerHTML = "executing...";
-              timer.className = "font-bold text-orange-500 animate-pulse";
-            } else {
-              timer.innerHTML = currentSecs + " sec";
-            }        
-        }
-      }
-    }
-  }
-}
-
-function CronRefresh() {
-  var xmlhttp;
-  if (window.XMLHttpRequest) {
-      xmlhttp = new XMLHttpRequest();
-  } else {
-      xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-  }
-  xmlhttp.onreadystatechange = function() {
-      if (this.readyState == 4 && this.status == 200) {
-        try {
-            var json = JSON.parse(this.responseText);
-            countAmont = json.length;
-            
-            for(var i = 0; i < json.length; i++){
-              var cron_enabled = document.getElementById("cron_enabled_" + i);
-              var cron_status = document.getElementById("cron_status_" + i);
-              var cron_name = document.getElementById("cron_name_" + i);
-              var cron_interval = document.getElementById("cron_interval_" + i);
-              var cron_exec_time = document.getElementById("cron_exec_time_" + i);
-              var cron_exec_length = document.getElementById("cron_exec_length_" + i);
-              var cron_exec_next = document.getElementById("cron_exec_next_" + i);
-
-              if (json[i]['enabled'].includes('toggle-on')) {
-                  cron_enabled.innerHTML = '<i class="fas fa-toggle-on fa-fw text-green-500 text-xl align-middle"></i>';
-              } else {
-                  cron_enabled.innerHTML = '<i class="fas fa-toggle-off fa-fw text-gray-400 text-xl align-middle"></i>';
-              }
-              
-              cron_status.className = json[i]['stat_color'].replace('w3-text-green', 'text-green-500').replace('w3-text-yellow', 'text-yellow-500').replace('w3-text-red', 'text-red-500').replace('w3-text-grey', 'text-gray-400') + ' text-sm';
-              cron_status.title = "HTML " + json[i]['exec_status'] + " code.";
-              cron_name.innerHTML = json[i]['name'];
-              cron_name.title = json[i]['description'];
-              cron_interval.innerHTML = json[i]['interval'];
-              cron_exec_time.innerHTML = json[i]['exec_time'];
-              cron_exec_length.innerHTML = json[i]['exec_length'];
-              cron_exec_next.innerHTML = json[i]['exec_next'];
+        if (cron_enabled.innerHTML.includes('off')) {
+            timer.innerHTML = ' - disabled - ';
+            timer.className = 'font-medium opacity-50';
+        } else {
+            timer.className = 'font-medium text-blue-600 dark:text-blue-400';
+            if (timer.innerHTML !== 'executing...' && timer.innerHTML !== 'Onbekend' && timer.innerHTML !== ' - disabled - ') {
+                let currentSecs = parseInt(timer.innerHTML);
+                if (!isNaN(currentSecs)) {
+                    currentSecs--;
+                    if (currentSecs <= 0) {
+                        timer.innerHTML = 'executing...';
+                        timer.className = 'font-bold text-orange-500 animate-pulse';
+                    } else {
+                        timer.innerHTML = currentSecs + ' sec';
+                    }
+                }
             }
-        } catch (e) {
-            console.error("Ongeldige JSON ontvangen van cronjobs_helper.php");
         }
-      }
-  };
-  xmlhttp.open("GET","cronjobs_helper.php?cronjobs",true);
-  xmlhttp.send();
+    }
 }
 
-function GPSrefresh() {
-  if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(showPosition);
-  } else {
-      console.log("Geolocation is not supported by this browser.");
-  }
-  
-  function showPosition(position) {
-    var xmlhttp;
-    if (window.XMLHttpRequest) {
-        xmlhttp = new XMLHttpRequest();
-    } else {
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    xmlhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-            // Gelukt
-        }
-    };
-    xmlhttp.open("GET","../functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-    xmlhttp.send();
-  }
-} 
-</script>
+async function CronRefresh() {
+    try {
+        const response = await fetch('cronjobs_helper.php?cronjobs');
+        if (!response.ok) return;
+        const json = await response.json();
+        countAmont = json.length;
 
+        for (let i = 0; i < json.length; i++) {
+            const cron_enabled = document.getElementById('cron_enabled_' + i);
+            const cron_status = document.getElementById('cron_status_' + i);
+            const cron_name = document.getElementById('cron_name_' + i);
+            const cron_interval = document.getElementById('cron_interval_' + i);
+            const cron_exec_time = document.getElementById('cron_exec_time_' + i);
+            const cron_exec_length = document.getElementById('cron_exec_length_' + i);
+            const cron_exec_next = document.getElementById('cron_exec_next_' + i);
+
+            if (cron_enabled) {
+                if (json[i]['enabled'].includes('toggle-on')) {
+                    cron_enabled.innerHTML = '<i class="fas fa-toggle-on fa-fw text-green-500 text-xl align-middle"></i>';
+                } else {
+                    cron_enabled.innerHTML = '<i class="fas fa-toggle-off fa-fw text-gray-400 text-xl align-middle"></i>';
+                }
+            }
+
+            if (cron_status) {
+                cron_status.className = json[i]['stat_color'].replace('w3-text-green', 'text-green-500').replace('w3-text-yellow', 'text-yellow-500').replace('w3-text-red', 'text-red-500').replace('w3-text-grey', 'text-gray-400') + ' text-sm';
+                cron_status.title = 'HTML ' + json[i]['exec_status'] + ' code.';
+            }
+            if (cron_name) {
+                cron_name.innerHTML = json[i]['name'];
+                cron_name.title = json[i]['description'];
+            }
+            if (cron_interval) cron_interval.innerHTML = json[i]['interval'];
+            if (cron_exec_time) cron_exec_time.innerHTML = json[i]['exec_time'];
+            if (cron_exec_length) cron_exec_length.innerHTML = json[i]['exec_length'];
+            if (cron_exec_next) cron_exec_next.innerHTML = json[i]['exec_next'];
+        }
+    } catch (e) {
+        console.error('Ongeldige JSON ontvangen van cronjobs_helper.php', e);
+    }
+}
+</script>
+<script src="../js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 </body>
 </html>

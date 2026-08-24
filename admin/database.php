@@ -243,36 +243,9 @@ $result_voslocaties = $stmt_vos->get_result();
         document.getElementById('deleteLink').href = '../functies.php?verwijder_voslocatie=' + id;
         document.getElementById('deleteModal').classList.remove('hidden');
     }
-
-    // GPS refresh functie
-    if ("<?php echo $_SESSION['gps'] ?? 'false'; ?>" == "true") {
-        setInterval(function() {
-            GPSrefresh();
-        }, 5555);
-    }
-
-    function GPSrefresh() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(showPosition);
-        } else {
-            console.log("Geolocation is not supported by this browser.");
-        }
-
-        function showPosition(position) {
-            console.log("Latitude: " + position.coords.latitude + "\nLongitude: " + position.coords.longitude);
-            if (window.XMLHttpRequest) {
-                xmlhttp = new XMLHttpRequest();
-            } else {
-                xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-            }
-            xmlhttp.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {}
-            };
-            xmlhttp.open("GET", "../functies.php?lat=" + position.coords.latitude + "&lon=" + position.coords.longitude, true);
-            xmlhttp.send();
-        }
-    }
 </script>
+<script src="../js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 
 </body>
 </html>

@@ -93,7 +93,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Ophalen Kiosk Accounts
 $kiosk_data = [];
-$res = $conn->query("SELECT * FROM Kiosk_Accounts ORDER BY id DESC");
+$stmt_kiosk = $conn->prepare("SELECT * FROM Kiosk_Accounts ORDER BY id DESC");
+$stmt_kiosk->execute();
+$res = $stmt_kiosk->get_result();
 if ($res) {
     while($row = $res->fetch_assoc()) {
         $kiosk_data[] = $row;
@@ -352,7 +354,7 @@ $stmt_settings->close();
 
 <script>
     function showToken(token, id) {
-        var fullUrl = window.location.origin + '/kiosk.php?auth=' + token;
+        const fullUrl = window.location.origin + '/kiosk.php?auth=' + token;
         document.getElementById('tokenDisplay').value = fullUrl;
         document.getElementById('regenAccountId').value = id;
         document.getElementById('tokenModal').classList.remove('hidden');
@@ -363,7 +365,7 @@ $stmt_settings->close();
         document.getElementById('deleteModal').classList.remove('hidden');
     }
     function copyToken() {
-        var copyText = document.getElementById("tokenDisplay");
+        const copyText = document.getElementById("tokenDisplay");
         copyText.select();
         copyText.setSelectionRange(0, 99999);
         navigator.clipboard.writeText(copyText.value);

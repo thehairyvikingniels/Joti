@@ -345,7 +345,7 @@ function confirmDelete(settingName) {
     document.getElementById('deleteModalText').innerHTML = "Weet je zeker dat je de instelling '<strong>" + settingName + "</strong>' wilt verwijderen?";
     
     // Set the href for the final delete button
-    var deleteUrl = "settings?delete_setting=" + encodeURIComponent(settingName);
+    const deleteUrl = "settings?delete_setting=" + encodeURIComponent(settingName);
     document.getElementById('confirmDeleteButton').href = deleteUrl;
 
     // Show the modal
@@ -353,5 +353,7 @@ function confirmDelete(settingName) {
 }
 </script>
 
+<script src="../js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 </body>
 </html>

@@ -28,14 +28,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // Haal gebruikers op die een abonnement hebben
-$subRes = $conn->query("SELECT DISTINCT g.id, g.voornaam, g.achternaam, g.priv FROM Gebruikers g JOIN Notification_Subscriptions s ON g.id = s.user_id ORDER BY g.voornaam");
+$stmt_sub = $conn->prepare("SELECT DISTINCT g.id, g.voornaam, g.achternaam, g.priv FROM Gebruikers g JOIN Notification_Subscriptions s ON g.id = s.user_id ORDER BY g.voornaam");
+$stmt_sub->execute();
+$subRes = $stmt_sub->get_result();
 $subscribed_users = [];
 while ($r = $subRes->fetch_assoc()) {
     $subscribed_users[] = $r;
 }
 
 // Haal backlog op
-$backlogRes = $conn->query("SELECT b.*, g.voornaam, g.achternaam FROM Notification_Backlog b LEFT JOIN Gebruikers g ON b.user_id = g.id ORDER BY b.added_on DESC LIMIT 100");
+$stmt_backlog = $conn->prepare("SELECT b.*, g.voornaam, g.achternaam FROM Notification_Backlog b LEFT JOIN Gebruikers g ON b.user_id = g.id ORDER BY b.added_on DESC LIMIT 100");
+$stmt_backlog->execute();
+$backlogRes = $stmt_backlog->get_result();
 ?>
 <!DOCTYPE html>
 <html lang="nl">

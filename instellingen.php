@@ -173,15 +173,15 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
         </div>
         
         <script>
-        function changeTheme(newTheme) {
-            var xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {
+        async function changeTheme(newTheme) {
+            try {
+                const response = await fetch("<?= $notInAdminfolder ?>functies.php?set_theme=" + encodeURIComponent(newTheme));
+                if (response.ok) {
                     window.location.href = window.location.pathname + window.location.search;
                 }
-            };
-            xhttp.open("GET", "<?= $notInAdminfolder ?>functies.php?set_theme=" + newTheme, true);
-            xhttp.send();
+            } catch (e) {
+                console.error('Error setting theme:', e);
+            }
         }
         </script>
       </div>

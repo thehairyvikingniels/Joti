@@ -165,8 +165,8 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
 <div id="myOverlay" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden transition-opacity" onclick="w3_close()"></div>
 
 <script>
-var mySidebar = document.getElementById("mySidebar");
-var overlayBg = document.getElementById("myOverlay");
+const mySidebar = document.getElementById("mySidebar");
+const overlayBg = document.getElementById("myOverlay");
 
 function w3_open() {
     mySidebar.classList.remove("-translate-x-full");
