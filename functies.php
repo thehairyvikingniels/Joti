@@ -555,10 +555,13 @@ function send_push_notification($to_user, $title, $message, $url = '/', $initiat
     
     $users = [];
     if ($to_user === 'ALL') {
-        $res = $conn->query("SELECT DISTINCT s.user_id, g.notification_prefs FROM Notification_Subscriptions s JOIN Gebruikers g ON s.user_id = g.id");
+        $stmt_all = $conn->prepare("SELECT DISTINCT s.user_id, g.notification_prefs FROM Notification_Subscriptions s JOIN Gebruikers g ON s.user_id = g.id");
+        $stmt_all->execute();
+        $res = $stmt_all->get_result();
         while ($row = $res->fetch_assoc()) {
             $users[$row['user_id']] = $row['notification_prefs'];
         }
+        $stmt_all->close();
     } else {
         $target_ids = is_array($to_user) ? $to_user : [$to_user];
         if (empty($target_ids)) return;

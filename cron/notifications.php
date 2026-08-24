@@ -19,11 +19,14 @@ function log2DB(string $entry) {
     $output .= $entry."\n";
 }
 
-$res_settings = $conn->query("SELECT Instelling, Waarde FROM Site_Instellingen");
+$stmt_settings = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen");
+$stmt_settings->execute();
+$res_settings = $stmt_settings->get_result();
 $site_settings = [];
 while ($r = $res_settings->fetch_assoc()) {
     $site_settings[$r['Instelling']] = $r['Waarde'];
 }
+$stmt_settings->close();
 
 $publicKey = $site_settings['VAPID_PUBLIC_KEY'] ?? '';
 $privateKey = $site_settings['VAPID_PRIVATE_KEY'] ?? '';
@@ -45,8 +48,9 @@ $auth = [
 $webPush = new WebPush($auth);
 
 // Get unsent notifications that haven't expired
-$query = "SELECT * FROM Notification_Backlog WHERE status = 'pending' AND (send_before IS NULL OR send_before > NOW())";
-$res = $conn->query($query);
+$stmt_pending = $conn->prepare("SELECT * FROM Notification_Backlog WHERE status = 'pending' AND (send_before IS NULL OR send_before > NOW())");
+$stmt_pending->execute();
+$res = $stmt_pending->get_result();
 
 if ($res->num_rows === 0) {
     log2DB("No pending notifications.");

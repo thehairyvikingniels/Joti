@@ -29,20 +29,16 @@ $user_lat = null;
 $user_lon = null;
 
 if ($user_id > 0) {
-    $stmt = $conn->prepare('SELECT * FROM Gebruikers WHERE id = ?');
-    $stmt->bind_param('i', $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($row = $result->fetch_assoc()) {
-        $first_name = $row['voornaam'];
-        $last_name = $row['achternaam'];
-        $email = $row['email'];
-        $telefoon = $row['telefoon'] ?? '';
-        $profile_picture = $row['profile_picture'] ?? '';
-        $privilege = (int)$row['priv'];
-        $user_lat = $row['lat'] ?: 51.98769228691746;  // Default: HQ coordinates
-        $user_lon = $row['lon'] ?: 5.876286397679744;
+    $user_data = fetchUserById($conn, $user_id);
+    if ($user_data) {
+        $first_name = $user_data['voornaam'];
+        $last_name = $user_data['achternaam'];
+        $email = $user_data['email'];
+        $telefoon = $user_data['telefoon'] ?? '';
+        $profile_picture = $user_data['profile_picture'] ?? '';
+        $privilege = (int)$user_data['priv'];
+        $user_lat = $user_data['lat'] ?: 51.98769228691746;  // Default: HQ coordinates
+        $user_lon = $user_data['lon'] ?: 5.876286397679744;
     } else {
         // User no longer exists in DB — destroy session
         session_destroy();
@@ -50,7 +46,6 @@ if ($user_id > 0) {
         header('Location: ' . $redirect);
         exit();
     }
-    $stmt->close();
 }
 
 // 5. Kiosk session fallback

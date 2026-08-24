@@ -1,15 +1,9 @@
 <?php
+// Load database access functions
+require_once(__DIR__ . '/db.php');
+
 // Load global settings
-$site_settings = [];
-$stmt_settings = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen");
-$stmt_settings->execute();
-$res_settings = $stmt_settings->get_result();
-if ($res_settings) {
-    while($r = $res_settings->fetch_assoc()) {
-        $site_settings[$r['Instelling']] = $r['Waarde'];
-    }
-}
-$stmt_settings->close();
+$site_settings = fetchSiteSettings($conn);
 
 // Parse dynamic fox names and colors
 $fox_names = array_map('trim', explode(',', $site_settings['FOX_NAMES'] ?? 'Alpha,Bravo,Charlie,Delta,Echo,Foxtrot,Golf,Hotel'));
@@ -25,5 +19,3 @@ if (!function_exists('getFoxColor')) {
         return "#000000";
     }
 }
-
-?>

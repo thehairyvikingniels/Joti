@@ -24,7 +24,9 @@ GROUP BY
 HAVING
   nextcron IS NULL OR (UNIX_TIMESTAMP(now()) + 7200) >= nextcron - 12"; 
 
-$result = $conn->query($sql);
+$stmt_cron = $conn->prepare($sql);
+$stmt_cron->execute();
+$result = $stmt_cron->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {

@@ -94,9 +94,7 @@ $p4 = 200;
 $p5 = $output;
 $stmt->execute();
 
-if ($conn->query($sql) === TRUE) {
-  
-}
+
 $stmt->close();
 $conn->close();
 
