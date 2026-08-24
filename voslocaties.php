@@ -6,32 +6,6 @@ require_once('includes/auth.php');
 
 $message = '';
 
-/**
- * Converts RD (Rijksdriehoekstelsel) coordinates to WGS84 (Latitude/Longitude).
- * Provides an approximation based on the formulas from the Dutch Kadaster.
- *
- * @param float $rd_x The RD X-coordinate.
- * @param float $rd_y The RD Y-coordinate.
- * @return array An associative array containing 'lat' and 'lon'.
- */
-function convert_rd_to_lat_lon($rd_x, $rd_y) {
-    $X0 = 155000;
-    $Y0 = 463000;
-    $phi0 = 52.15517440;
-    $lambda0 = 5.38720621;
-
-    $dx = ($rd_x - $X0) * 1E-5;
-    $dy = ($rd_y - $Y0) * 1E-5;
-
-    $sum_lat = (3235.65389 * $dy) + (-32.58297 * pow($dx, 2)) + (-0.2475 * pow($dy, 2)) + (-0.84978 * pow($dx, 2) * $dy) + (-0.0655 * pow($dy, 3)) + (-0.01709 * pow($dx, 2) * pow($dy, 2)) + (-0.00738 * $dx) + (0.0053 * pow($dx, 4)) + (-0.00039 * pow($dx, 2) * pow($dy, 3)) + (0.00033 * pow($dx, 4) * $dy) + (-0.00012 * $dx * $dy);
-
-    $sum_lon = (5260.52916 * $dx) + (105.94684 * $dx * $dy) + (2.45656 * $dx * pow($dy, 2)) + (-0.81885 * pow($dx, 3)) + (0.05594 * $dx * pow($dy, 3)) + (-0.05607 * pow($dx, 3) * $dy) + (0.01199 * $dy) + (-0.00256 * pow($dx, 3) * pow($dy, 2)) + (0.00128 * $dx * pow($dy, 4)) + (0.00022 * pow($dy, 2)) + (-0.00022 * pow($dx, 2)) + (0.00026 * pow($dx, 5));
-
-    $lat = $phi0 + $sum_lat / 3600;
-    $lon = $lambda0 + $sum_lon / 3600;
-
-    return ['lat' => $lat, 'lon' => $lon];
-}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_fox_location'])) {
     // Sanitize and retrieve form data
@@ -53,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_fox_location'])
         $rd_x = filter_input(INPUT_POST, 'rd_x', FILTER_VALIDATE_FLOAT);
         $rd_y = filter_input(INPUT_POST, 'rd_y', FILTER_VALIDATE_FLOAT);
         if ($rd_x && $rd_y) {
-            $converted_coords = convert_rd_to_lat_lon($rd_x, $rd_y);
+            $converted_coords = convertRdToWgs($rd_x, $rd_y);
             $lat = $converted_coords['lat'];
             $lon = $converted_coords['lon'];
         }

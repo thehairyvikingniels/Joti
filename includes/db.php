@@ -190,3 +190,47 @@ function send_push_notification(
     $stmt->close();
     return true;
 }
+
+/**
+ * Fetch ordered GPS coordinate points for fox teams within game boundaries.
+ *
+ * @param mysqli $conn Active database connection
+ * @param array<string> $foxTeams List of fox team names
+ * @param string $timeFilterSql Additional SQL fragment for time filtering
+ * @param string $timeFilterTypes Binding types for time filter
+ * @param array $timeFilterParams Parameters for time filter
+ * @return array<string, array<int, array{lat: float, lon: float, time: DateTime}>>
+ */
+function fetchFoxPathPoints(
+    mysqli $conn,
+    array $foxTeams,
+    string $timeFilterSql = '',
+    string $timeFilterTypes = '',
+    array $timeFilterParams = []
+): array {
+    $results = [];
+    foreach ($foxTeams as $deelgebied) {
+        $sql = "SELECT coordinaat_x, coordinaat_y, ingestuurd_op FROM Voslocaties WHERE deelgebied = ? AND coordinaat_x BETWEEN 51.5 AND 52.6 AND coordinaat_y BETWEEN 5.0 AND 6.8 " . $timeFilterSql . " ORDER BY ingestuurd_op ASC";
+        $stmt = $conn->prepare($sql);
+        if ($stmt) {
+            $types = "s" . $timeFilterTypes;
+            $params = array_merge([$deelgebied], $timeFilterParams);
+            $stmt->bind_param($types, ...$params);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $points = [];
+            if ($res && $res->num_rows > 0) {
+                while ($row = $res->fetch_assoc()) {
+                    $points[] = [
+                        'lat' => (float)$row['coordinaat_x'],
+                        'lon' => (float)$row['coordinaat_y'],
+                        'time' => new DateTime($row['ingestuurd_op'])
+                    ];
+                }
+            }
+            $stmt->close();
+            $results[$deelgebied] = $points;
+        }
+    }
+    return $results;
+}

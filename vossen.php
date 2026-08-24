@@ -92,13 +92,6 @@ $future_color = 'w3-light-grey'; // Grey for future
 // --- STATS CALCULATION ---
 $stats = [];
 
-// Helper function to format seconds into HH:MM:SS
-function format_seconds($seconds) {
-    $h = floor($seconds / 3600);
-    $m = floor(($seconds % 3600) / 60);
-    $s = $seconds % 60;
-    return sprintf('%02d:%02d:%02d', $h, $m, $s);
-}
 
 foreach ($fox_teams as $team) {
     // Array uitgebreid met 'hunts' teller
