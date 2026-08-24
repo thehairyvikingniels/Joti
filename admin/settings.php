@@ -308,38 +308,6 @@ $stmt_groups->close();
 </div>
 
 <script>
-if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
-  setInterval(function() {
-    GPSrefresh();
-  }, 5555);
-}
-
-function GPSrefresh() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    } else {
-        console.log("Geolocation is not supported by this browser.");
-    }
-    
-    function showPosition(position) {
-        console.log("Latitude: " + position.coords.latitude + "\nLongitude: " + position.coords.longitude);
-        
-        var xmlhttp;
-        if (window.XMLHttpRequest) {
-            xmlhttp = new XMLHttpRequest();
-        } else {
-            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-        xmlhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-            }
-        };
-        xmlhttp.open("GET", "../functies.php?lat=" + position.coords.latitude + "&lon=" + position.coords.longitude, true);
-        xmlhttp.send();
-    }
-}
-
-// Show modal for deleting a setting
 function confirmDelete(settingName) {
     // Set the dynamic text in the modal
     document.getElementById('deleteModalText').innerHTML = "Weet je zeker dat je de instelling '<strong>" + settingName + "</strong>' wilt verwijderen?";
