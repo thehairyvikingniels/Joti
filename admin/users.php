@@ -65,26 +65,21 @@ $stmt_users->close();
           <h3 class="text-xl font-bold">Gebruikers</h3>
         </div>
         <div class="p-0">
-          <?php if (isset($succes)){
-            echo "
-            <div class='bg-green-100 border border-green-400 text-green-700 px-4 py-3 m-4 rounded relative shadow-sm'>
-              <span onclick=\"this.parentElement.style.display='none'\" class=\"absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer\">
-                <i class=\"fas fa-times opacity-70 hover:opacity-100 transition\"></i>
+          <?php if (!empty($succes_msg)): ?>
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 m-4 rounded relative shadow-sm">
+              <span onclick="this.parentElement.style.display='none'" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">
+                <i class="fas fa-times opacity-70 hover:opacity-100 transition"></i>
               </span>
-              <p class='font-bold'>Succes!</p>
+              <p class="font-bold"><?= htmlspecialchars($succes_msg) ?></p>
             </div>
-            ";
-          } elseif (isset($error_msg)) {
-            echo "
-            <div class='bg-red-100 border border-red-400 text-red-700 px-4 py-3 m-4 rounded relative shadow-sm'>
-              <span onclick=\"this.parentElement.style.display='none'\" class=\"absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer\">
-                <i class=\"fas fa-times opacity-70 hover:opacity-100 transition\"></i>
+          <?php elseif (!empty($error_msg)): ?>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 m-4 rounded relative shadow-sm">
+              <span onclick="this.parentElement.style.display='none'" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">
+                <i class="fas fa-times opacity-70 hover:opacity-100 transition"></i>
               </span>
-              <p>".htmlspecialchars($error_msg)."</p>
+              <p><?= htmlspecialchars($error_msg) ?></p>
             </div>
-            ";
-          }
-          ?>
+          <?php endif; ?>
           
           <!-- Desktop Table -->
           <div class="hidden md:block overflow-x-auto">

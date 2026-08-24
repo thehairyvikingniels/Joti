@@ -298,3 +298,31 @@ if (!function_exists('formatSeconds')) {
         return $hours . "u " . $remainingMinutes . "m";
     }
 }
+
+/**
+ * Format duration in seconds into HH:MM:SS format (e.g. '01:23:45').
+ *
+ * @param int 
+ * @return string
+ */
+
+/**
+ * Format duration in seconds into HH:MM:SS format (e.g. '01:23:45').
+ *
+ * @param int $seconds
+ * @return string
+ */
+if (!function_exists('formatDurationHms')) {
+    function formatDurationHms(int $seconds): string {
+        $h = floor($seconds / 3600);
+        $m = floor(($seconds % 3600) / 60);
+        $s = $seconds % 60;
+        return sprintf('%02d:%02d:%02d', $h, $m, $s);
+    }
+}
+
+if (!function_exists('format_seconds')) {
+    function format_seconds(int $seconds): string {
+        return formatDurationHms($seconds);
+    }
+}

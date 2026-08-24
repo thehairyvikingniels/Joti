@@ -1,5 +1,6 @@
 <?php
 // Load database access functions
+require_once(__DIR__ . '/helpers.php');
 require_once(__DIR__ . '/db.php');
 
 // Load global settings

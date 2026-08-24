@@ -7,8 +7,8 @@ if ($privilege < 3) {
     exit();
 }
 
-$succes_message = '';
-$error_message = '';
+$succes_message = $_GET['msg'] ?? '';
+$error_message = $_GET['error'] ?? '';
 
 // Process form to UPDATE site settings
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['action'] === 'update_settings') {
