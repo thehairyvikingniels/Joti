@@ -186,7 +186,6 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
 
   </main>
 
-  <!-- Footer -->
   <?php require_once('../includes/footer.php') ?>
 </div>
 

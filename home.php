@@ -216,7 +216,6 @@ $stmt->close();
       </div>
   </main>
   
-  <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
 </div> <!-- End Main Content / flex-1 -->
 

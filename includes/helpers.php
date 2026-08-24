@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * Convert timestamp or datetime string to human-readable Dutch relative time.
+ *
+ * @param string|int|null $ts
+ * @return string
+ */
 if (!function_exists('time2str')) {
     function time2str($ts) {
         if (empty($ts)) {
@@ -49,5 +55,62 @@ if (!function_exists('time2str')) {
             if (date('n', $ts) == date('n') + 1) { return 'Volgende maand'; }
             return date('d-m-Y H:i', $ts);
         }
+    }
+}
+
+/**
+ * Retrieve current Git commit hash and commit/build date.
+ *
+ * @return array{hash: string, date: string}
+ */
+if (!function_exists('getGitBuildInfo')) {
+    function getGitBuildInfo(): array {
+        $info = ['hash' => 'unknown', 'date' => 'unknown'];
+        $repoDir = dirname(__DIR__);
+
+        // 1. Try via Git CLI command
+        $gitOutput = @shell_exec('git -C ' . escapeshellarg($repoDir) . ' log -1 --format="%h|%cd" --date=format:"%d-%m-%Y %H:%M" 2>/dev/null');
+        if ($gitOutput && str_contains($gitOutput, '|')) {
+            $parts = explode('|', trim($gitOutput));
+            if (!empty($parts[0])) {
+                $info['hash'] = $parts[0];
+                $info['date'] = $parts[1] ?? 'unknown';
+                return $info;
+            }
+        }
+
+        // 2. Direct filesystem fallback (.git/HEAD and loose/packed refs)
+        $gitBasePath = $repoDir . '/.git';
+        $headFile = $gitBasePath . '/HEAD';
+
+        if (!file_exists($headFile)) {
+            return $info;
+        }
+
+        $headContents = trim((string)file_get_contents($headFile));
+
+        if (str_starts_with($headContents, 'ref:')) {
+            $refParts = explode(' ', $headContents);
+            $ref = trim($refParts[1] ?? '');
+            $refPath = $gitBasePath . '/' . $ref;
+
+            if (file_exists($refPath)) {
+                $hash = trim((string)file_get_contents($refPath));
+                $info['hash'] = substr($hash, 0, 7);
+                $info['date'] = date('d-m-Y H:i', filemtime($refPath));
+            } elseif (file_exists($gitBasePath . '/packed-refs')) {
+                $packed = (string)file_get_contents($gitBasePath . '/packed-refs');
+                if (preg_match('/^([a-f0-9]+)\s+' . preg_quote($ref, '/') . '/m', $packed, $matches)) {
+                    $info['hash'] = substr($matches[1], 0, 7);
+                    $info['date'] = date('d-m-Y H:i', filemtime($gitBasePath . '/packed-refs'));
+                }
+            }
+        } else {
+            // Detached HEAD
+            $info['hash'] = substr($headContents, 0, 7);
+            $info['date'] = date('d-m-Y H:i', filemtime($headFile));
+        }
+
+        return $info;
     }
 }

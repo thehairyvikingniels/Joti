@@ -349,7 +349,6 @@ $stmt_groups->close();
     </div>
   </div>
 
-  <!-- Footer -->
   <?php require_once('../includes/footer.php') ?>
 </div>
 

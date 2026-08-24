@@ -146,7 +146,6 @@ $stmt->close();
 
   </main>
 
-  <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
 </div>
 

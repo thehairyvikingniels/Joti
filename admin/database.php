@@ -223,7 +223,6 @@ $result_voslocaties = $stmt_vos->get_result();
     </div>
   </div>
 
-  <!-- Footer -->
   <?php require_once('../includes/footer.php') ?>
 </div>
 

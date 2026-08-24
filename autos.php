@@ -259,7 +259,6 @@ if (isset($_POST['carid'])) {
     </div>
   </main>
 
-  <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
 </div>
 

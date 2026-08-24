@@ -379,7 +379,6 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
     </div>
   </div>
 
-  <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
 </div>
 

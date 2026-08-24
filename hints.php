@@ -199,7 +199,6 @@ if (isset($priv) && $priv > 0 && isset($_POST['subarea']) && isset($_POST['rdX']
       </div>
     </main>
 
-    <!-- Footer -->
     <?php require_once('includes/footer.php') ?>
   </div>
 

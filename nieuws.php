@@ -129,7 +129,6 @@ $stmt->close();
     </div>
   </main>
 
-  <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
 
 </div>
