@@ -313,7 +313,7 @@ function confirmDelete(settingName) {
     document.getElementById('deleteModalText').innerHTML = "Weet je zeker dat je de instelling '<strong>" + settingName + "</strong>' wilt verwijderen?";
     
     // Set the href for the final delete button
-    const deleteUrl = "settings?delete_setting=" + encodeURIComponent(settingName);
+    const deleteUrl = "settings_helper.php?delete_setting=" + encodeURIComponent(settingName);
     document.getElementById('confirmDeleteButton').href = deleteUrl;
 
     // Show the modal

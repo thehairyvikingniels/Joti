@@ -264,3 +264,37 @@ if (!function_exists('getThemeConfig')) {
         return $config;
     }
 }
+
+/**
+ * Generate a cryptographically secure random hexadecimal token.
+ *
+ * @param int $length Byte length of the token (output hex will be length * 2)
+ * @return string
+ */
+if (!function_exists('generateToken')) {
+    function generateToken(int $length = 32): string {
+        return bin2hex(random_bytes($length));
+    }
+}
+
+/**
+ * Format a number of seconds into human-readable Dutch duration (e.g. '2u 15m' or '45s').
+ *
+ * @param int $seconds
+ * @return string
+ */
+if (!function_exists('formatSeconds')) {
+    function formatSeconds(int $seconds): string {
+        if ($seconds < 60) {
+            return $seconds . "s";
+        }
+        $minutes = floor($seconds / 60);
+        $remainingSeconds = $seconds % 60;
+        if ($minutes < 60) {
+            return $minutes . "m " . $remainingSeconds . "s";
+        }
+        $hours = floor($minutes / 60);
+        $remainingMinutes = $minutes % 60;
+        return $hours . "u " . $remainingMinutes . "m";
+    }
+}
