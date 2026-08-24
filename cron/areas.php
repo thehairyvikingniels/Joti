@@ -12,7 +12,7 @@ require_once(__DIR__ . "/../functies.php");
 $datumtijd = date('Y-m-d H:i:s');
 
 
-// Vos-status ophalen
+// Fetch fox status
 log2DB("-VOSSEN<br>");
 $sql = "Select datumtijd FROM Voslog ORDER BY datumtijd desc LIMIT 1";
 $result = mysqli_query($conn, $sql);

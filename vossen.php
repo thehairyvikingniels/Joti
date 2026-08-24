@@ -151,7 +151,7 @@ foreach ($fox_teams as $team) {
         $last_status = $log[$team] ?? $last_status; 
     }
 
-    // --- NIEUW: Tellen van de hunts per spelhelft ---
+    // Count recorded hunts per game half
     $team_lower = strtolower($team);
     if (isset($hunts_data[$team_lower])) {
         foreach ($hunts_data[$team_lower] as $hunt_time_str) {

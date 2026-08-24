@@ -2,7 +2,7 @@
 // Administrative interface for viewing registered users, modifying privilege levels, resetting passwords, and deleting accounts.
 define("PAGE_NAME", "a_users");
 require_once(__DIR__ . '/../includes/auth.php');
-// Gebruiker updaten of verwijderen
+// Update or delete user
 if (isset($_POST["user"]) && isset($_POST['priv'])){
     $target_user_id = intval($_POST['user']);
     $new_priv = intval($_POST['priv']);
@@ -30,7 +30,7 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
 
     if ($allowed) {
         if ($new_priv === 4) {
-            // Verwijder de gebruiker als optie 4 is geselecteerd
+            // Delete user if option 4 (delete) is selected
             $stmt_update = $conn->prepare("DELETE FROM Gebruikers WHERE id=?");
             $stmt_update->bind_param("i", $target_user_id);
         } else {
@@ -50,7 +50,7 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
     }
 }
 
-// Reset Wachtwoord
+// Reset password
 if (isset($_POST['reset_password_user_id']) && isset($_POST['new_password'])) {
     $target_user_id = intval($_POST['reset_password_user_id']);
     $new_password = $_POST['new_password'];
@@ -199,7 +199,7 @@ if (isset($_POST['admin_upload_user_id']) && isset($_FILES['admin_profile_pictur
     $stmt_target->close();
 }
 
-// Haal alle gebruikers op en sla ze op in een array (voorkomt 2x dezelfde query uitvoeren)
+// Fetch all users into array to avoid duplicate queries
 $users_data = [];
 $stmt_users = $conn->prepare("SELECT id, voornaam, achternaam, email, priv, first_login, last_login, profile_picture FROM Gebruikers ORDER BY id ASC");
 $stmt_users->execute();

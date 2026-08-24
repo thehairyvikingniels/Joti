@@ -2,7 +2,7 @@
 // Administrative dashboard for composing and dispatching web push notifications and viewing the notification backlog.
 define("PAGE_NAME", "sa_notifications");
 require_once(__DIR__ . '/../includes/auth.php');
-// Controleer admin rechten
+// Check admin privileges
 if ($privilege < 2){
   header("Location: ../home");
   exit();
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// Haal gebruikers op die een abonnement hebben
+// Fetch users who have active push subscriptions
 $stmt_sub = $conn->prepare("SELECT DISTINCT g.id, g.voornaam, g.achternaam, g.priv FROM Gebruikers g JOIN Notification_Subscriptions s ON g.id = s.user_id ORDER BY g.voornaam");
 $stmt_sub->execute();
 $subRes = $stmt_sub->get_result();

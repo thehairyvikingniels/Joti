@@ -10,7 +10,7 @@ if ($privilege < 3) {
 $succes_message = '';
 $error_message = '';
 
-// Verwerken van formulier om instellingen te UPDATEN
+// Process form to UPDATE site settings
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['action'] === 'update_settings') {
     $all_updates_successful = true;
     
@@ -44,14 +44,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['
     }
 }
 
-// Verwerken van formulier om nieuwe instelling TOE TE VOEGEN
+// Process form to ADD a new setting
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['action'] === 'add_setting') {
     $newName = trim($_POST['add_setting_name'] ?? '');
     $newValue = trim($_POST['add_setting_value'] ?? '');
     $newDescription = trim($_POST['add_setting_description'] ?? '');
 
     if (!empty($newName)) {
-        // Controleer of de instelling al bestaat
+        // Check if setting already exists
         $check_stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM Site_Instellingen WHERE Instelling = ?");
         $check_stmt->bind_param("s", $newName);
         $check_stmt->execute();
@@ -81,7 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['
     }
 }
 
-// Verwerken van VERWIJDEREN van een instelling
+// Process DELETION of a setting
 if (isset($_GET['delete_setting'])) {
     $setting_to_delete = trim($_GET['delete_setting']);
     

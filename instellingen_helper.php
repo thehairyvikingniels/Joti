@@ -19,7 +19,7 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
 
 } elseif (!empty($_POST['pswd0']) && !empty($_POST['pswd1'])) {
     
-    // Wachtwoord updaten
+    // Update password
     if ($_POST['pswd0'] === $_POST['pswd1']) {
         $hashed_password = password_hash($_POST['pswd1'], PASSWORD_DEFAULT);
         

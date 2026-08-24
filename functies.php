@@ -46,7 +46,7 @@ if (isset($_GET['save_map_settings'])) {
 }
 
 
-// Verwijder een Voslocatie
+// Delete a fox location
 if (isset($_GET['verwijder_voslocatie'])) {
     // Check user privilege
     $stmt_priv = $conn->prepare("SELECT priv FROM Gebruikers WHERE id=?");
@@ -294,7 +294,7 @@ if (isset($_POST['toggle_toewijzing'])) {
     exit();
 }
   
-// elke x seconden gps locatie ophalen
+// Periodic GPS location update
 if (isset($_GET['lat']) && isset($_GET['lon'])) {
     $time = date("Y-m-d H:i:s");
   
@@ -360,7 +360,7 @@ if (isset($_GET['hunthintgedaan'])){
     }
 }
 
-// Invulgegevens voor homebase (tabel tonen)
+// Submission data table for homebase
 if (isset($_GET['invulgegevens'])){
     if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
         exit();
@@ -393,7 +393,7 @@ if (isset($_GET['invulgegevens'])){
     $stmt->close();
 }
 
-// autosonderweg ophalen
+// Fetch active hunt cars
 if (isset($_GET['autos'])){
     // rb
     $locatie["lat"] = 51.98761;
@@ -452,11 +452,11 @@ if (isset($_GET['autos'])){
 }
 
 
-// gebeurtenissen ophalen
+// Fetch event log
 if (isset($_GET['gebeurtenissen'])){
     $data = [];
     
-    // Opdrachten ophalen
+    // Fetch assignments
     $stmt_opdr = $conn->prepare("SELECT * FROM Opdrachten");
     $stmt_opdr->execute();
     $result = $stmt_opdr->get_result();
@@ -467,7 +467,7 @@ if (isset($_GET['gebeurtenissen'])){
     }
     $stmt_opdr->close();
   
-    // Hints ophalen
+    // Fetch hints
     $stmt_hints = $conn->prepare("SELECT * FROM Hints");
     $stmt_hints->execute();
     $result = $stmt_hints->get_result();
@@ -478,7 +478,7 @@ if (isset($_GET['gebeurtenissen'])){
     }
     $stmt_hints->close();
   
-    // Nieuws ophalen
+    // Fetch news
     $stmt_nieuws = $conn->prepare("SELECT * FROM Nieuws");
     $stmt_nieuws->execute();
     $result = $stmt_nieuws->get_result();
@@ -489,7 +489,7 @@ if (isset($_GET['gebeurtenissen'])){
     }
     $stmt_nieuws->close();
   
-    // Voslocaties ophalen
+    // Fetch fox locations
     $stmt_vos = $conn->prepare("SELECT * FROM Voslocaties");
     $stmt_vos->execute();
     $result = $stmt_vos->get_result();
@@ -510,7 +510,7 @@ if (isset($_GET['gebeurtenissen'])){
     
     echo '<table class="w-full text-sm text-left theme-text" id="gebeurtenissentabel"><tbody>';
     
-    // In tabel zetten
+    // Render table rows
     foreach($data as $element){
         switch ($element["type"]) {
             case "Opdracht": 

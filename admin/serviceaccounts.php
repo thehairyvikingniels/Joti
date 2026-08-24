@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Ophalen Kiosk Accounts
+// Fetch Kiosk service accounts
 $kiosk_data = [];
 $stmt_kiosk = $conn->prepare("SELECT * FROM Kiosk_Accounts ORDER BY id DESC");
 $stmt_kiosk->execute();
