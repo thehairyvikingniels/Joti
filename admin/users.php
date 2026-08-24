@@ -2,202 +2,20 @@
 // Administrative interface for viewing registered users, modifying privilege levels, resetting passwords, and deleting accounts.
 define("PAGE_NAME", "a_users");
 require_once(__DIR__ . '/../includes/auth.php');
-// Update or delete user
-if (isset($_POST["user"]) && isset($_POST['priv'])){
-    $target_user_id = intval($_POST['user']);
-    $new_priv = intval($_POST['priv']);
-
-    // Fetch current priv of target
-    $stmt_current = $conn->prepare("SELECT priv FROM Gebruikers WHERE id=?");
-    $stmt_current->bind_param("i", $target_user_id);
-    $stmt_current->execute();
-    $result_current = $stmt_current->get_result();
-    $current_priv = 0;
-    if ($result_current->num_rows > 0) {
-        $row_current = $result_current->fetch_assoc();
-        $current_priv = $row_current['priv'];
-    }
-    $stmt_current->close();
-
-    $allowed = false;
-    if ($_SESSION['priv'] >= 3) {
-        $allowed = true;
-    } else if ($_SESSION['priv'] == 2) {
-        if ($current_priv <= 2 && ($new_priv <= 2 || $new_priv == 4)) {
-            $allowed = true;
-        }
-    }
-
-    if ($allowed) {
-        if ($new_priv === 4) {
-            // Delete user if option 4 (delete) is selected
-            $stmt_update = $conn->prepare("DELETE FROM Gebruikers WHERE id=?");
-            $stmt_update->bind_param("i", $target_user_id);
-        } else {
-            // Update de privileges
-            $stmt_update = $conn->prepare("UPDATE Gebruikers SET priv=? WHERE id=?");
-            $stmt_update->bind_param("ii", $new_priv, $target_user_id);
-        }
-
-        if ($stmt_update->execute()) {
-            $succes = true;
-        } else {
-            $error_msg = "Error updating record: " . $stmt_update->error;
-        }
-        $stmt_update->close();
-    } else {
-        $error_msg = "Je hebt niet de juiste rechten om deze actie uit te voeren.";
-    }
+if ($privilege < 2) {
+    header("Location: ../home");
+    exit();
 }
 
-// Reset password
-if (isset($_POST['reset_password_user_id']) && isset($_POST['new_password'])) {
-    $target_user_id = intval($_POST['reset_password_user_id']);
-    $new_password = $_POST['new_password'];
-    
-    $stmt_target = $conn->prepare("SELECT priv FROM Gebruikers WHERE id=?");
-    $stmt_target->bind_param("i", $target_user_id);
-    $stmt_target->execute();
-    $result_target = $stmt_target->get_result();
-    
-    if ($result_target->num_rows > 0) {
-        $row_target = $result_target->fetch_assoc();
-        $target_priv = $row_target['priv'];
-        
-        $allowed = false;
-        if ($_SESSION['priv'] >= 3 && $target_priv <= 2) {
-            $allowed = true;
-        } else if ($_SESSION['priv'] == 2 && $target_priv <= 1) {
-            $allowed = true;
-        }
-        
-        if ($allowed) {
-            $hashed = password_hash($new_password, PASSWORD_DEFAULT);
-            $stmt_reset = $conn->prepare("UPDATE Gebruikers SET wachtwoord=? WHERE id=?");
-            $stmt_reset->bind_param("si", $hashed, $target_user_id);
-            if ($stmt_reset->execute()) {
-                $succes = true;
-            } else {
-                $error_msg = "Error updating wachtwoord: " . $stmt_reset->error;
-            }
-            $stmt_reset->close();
-        } else {
-            $error_msg = "Je hebt niet de juiste rechten om dit wachtwoord te resetten.";
-        }
-    }
-    $stmt_target->close();
+$succes = isset($_GET['msg']);
+$succes_msg = "";
+if (isset($_GET['msg'])) {
+    if ($_GET['msg'] === 'success') $succes_msg = "Gebruiker succesvol bijgewerkt!";
+    elseif ($_GET['msg'] === 'password_reset') $succes_msg = "Wachtwoord succesvol gereset!";
+    elseif ($_GET['msg'] === 'pic_success') $succes_msg = "Profielfoto succesvol geupload!";
+    else $succes_msg = "Actie succesvol uitgevoerd!";
 }
-
-// Impersonate
-if (isset($_POST['impersonate_user_id'])) {
-    $target_user_id = intval($_POST['impersonate_user_id']);
-    
-    $stmt_target = $conn->prepare("SELECT id, priv FROM Gebruikers WHERE id=?");
-    $stmt_target->bind_param("i", $target_user_id);
-    $stmt_target->execute();
-    $result_target = $stmt_target->get_result();
-    
-    if ($result_target->num_rows > 0) {
-        $row_target = $result_target->fetch_assoc();
-        $target_priv = $row_target['priv'];
-        
-        $allowed = false;
-        if ($_SESSION['priv'] >= 3 && $target_priv <= 2) {
-            $allowed = true;
-        } else if ($_SESSION['priv'] == 2 && $target_priv <= 1) {
-            $allowed = true;
-        }
-        
-        if ($allowed) {
-            $_SESSION['original_id'] = $_SESSION['id'];
-            $_SESSION['id'] = $row_target['id'];
-            $_SESSION['priv'] = $row_target['priv'];
-            header("Location: ../home");
-            exit();
-        } else {
-            $error_msg = "Je hebt niet de juiste rechten om deze gebruiker te imiteren.";
-        }
-    }
-    $stmt_target->close();
-}
-
-// Admin Profile Picture Upload
-if (isset($_POST['admin_upload_user_id']) && isset($_FILES['admin_profile_picture']) && $_FILES['admin_profile_picture']['error'] === UPLOAD_ERR_OK) {
-    $target_user_id = intval($_POST['admin_upload_user_id']);
-    $fileTmpPath = $_FILES['admin_profile_picture']['tmp_name'];
-    $fileType = mime_content_type($fileTmpPath);
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    
-    // Check permission logic
-    $stmt_target = $conn->prepare("SELECT priv FROM Gebruikers WHERE id=?");
-    $stmt_target->bind_param("i", $target_user_id);
-    $stmt_target->execute();
-    $result_target = $stmt_target->get_result();
-    
-    if ($result_target->num_rows > 0) {
-        $row_target = $result_target->fetch_assoc();
-        $target_priv = $row_target['priv'];
-        
-        $allowed = false;
-        if ($_SESSION['priv'] >= 3 && $target_priv <= 2) {
-            $allowed = true;
-        } else if ($_SESSION['priv'] == 2 && $target_priv <= 1) {
-            $allowed = true;
-        }
-        
-        if ($allowed && in_array($fileType, $allowedTypes)) {
-            if (!function_exists('imagecreatefromjpeg')) {
-                $error_msg = "De server mist de PHP GD extensie. Installeer php-gd om afbeeldingen te uploaden.";
-            } else {
-                $hash = bin2hex(random_bytes(8));
-            
-            if ($fileType == 'image/jpeg') $src = imagecreatefromjpeg($fileTmpPath);
-            elseif ($fileType == 'image/png') $src = imagecreatefrompng($fileTmpPath);
-            elseif ($fileType == 'image/webp') $src = imagecreatefromwebp($fileTmpPath);
-            
-            if ($src) {
-                $width = imagesx($src);
-                $height = imagesy($src);
-                $size = min($width, $height);
-                $x = ($width - $size) / 2;
-                $y = ($height - $size) / 2;
-                
-                $high_res = imagecreatetruecolor(512, 512);
-                $white = imagecolorallocate($high_res, 255, 255, 255);
-                imagefill($high_res, 0, 0, $white);
-                imagecopyresampled($high_res, $src, 0, 0, $x, $y, 512, 512, $size, $size);
-                imagejpeg($high_res, __DIR__ . "/../media/profiles/{$hash}_high.jpg", 90);
-                
-                $low_res = imagecreatetruecolor(128, 128);
-                $white = imagecolorallocate($low_res, 255, 255, 255);
-                imagefill($low_res, 0, 0, $white);
-                imagecopyresampled($low_res, $src, 0, 0, $x, $y, 128, 128, $size, $size);
-                imagejpeg($low_res, __DIR__ . "/../media/profiles/{$hash}_low.jpg", 80);
-                
-                imagedestroy($src);
-                imagedestroy($high_res);
-                imagedestroy($low_res);
-                
-                $stmt_upd = $conn->prepare("UPDATE Gebruikers SET profile_picture=? WHERE id=?");
-                $stmt_upd->bind_param("si", $hash, $target_user_id);
-                if ($stmt_upd->execute()) {
-                    $succes = true;
-                } else {
-                    $error_msg = "Database fout: " . $stmt_upd->error;
-                }
-                $stmt_upd->close();
-            } else {
-                $error_msg = "Fout bij verwerken afbeelding.";
-            }
-            } // end of function_exists check
-        } elseif (!$allowed) {
-            $error_msg = "Je hebt niet de juiste rechten om deze profielfoto te wijzigen.";
-        } else {
-            $error_msg = "Ongeldig bestandstype.";
-        }
-    }
-    $stmt_target->close();
-}
+$error_msg = $_GET['error'] ?? '';
 
 // Fetch all users into array to avoid duplicate queries
 $users_data = [];
@@ -481,7 +299,7 @@ $stmt_users->close();
                           <h3 class='text-lg font-bold'><i class='fas fa-key mr-2'></i>Nieuw Wachtwoord</h3>
                           <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').classList.add('hidden')\" class='hover:text-gray-200 transition'><i class='fas fa-times text-xl'></i></button>
                         </div>
-                        <form method='POST'>
+                        <form action='users_helper.php' method='POST'>
                           <div class='bg-white px-4 pt-5 pb-4 text-gray-800 space-y-4'>
                             <p>Vul een nieuw wachtwoord in voor <strong>".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."</strong>:</p>
                             <input type='hidden' name='reset_password_user_id' value='".htmlspecialchars($row['id'])."'>
@@ -505,7 +323,7 @@ $stmt_users->close();
                           <h3 class='text-lg font-bold'><i class='fas fa-image mr-2'></i>Foto Uploaden</h3>
                           <button type='button' onclick=\"document.getElementById('pic_modal_".$row['id']."').classList.add('hidden')\" class='hover:text-gray-200 transition'><i class='fas fa-times text-xl'></i></button>
                         </div>
-                        <form method='POST' enctype='multipart/form-data'>
+                        <form action='users_helper.php' method='POST' enctype='multipart/form-data'>
                           <div class='bg-white px-4 pt-5 pb-4 text-gray-800 space-y-4'>
                             <p>Upload een profielfoto voor <strong>".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."</strong>:</p>
                             <input type='hidden' name='admin_upload_user_id' value='".htmlspecialchars($row['id'])."'>

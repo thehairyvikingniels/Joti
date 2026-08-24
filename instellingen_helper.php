@@ -85,6 +85,10 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
         }
         
         $hash = bin2hex(random_bytes(8));
+        $profile_dir = __DIR__ . '/media/profiles';
+        if (!is_dir($profile_dir)) {
+            @mkdir($profile_dir, 0775, true);
+        }
         
         if ($fileType == 'image/jpeg') $src = imagecreatefromjpeg($fileTmpPath);
         elseif ($fileType == 'image/png') $src = imagecreatefrompng($fileTmpPath);
