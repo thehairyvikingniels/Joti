@@ -116,3 +116,77 @@ function fetchSiteSettings(mysqli $conn): array {
 function fetchUserById(mysqli $conn, int $userId): ?array {
     return dbFetchOne($conn, 'SELECT * FROM Gebruikers WHERE id = ?', [$userId], 'i');
 }
+
+/**
+ * Queue a push notification to be sent by the cronjob.
+ *
+ * @param mixed $toUser User ID (int/string), 'ALL', or an array of user IDs.
+ * @param string $title The notification title.
+ * @param string $message The notification message body.
+ * @param string $url The URL to open when clicked.
+ * @param string $initiator The script or context queueing this.
+ * @param string|null $sendBefore ISO date string or null.
+ * @param string|null $channel The notification channel/preference key.
+ * @return bool True if queued successfully, false otherwise.
+ */
+function send_push_notification(
+    mixed $toUser,
+    string $title,
+    string $message,
+    string $url = '/',
+    string $initiator = 'system',
+    ?string $sendBefore = null,
+    ?string $channel = null
+): bool {
+    global $conn;
+    if (!$conn instanceof mysqli) {
+        return false;
+    }
+
+    $users = [];
+    if ($toUser === 'ALL') {
+        $rows = dbFetchAll($conn, 'SELECT DISTINCT s.user_id, g.notification_prefs FROM Notification_Subscriptions s JOIN Gebruikers g ON s.user_id = g.id');
+        foreach ($rows as $row) {
+            $users[$row['user_id']] = $row['notification_prefs'];
+        }
+    } else {
+        $targetIds = is_array($toUser) ? $toUser : [$toUser];
+        if (empty($targetIds)) {
+            return false;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($targetIds), '?'));
+        $types = str_repeat('i', count($targetIds));
+        $rows = dbFetchAll($conn, "SELECT id, notification_prefs FROM Gebruikers WHERE id IN ($placeholders)", $targetIds, $types);
+        foreach ($rows as $row) {
+            $users[$row['id']] = $row['notification_prefs'];
+        }
+    }
+
+    if (empty($users)) {
+        return false;
+    }
+
+    $stmt = $conn->prepare('INSERT INTO Notification_Backlog (user_id, title, message, url, initiator, send_before) VALUES (?, ?, ?, ?, ?, ?)');
+    if (!$stmt) {
+        return false;
+    }
+
+    foreach ($users as $uId => $prefsJson) {
+        if ($channel !== null) {
+            $prefs = $prefsJson ? json_decode((string)$prefsJson, true) : [];
+            $defaultVal = in_array($channel, ['welkomsberichten', 'assignment_changes'], true);
+            $enabled = isset($prefs[$channel]) ? (bool)$prefs[$channel] : $defaultVal;
+
+            if (!$enabled) {
+                continue;
+            }
+        }
+
+        $uInt = (int)$uId;
+        $stmt->bind_param('isssss', $uInt, $title, $message, $url, $initiator, $sendBefore);
+        $stmt->execute();
+    }
+    $stmt->close();
+    return true;
+}

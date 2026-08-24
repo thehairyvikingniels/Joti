@@ -19,6 +19,8 @@ require_once(__DIR__ . '/../dblogin.php');
 
 // 4. Load user data from database
 $user_id = (int)$_SESSION['id'];
+$username = '';
+$user_name = '';
 $first_name = '';
 $last_name = '';
 $email = '';
@@ -31,6 +33,8 @@ $user_lon = null;
 if ($user_id > 0) {
     $user_data = fetchUserById($conn, $user_id);
     if ($user_data) {
+        $username = $user_data['gebruikersnaam'] ?? '';
+        $user_name = $username;
         $first_name = $user_data['voornaam'];
         $last_name = $user_data['achternaam'];
         $email = $user_data['email'];

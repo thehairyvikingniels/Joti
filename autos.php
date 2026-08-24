@@ -2,34 +2,46 @@
 // Vehicle management interface for registering new hunt cars, deleting vehicles, and joining or leaving as passengers.
 define("PAGE_NAME", "autos");
 require_once('includes/auth.php');
-// Auto toevoegen
-if (isset($_POST['kenteken'])){
-  $stmt_ins = $conn->prepare("INSERT INTO Auto (eigenaar, kenteken) VALUES (?, ?) ON DUPLICATE KEY UPDATE eigenaar = eigenaar");
-  $stmt_ins->bind_param("is", $_SESSION['id'], $_POST['kenteken']);
-  
-  if (!$stmt_ins->execute()) {
-    echo "Error: " . $stmt_ins->error;
-  }
-  $stmt_ins->close();
-}
-
-// Gebruikersgegevens ophalen
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $first_name = $row['voornaam'];
-      $privilege = $row['priv'];
-    }
-}
-$stmt->close();
 
 if (!isset($privilege) || ($privilege < 1 && !isset($_SESSION['kiosk_id']))) {
   header("Location: home");
   exit();
+}
+
+// Auto toevoegen
+if (isset($_POST['kenteken'])){
+  $kenteken = strtoupper(trim($_POST['kenteken']));
+  if (!empty($kenteken)) {
+    $stmt_ins = $conn->prepare("INSERT INTO Auto (eigenaar, kenteken) VALUES (?, ?) ON DUPLICATE KEY UPDATE eigenaar = eigenaar");
+    $stmt_ins->bind_param("is", $_SESSION['id'], $kenteken);
+    $stmt_ins->execute();
+    $stmt_ins->close();
+  }
+}
+
+// Auto verwijderen
+if (isset($_GET['delauto'])){
+  $kenteken_to_delete = trim($_GET['delauto']);
+  if (!empty($kenteken_to_delete)) {
+    // Only owner or admin (privilege >= 2) can delete car
+    $stmt_del = $conn->prepare("DELETE FROM Auto WHERE kenteken = ? AND (eigenaar = ? OR ? >= 2)");
+    $stmt_del->bind_param("sii", $kenteken_to_delete, $_SESSION['id'], $privilege);
+    if ($stmt_del->execute()) {
+      // Clean up passengers and whiteboard assignments
+      $stmt_clean_bijr = $conn->prepare("DELETE FROM Auto_Bijrijders WHERE auto = ?");
+      $stmt_clean_bijr->bind_param("s", $kenteken_to_delete);
+      $stmt_clean_bijr->execute();
+      $stmt_clean_bijr->close();
+
+      $stmt_clean_toew = $conn->prepare("DELETE FROM Auto_Toewijzingen WHERE auto = ?");
+      $stmt_clean_toew->bind_param("s", $kenteken_to_delete);
+      $stmt_clean_toew->execute();
+      $stmt_clean_toew->close();
+    }
+    $stmt_del->close();
+    header("Location: autos");
+    exit();
+  }
 }
 
 // In of uitstappen als bijrijder
