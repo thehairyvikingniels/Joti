@@ -271,47 +271,7 @@ $stmt_settings->close();
     </div>
 </div>
 
-<script>
-    function showToken(token, id) {
-        const fullUrl = window.location.origin + '/kiosk.php?auth=' + token;
-        document.getElementById('tokenDisplay').value = fullUrl;
-        document.getElementById('regenAccountId').value = id;
-        document.getElementById('tokenModal').classList.remove('hidden');
-    }
-    function showDeleteModal(id, naam) {
-        document.getElementById('deleteAccountId').value = id;
-        document.getElementById('deleteAccountName').textContent = naam;
-        document.getElementById('deleteModal').classList.remove('hidden');
-    }
-    function copyToken() {
-        const copyText = document.getElementById("tokenDisplay");
-        copyText.select();
-        copyText.setSelectionRange(0, 99999);
-        navigator.clipboard.writeText(copyText.value);
-    }
-    function editAccount(account) {
-        document.getElementById('modalTitle').textContent = 'Account Bewerken';
-        document.getElementById('formAction').value = 'edit';
-        document.getElementById('formAccountId').value = account.id;
-        document.getElementById('formNaam').value = account.naam;
-        document.getElementById('formDoel').value = account.doel_pagina;
-        document.getElementById('formRechten').value = account.rechten;
-        document.getElementById('formIp').value = account.ip_whitelist;
-        document.getElementById('formRefresh').value = account.refresh_interval;
-        document.getElementById('createModal').classList.remove('hidden');
-    }
-    function closeEditModal() {
-        document.getElementById('createModal').classList.add('hidden');
-        document.getElementById('modalTitle').textContent = 'Nieuw Service Account';
-        document.getElementById('formAction').value = 'create';
-        document.getElementById('formAccountId').value = '';
-        document.getElementById('formNaam').value = '';
-        document.getElementById('formDoel').value = 'home';
-        document.getElementById('formRechten').value = '0';
-        document.getElementById('formIp').value = '';
-        document.getElementById('formRefresh').value = '0';
-    }
-</script>
+<script src="../js/admin_serviceaccounts.js"></script>
 
 </body>
 </html>

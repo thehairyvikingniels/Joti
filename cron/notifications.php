@@ -1,5 +1,5 @@
 <?php
-// cron/notifications.php
+// cron/notifications.php ??? Processes pending Web Push notification backlog and dispatches payloads to subscriber browser endpoints.
 define("NAME", "push_queue");
 define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');
@@ -12,12 +12,6 @@ $datumtijd = date('Y-m-d H:i:s');
 
 use Minishlink\WebPush\WebPush;
 use Minishlink\WebPush\Subscription;
-
-function log2DB(string $entry) {
-    global $output;
-    echo $entry;
-    $output .= $entry."\n";
-}
 
 $stmt_settings = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen");
 $stmt_settings->execute();
@@ -33,13 +27,14 @@ $privateKey = $site_settings['VAPID_PRIVATE_KEY'] ?? '';
 
 if (empty($publicKey) || empty($privateKey)) {
     log2DB("Error: VAPID keys are missing.");
-    end_cron();
-    exit;
+    recordCronLog($conn, NAME, START_TIME, $output, 500);
+    $conn->close();
+    exit();
 }
 
 $auth = [
     'VAPID' => [
-        'subject' => 'mailto:admin@' . $_SERVER['SERVER_NAME'],
+        'subject' => 'mailto:admin@' . ($_SERVER['SERVER_NAME'] ?? 'localhost'),
         'publicKey' => $publicKey,
         'privateKey' => $privateKey,
     ],
@@ -54,8 +49,9 @@ $res = $stmt_pending->get_result();
 
 if ($res->num_rows === 0) {
     log2DB("No pending notifications.");
-    end_cron();
-    exit;
+    recordCronLog($conn, NAME, START_TIME, $output, 200);
+    $conn->close();
+    exit();
 }
 
 $updateStmt = $conn->prepare("UPDATE Notification_Backlog SET status = ?, sent = NOW() WHERE id = ?");
@@ -92,9 +88,6 @@ while ($notification = $res->fetch_assoc()) {
                 'authToken' => $sub['auth'],
             ]);
             
-            // sendOneNotification runs synchronously and handles the exception within its own internal scope, 
-            // returning a MessageSentReport object. However, exceptions inside the VAPID cryptography 
-            // might still escape, so we catch them.
             $report = $webPush->sendOneNotification($subscription, $payload);
             
             if ($report->isSuccess()) {
@@ -112,7 +105,6 @@ while ($notification = $res->fetch_assoc()) {
         } catch (\Exception $e) {
             log2DB("[!] Critical Exception sending to {$sub['endpoint']}: " . $e->getMessage() . "\n");
             $failedCount++;
-            // If the key is totally invalid, remove the subscription so it doesn't loop forever
             $delStmt->bind_param("s", $sub['endpoint']);
             $delStmt->execute();
             log2DB("    -> Subscription removed due to invalid cryptography.\n");
@@ -120,7 +112,6 @@ while ($notification = $res->fetch_assoc()) {
     }
     
     // Mark this individual backlog row as sent or failed
-    // If no endpoints existed, mark as failed.
     $final_status = ($attempted_for_user && $success_for_user) ? 'sent' : 'failed';
     
     $updateStmt->bind_param("si", $final_status, $notification['id']);
@@ -128,27 +119,6 @@ while ($notification = $res->fetch_assoc()) {
 }
 
 log2DB("Finished processing. Success: {$sentCount}, Failed: {$failedCount}.");
-end_cron();
+recordCronLog($conn, NAME, START_TIME, $output, 200);
+$conn->close();
 
-function end_cron() {
-    global $conn, $datumtijd, $output;
-    
-    if (!defined('END_TIME')) {
-        define("END_TIME", microtime(true));
-    }
-    
-    $duration = intval((END_TIME - START_TIME)*1000);
-    $output_clean = addslashes($output);
-    
-    // prepare and bind
-    $stmt = $conn->prepare("INSERT INTO Cronlogs (name, exec_time, exec_length, exec_stat, exec_output) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssiis", $p1, $p2, $p3, $p4, $p5);
-    $p1 = NAME;
-    $p2 = $datumtijd;
-    $p3 = $duration;
-    $p4 = 200;
-    $p5 = $output_clean;
-    $stmt->execute();
-    $stmt->close();
-    $conn->close();
-}

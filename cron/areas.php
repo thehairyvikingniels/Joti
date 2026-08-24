@@ -98,8 +98,3 @@ $stmt->execute();
 $stmt->close();
 $conn->close();
 
-function log2DB(string $entry) {
-    global $output;
-    echo $entry;
-    $output .= $entry."\n";
-}

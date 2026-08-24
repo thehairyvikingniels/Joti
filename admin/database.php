@@ -182,68 +182,7 @@ $result_voslocaties = $stmt_vos->get_result();
   <?php require_once('../includes/footer.php') ?>
 </div>
 
-<script>
-    let sortDirections = {}; // Object to track sorting direction for each column
-
-    function sortTable(columnIndex) {
-        const table = document.getElementById("voslocatiesTable");
-        const tbody = table.tBodies[0];
-        const rows = Array.from(tbody.rows);
-        const header = table.tHead.rows[0].cells[columnIndex];
-        const dir = sortDirections[columnIndex] === 'asc' ? 'desc' : 'asc';
-        sortDirections = {}; // Reset all directions
-        sortDirections[columnIndex] = dir;
-
-        // Reset all sort icons
-        document.querySelectorAll('#voslocatiesTable th .fas').forEach((icon, index) => {
-            icon.classList.remove('fa-sort-up', 'fa-sort-down', 'active');
-            if (index !== columnIndex) {
-                icon.classList.add('fa-sort');
-            }
-        });
-        
-        const sortIcon = header.querySelector('.fas');
-        sortIcon.classList.remove('fa-sort', 'fa-sort-up', 'fa-sort-down');
-        sortIcon.classList.add(dir === 'asc' ? 'fa-sort-up' : 'fa-sort-down', 'active');
-        
-        rows.sort((a, b) => {
-            const aText = a.cells[columnIndex].textContent.trim();
-            const bText = b.cells[columnIndex].textContent.trim();
-
-            // For date sorting (column 2), convert to timestamp
-            if (columnIndex === 2) {
-                return dir === 'asc' ? new Date(aText) - new Date(bText) : new Date(bText) - new Date(aText);
-            }
-
-            return dir === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
-        });
-
-        rows.forEach(row => tbody.appendChild(row));
-    }
-
-    // JavaScript voor het openen en vullen van de modals
-    function openEditModal(data) {
-        document.getElementById('edit_id').value = data.id;
-        document.getElementById('edit_type').value = data.type;
-        document.getElementById('edit_deelgebied').value = data.deelgebied;
-        
-        // Format date for datetime-local input
-        const date = new Date(data.ingestuurd_op.replace(' ', 'T'));
-        const localIsoString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-        document.getElementById('edit_ingestuurd_op').value = localIsoString;
-        
-        document.getElementById('edit_coord_x').value = data.coordinaat_x;
-        document.getElementById('edit_coord_y').value = data.coordinaat_y;
-        document.getElementById('edit_code').value = data.code;
-        document.getElementById('edit_opmerking').value = data.opmerking;
-        document.getElementById('editModal').classList.remove('hidden');
-    }
-
-    function openDeleteModal(id) {
-        document.getElementById('deleteLink').href = '../functies.php?verwijder_voslocatie=' + id;
-        document.getElementById('deleteModal').classList.remove('hidden');
-    }
-</script>
+<script src="../js/admin_database.js"></script>
 <script src="../js/gps.js"></script>
 <script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 

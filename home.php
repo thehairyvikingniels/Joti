@@ -247,63 +247,7 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
     </div>
   </div>
 
-  <script>
-    // auto-open welcome modal on page load and force 7s read-delay with countdown
-    (function() {
-      window.addEventListener('load', function() {
-        const modal = document.getElementById('welcomeModal');
-        const modalContent = document.getElementById('welcomeModalContent');
-        if (!modal) return;
-        
-        modal.classList.remove('hidden');
-        // trigger animation
-        setTimeout(() => {
-          modal.classList.remove('opacity-0');
-          modalContent.classList.remove('-translate-y-4');
-        }, 10);
-
-        const closeBtn = document.getElementById('welcomeClose');
-        const progress = document.getElementById('welcomeProgress');
-        const countdownEl = document.getElementById('closeCountdown');
-        const duration = 7000; // milliseconds
-        const start = Date.now();
-
-        let raf;
-        function tick() {
-          const elapsed = Date.now() - start;
-          const pct = Math.min(100, (elapsed / duration) * 100);
-          progress.style.width = pct + '%';
-
-          const remaining = Math.max(0, Math.ceil((duration - elapsed) / 1000));
-          if (remaining > 0) {
-            countdownEl.textContent = '(' + remaining + 's)';
-          } else {
-            countdownEl.style.display = 'none';
-          }
-
-          if (elapsed < duration) {
-            raf = requestAnimationFrame(tick);
-          } else {
-            // enable button after duration
-            closeBtn.disabled = false;
-            closeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            closeBtn.classList.add('hover:bg-green-600');
-            progress.style.display = 'none';
-            cancelAnimationFrame(raf);
-          }
-        }
-        tick();
-
-        closeBtn.addEventListener('click', function() {
-          if (!closeBtn.disabled) {
-            modal.classList.add('opacity-0');
-            modalContent.classList.add('-translate-y-4');
-            setTimeout(() => { modal.style.display = 'none'; }, 300);
-          }
-        });
-      });
-    })();
-  </script>
+  <script>initWelcomeModal();</script>
   <?php
 }
 ?>
@@ -337,80 +281,9 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
   firebase.analytics();
 </script>
 
+<script src="js/home.js"></script>
 <script>
-async function gebeurtenissen(str = '6') {
-  const icon = document.getElementById('gebeurtenissen_icon');
-  if (icon) icon.classList.add('w3-spin');
-  try {
-    const response = await fetch('functies.php?gebeurtenissen=' + encodeURIComponent(str));
-    if (response.ok) {
-      const html = await response.text();
-      const el = document.getElementById('gebeurtenissen');
-      if (el) el.innerHTML = html;
-    }
-  } catch (err) {
-    console.error('Error fetching gebeurtenissen:', err);
-  } finally {
-    if (icon) {
-      setTimeout(() => { icon.classList.remove('w3-spin'); }, 1000);
-    }
-  }
-}
-
-async function autosonderweg(str = '6') {
-  const icon = document.getElementById('autosonderweg_icon');
-  if (icon) icon.classList.add('w3-spin');
-  try {
-    const response = await fetch('functies.php?autos=' + encodeURIComponent(str));
-    if (response.ok) {
-      const html = await response.text();
-      const el = document.getElementById('autosonderweg');
-      if (el) el.innerHTML = html;
-    }
-  } catch (err) {
-    console.error('Error fetching autos:', err);
-  } finally {
-    if (icon) {
-      setTimeout(() => { icon.classList.remove('w3-spin'); }, 1000);
-    }
-  }
-}
-
-<?php if ($privilege > 0): ?>
-async function invulgegevens(str = '6') {
-  const icon = document.getElementById('invulgegevens_icon');
-  if (icon) icon.classList.add('w3-spin');
-  try {
-    const response = await fetch('functies.php?invulgegevens=' + encodeURIComponent(str));
-    if (response.ok) {
-      const html = await response.text();
-      const el = document.getElementById('invulgegevens');
-      if (el) el.innerHTML = html;
-    }
-  } catch (err) {
-    console.error('Error fetching invulgegevens:', err);
-  } finally {
-    if (icon) {
-      setTimeout(() => { icon.classList.remove('w3-spin'); }, 1000);
-    }
-  }
-}
-<?php endif; ?>
-
-document.addEventListener('DOMContentLoaded', () => {
-  gebeurtenissen();
-  autosonderweg();
-  <?php if ($privilege > 0): ?>
-  invulgegevens();
-  <?php endif; ?>
-  setInterval(() => {
-    gebeurtenissen();
-    autosonderweg();
-    <?php if ($privilege > 0): ?>
-    invulgegevens();
-    <?php endif; ?>
-  }, 11111);
-});
+initHome(<?= ($privilege > 0) ? "true" : "false" ?>);
 </script>
 
 <script src="js/gps.js"></script>

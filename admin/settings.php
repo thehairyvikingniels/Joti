@@ -307,19 +307,7 @@ $stmt_groups->close();
   <?php require_once('../includes/footer.php') ?>
 </div>
 
-<script>
-function confirmDelete(settingName) {
-    // Set the dynamic text in the modal
-    document.getElementById('deleteModalText').innerHTML = "Weet je zeker dat je de instelling '<strong>" + settingName + "</strong>' wilt verwijderen?";
-    
-    // Set the href for the final delete button
-    const deleteUrl = "settings_helper.php?delete_setting=" + encodeURIComponent(settingName);
-    document.getElementById('confirmDeleteButton').href = deleteUrl;
-
-    // Show the modal
-    document.getElementById('deleteModal').classList.remove('hidden');
-}
-</script>
+<script src="../js/admin_settings.js"></script>
 
 <script src="../js/gps.js"></script>
 <script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>

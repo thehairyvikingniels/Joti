@@ -172,18 +172,7 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
           </select>
         </div>
         
-        <script>
-        async function changeTheme(newTheme) {
-            try {
-                const response = await fetch("<?= $notInAdminfolder ?>functies.php?set_theme=" + encodeURIComponent(newTheme));
-                if (response.ok) {
-                    window.location.href = window.location.pathname + window.location.search;
-                }
-            } catch (e) {
-                console.error('Error setting theme:', e);
-            }
-        }
-        </script>
+        
       </div>
 
       <!-- Notificaties -->
@@ -224,38 +213,7 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
             <button onclick="requestAndSubscribeToPush()" class="theme-bg-primary text-white text-sm font-bold py-2 px-4 rounded hover:opacity-90 transition shadow-sm w-full sm:w-auto">
               <i class="fas fa-bell mr-2"></i> Zet meldingen aan voor dit apparaat
             </button>
-            <script>
-            function renameDevice(id, currentName) {
-                document.getElementById('rename_device_id').value = id;
-                document.getElementById('new_device_name').value = currentName;
-                document.getElementById('renameModal').classList.remove('hidden');
-            }
-            function unsubscribeDevice(endpoint) {
-                document.getElementById('deleteModal').classList.remove('hidden');
-                document.getElementById('confirmDeleteBtn').onclick = function() {
-                    document.getElementById('deleteModal').classList.add('hidden');
-                    // Force removing it from the browser push manager as well if it's the current device
-                    if ('serviceWorker' in navigator) {
-                        navigator.serviceWorker.ready.then(function(reg) {
-                            reg.pushManager.getSubscription().then(function(sub) {
-                                if (sub && sub.endpoint === endpoint) {
-                                    sub.unsubscribe();
-                                }
-                            });
-                        }).finally(function() {
-                            doDeleteEndpoint(endpoint);
-                        });
-                    } else {
-                        doDeleteEndpoint(endpoint);
-                    }
-                };
-            }
-            function doDeleteEndpoint(endpoint) {
-                fetch('/api/subscribe.php?endpoint=' + encodeURIComponent(endpoint), {
-                    method: 'DELETE'
-                }).then(() => window.location.reload());
-            }
-            </script>
+            
           </div>
 
           <!-- Voorkeuren -->
@@ -340,6 +298,7 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
   <?php require_once('includes/footer.php') ?>
 </div>
 
+<script src="js/instellingen.js"></script>
 <script src="js/gps.js"></script>
 <script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 

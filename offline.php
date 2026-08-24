@@ -59,39 +59,6 @@ $stmt->close();
         </button>
     </div>
 
-    <script>
-        let remainingSeconds = 10;
-        let countdownElement = document.getElementById('countdown-text');
-
-        // Countdown timer for display
-        setInterval(() => {
-            remainingSeconds--;
-            if (remainingSeconds < 0) {
-                remainingSeconds = 10;
-            }
-            countdownElement.textContent = remainingSeconds + 's';
-        }, 1000);
-
-        function checkConnection() {
-            fetch('/functies.php?onlinecheck=1', { cache: 'no-store' })
-                .then(response => {
-                    if (response.ok || response.status === 401) {
-                        // Connection restored! Redirect back
-                        if (document.referrer && new URL(document.referrer).origin === window.location.origin) {
-                            window.location.href = document.referrer;
-                        } else {
-                            window.location.href = '/';
-                        }
-                    }
-                })
-                .catch(() => {
-                    // Still offline, progress bar will loop
-                    console.log("[Offline] Server nog niet bereikbaar...");
-                });
-        }
-
-        // Retry connection every 10 seconds
-        setInterval(checkConnection, 10000);
-    </script>
+    <script src="js/offline.js"></script>
 </body>
 </html>

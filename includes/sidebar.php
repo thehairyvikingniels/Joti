@@ -164,23 +164,4 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
 <!-- Overlay effect when opening sidebar on small screens -->
 <div id="myOverlay" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden transition-opacity" onclick="w3_close()"></div>
 
-<script>
-const mySidebar = document.getElementById("mySidebar");
-const overlayBg = document.getElementById("myOverlay");
-
-function w3_open() {
-    mySidebar.classList.remove("-translate-x-full");
-    mySidebar.classList.remove("hidden");
-    mySidebar.classList.add("flex");
-    overlayBg.classList.remove("hidden");
-}
-
-function w3_close() {
-    mySidebar.classList.add("-translate-x-full");
-    setTimeout(() => {
-        mySidebar.classList.add("hidden");
-        mySidebar.classList.remove("flex");
-    }, 300); // match transition duration
-    overlayBg.classList.add("hidden");
-}
-</script>
+<script src="<?= $inAdminfolder ?? '' ?>js/app.js"></script>

@@ -176,26 +176,3 @@ foreach ($fox_names as $vosnaam) {
     </div>
 </header>
 
-<script>
-    function updateImmuneCountdowns() {
-        const now = Math.floor(Date.now() / 1000);
-        document.querySelectorAll('.immune-countdown').forEach(function (el) {
-            const until = parseInt(el.getAttribute('data-until'), 10);
-            const diff = until - now;
-            if (diff > 0) {
-                const m = Math.floor(diff / 60);
-                const s = diff % 60;
-                el.textContent = m + 'm ' + s + 's';
-            } else {
-                // Immunity over: restore original duration text and remove striped background
-                el.textContent = el.getAttribute('data-duratie');
-                if (el.parentElement) {
-                    el.parentElement.style.backgroundImage = '';
-                }
-                el.classList.remove('immune-countdown');
-            }
-        });
-    }
-    setInterval(updateImmuneCountdowns, 1000);
-    updateImmuneCountdowns();
-</script>

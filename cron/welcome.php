@@ -10,11 +10,7 @@ require_once(__DIR__ . "/../functies.php");
 
 $datumtijd = date('Y-m-d H:i:s');
 
-function log2DB(string $entry) {
-    global $output;
-    echo $entry . "\n";
-    $output .= $entry . "\n";
-}
+
 
 
 // 1. Fetch active users (geotijd < 5 min)
