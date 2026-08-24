@@ -65,11 +65,3 @@ if ($is_kiosk && $user_id === 0) {
 
 // 6. Load shared helpers
 require_once(__DIR__ . '/helpers.php');
-
-// 7. Backward compatibility aliases (temporary, for gradual migration)
-$vn = $first_name;
-$an = $last_name;
-$priv = $privilege;
-$siteSettings = $site_settings ?? [];
-$usr_lat = $user_lat;
-$usr_lon = $user_lon;

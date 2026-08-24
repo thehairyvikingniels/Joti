@@ -2,7 +2,7 @@
 // Sortable list of all submitted fox locations (hints, hunts, spots, predictions) with view, edit, and delete controls.
 define("PAGE_NAME", "a_database");
 require_once(__DIR__ . '/../includes/auth.php');
-if ($priv < 2) {
+if ($privilege < 2) {
     header("Location: ../home");
     exit();
 }
@@ -122,7 +122,7 @@ $result_voslocaties = $stmt_vos->get_result();
                     <label class="block text-sm font-bold opacity-70 mb-1">Deelgebied</label>
                     <select class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" id="edit_deelgebied" name="deelgebied" required>
                         <?php
-                        foreach ($vossen_names as $fox) {
+                        foreach ($fox_names as $fox) {
                             echo "<option value=\"" . htmlspecialchars($fox) . "\">" . htmlspecialchars($fox) . "</option>\n";
                         }
                         ?>

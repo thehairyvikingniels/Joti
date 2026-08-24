@@ -3,7 +3,7 @@
 define("PAGE_NAME", "a_cronjobs");
 
 require_once(__DIR__ . '/../includes/auth.php');
-if ($priv < 2){
+if ($privilege < 2){
   header("Location: ../home");
   exit();
 }

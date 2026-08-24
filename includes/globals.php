@@ -26,8 +26,4 @@ if (!function_exists('getFoxColor')) {
     }
 }
 
-// Backward compatibility aliases
-$siteSettings = $site_settings;
-$vossen_names = $fox_names;
-$vossen_colors = $fox_colors;
 ?>

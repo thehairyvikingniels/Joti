@@ -108,7 +108,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_fox_location'])
     }
 }
 
-if ($priv < 1) {
+if ($privilege < 1) {
     header("Location: home");
     exit();
 }
@@ -125,9 +125,9 @@ $stmt_groups->close();
 $group_lat = 52.15517440;
 $group_lon = 5.38720621;
 
-if (isset($siteSettings['GROUP_ID'])) {
+if (isset($site_settings['GROUP_ID'])) {
     $stmt = $conn->prepare("SELECT lat, lon FROM Groepen WHERE id = ?");
-    $stmt->bind_param("i", $siteSettings['GROUP_ID']);
+    $stmt->bind_param("i", $site_settings['GROUP_ID']);
     $stmt->execute();
     $groupResult = $stmt->get_result();
     if ($groupRow = $groupResult->fetch_assoc()) {
@@ -256,7 +256,7 @@ if (isset($siteSettings['GROUP_ID'])) {
               <select class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white" name="fox_team" required>
                 <option value="" disabled selected>Kies een team</option>
                 <?php
-                foreach ($vossen_names as $fox) {
+                foreach ($fox_names as $fox) {
                     echo "<option value=\"" . htmlspecialchars($fox) . "\">" . htmlspecialchars($fox) . "</option>\n";
                 }
                 ?>
@@ -442,7 +442,7 @@ let mapModal;
 let modalMarker;
 let mapInitialized = false;
 
-mapboxgl.accessToken = '<?php echo $siteSettings["API_KEY_MAPBOX"] ?? ""; ?>';
+mapboxgl.accessToken = '<?php echo $site_settings["API_KEY_MAPBOX"] ?? ""; ?>';
 
 /**
  * Initializes and displays the Mapbox modal.

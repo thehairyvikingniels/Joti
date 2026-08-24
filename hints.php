@@ -4,7 +4,7 @@ define("PAGE_NAME", "hints");
 require_once('includes/auth.php');
 
 // Insert voslocaties after using hints form
-if (isset($priv) && $priv > 0 && isset($_POST['subarea']) && isset($_POST['rdX']) && isset($_POST['rdY'])) {
+if (isset($privilege) && $privilege > 0 && isset($_POST['subarea']) && isset($_POST['rdX']) && isset($_POST['rdY'])) {
   $latlon = rdtowgs($_POST['rdX'], $_POST['rdY']);
   $ingestuurd_op = date("Y-m-d H:i:s");
   $code = $_POST['subarea'] . " " . $_POST['rdX'] . " " . $_POST['rdY'];
@@ -53,7 +53,7 @@ if (isset($priv) && $priv > 0 && isset($_POST['subarea']) && isset($_POST['rdX']
         $stmt->execute();
         $result = $stmt->get_result();
 
-        $vossen = $vossen_names;
+        $vossen = $fox_names;
 
         if ($result->num_rows > 0) {
           while ($row = $result->fetch_assoc()) {
@@ -115,7 +115,7 @@ if (isset($priv) && $priv > 0 && isset($_POST['subarea']) && isset($_POST['rdX']
                     <div id="toewijzingen-avatars-hint-' . $row['id'] . '" class="flex -space-x-2 overflow-visible items-center p-1">
                         ' . $avatars_html . '
                     </div>';
-            if ($priv > 0) {
+            if ($privilege > 0) {
               echo '<button id="toewijzingen-btn-hint-' . $row['id'] . '" onclick="toggleToewijzing(\'hint\', ' . $row['id'] . ')" class="text-sm font-bold ' . $btn_class . ' px-3 py-1.5 rounded transition shadow-sm whitespace-nowrap ml-4">
                         ' . $btn_text . '
                     </button>';
@@ -124,7 +124,7 @@ if (isset($priv) && $priv > 0 && isset($_POST['subarea']) && isset($_POST['rdX']
 
             $subareas = $vossen;
 
-            if (isset($priv) && $priv > 0) {
+            if (isset($privilege) && $privilege > 0) {
               echo '<div class="bg-black/5 p-4 border-t grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" style="border-color: var(--theme-card-border);">';
               foreach ($subareas as $key => $subarea) {
                 $unique_id = htmlspecialchars($row['id'] . '_' . $subarea);

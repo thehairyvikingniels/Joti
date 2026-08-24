@@ -10,10 +10,10 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {
-    $groepaantal = $row['NUM'];
+    $group_count = $row['NUM'];
   }
 } else {
-  $groepaantal = "E?";
+  $group_count = "E?";
 }
 $stmt->close();
 
@@ -24,7 +24,7 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {
-      $plaats = $row['plaats'] ?? '?';
+      $rank = $row['plaats'] ?? '?';
       $hunts = $row['hunts'] ?? 0;
       $tegenhunts = $row['tegenhunts'] ?? 0;
       $opdrachten = $row['opdrachten'] ?? 0;
@@ -32,10 +32,10 @@ if ($result->num_rows > 0) {
       $hints = $row['hints'] ?? 0;
       $bonus = $row['bonus'] ?? 0;
       $penalties = $row['strafpunten'] ?? 0;
-      $puntentotaal = $hunts + $tegenhunts + $opdrachten + $fotoopdrachten + $hints + $bonus - $penalties;
+      $total_points = $hunts + $tegenhunts + $opdrachten + $fotoopdrachten + $hints + $bonus - $penalties;
   }
 } else {
-  $plaats = 0;
+  $rank = 0;
   $hunts = 0;
   $tegenhunts = 0;
   $opdrachten = 0;
@@ -43,7 +43,7 @@ if ($result->num_rows > 0) {
   $hints = 0;
   $bonus = 0;
   $penalties = 0;
-  $puntentotaal = 0;
+  $total_points = 0;
 }
 $stmt->close();
 
@@ -79,7 +79,7 @@ $stmt->close();
       <div class="theme-card rounded border shadow-sm overflow-hidden lg:col-span-1 h-fit">
         <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold flex items-center">
-              <span class="text-2xl mr-2 font-black"><?php echo $plaats;?>e</span> Plaats
+              <span class="text-2xl mr-2 font-black"><?php echo $rank;?>e</span> Plaats
             </h5>
         </div>
         <div class="p-0">
@@ -115,7 +115,7 @@ $stmt->close();
                 </tr>
                 <tr class="hover:bg-black/5 transition" style="background-color: var(--theme-card-header);">
                   <td class="px-6 py-4 font-bold text-base uppercase">Totaal</td>
-                  <td class="px-6 py-4 text-right font-bold text-base"><?php echo $puntentotaal;?></td>
+                  <td class="px-6 py-4 text-right font-bold text-base"><?php echo $total_points;?></td>
                 </tr>
               </tbody>
             </table>

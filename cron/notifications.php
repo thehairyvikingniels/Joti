@@ -20,13 +20,13 @@ function log2DB(string $entry) {
 }
 
 $res_settings = $conn->query("SELECT Instelling, Waarde FROM Site_Instellingen");
-$siteSettings = [];
+$site_settings = [];
 while ($r = $res_settings->fetch_assoc()) {
-    $siteSettings[$r['Instelling']] = $r['Waarde'];
+    $site_settings[$r['Instelling']] = $r['Waarde'];
 }
 
-$publicKey = $siteSettings['VAPID_PUBLIC_KEY'] ?? '';
-$privateKey = $siteSettings['VAPID_PRIVATE_KEY'] ?? '';
+$publicKey = $site_settings['VAPID_PUBLIC_KEY'] ?? '';
+$privateKey = $site_settings['VAPID_PRIVATE_KEY'] ?? '';
 
 if (empty($publicKey) || empty($privateKey)) {
     log2DB("Error: VAPID keys are missing.");

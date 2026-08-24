@@ -5,9 +5,9 @@ if (isset($_SESSION['kiosk_id'])) {
 }
 $vos = array();
 $topbarGroupName = 'Jotify';
-if (!empty($siteSettings['GROUP_ID'])) {
+if (!empty($site_settings['GROUP_ID'])) {
     $stmt_gn = $conn->prepare("SELECT naam FROM Groepen WHERE id = ?");
-    $stmt_gn->bind_param("i", $siteSettings['GROUP_ID']);
+    $stmt_gn->bind_param("i", $site_settings['GROUP_ID']);
     $stmt_gn->execute();
     $result_gn = $stmt_gn->get_result();
     if ($result_gn->num_rows > 0) {
@@ -32,7 +32,7 @@ if (isset($_SESSION['id'])) {
     $stmt_pp->close();
 }
 
-foreach ($vossen_names as $vosnaam) {
+foreach ($fox_names as $vosnaam) {
     $vos[$vosnaam]["Kleur"] = "grey"; // Standaard w3css kleur bij geen data
     $vos[$vosnaam]["duratie"] = "-";
     $vos[$vosnaam]["Status"] = 0;
@@ -121,8 +121,8 @@ foreach ($vossen_names as $vosnaam) {
     <div
         class="hidden xl:flex items-center space-x-2 mx-4 flex-1 justify-center max-w-2xl overflow-hidden whitespace-nowrap">
         <?php
-        if (isset($vossen_names)) {
-            foreach ($vossen_names as $n) {
+        if (isset($fox_names)) {
+            foreach ($fox_names as $n) {
                 $tw_color = 'bg-gray-200 text-gray-700';
                 if ($vos[$n]['Kleur'] == 'red')
                     $tw_color = 'bg-red-500 text-white';
@@ -167,11 +167,11 @@ foreach ($vossen_names as $vosnaam) {
             <?php else: ?>
                 <div
                     class="w-8 h-8 rounded-full theme-bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
-                    <?php echo strtoupper(substr($vn ?? 'U', 0, 1)); ?>
+                    <?php echo strtoupper(substr($first_name ?? 'U', 0, 1)); ?>
                 </div>
             <?php endif; ?>
             <span
-                class="text-sm font-medium hidden sm:block"><?php echo htmlspecialchars(ucfirst($vn ?? 'User')); ?></span>
+                class="text-sm font-medium hidden sm:block"><?php echo htmlspecialchars(ucfirst($first_name ?? 'User')); ?></span>
         </a>
     </div>
 </header>

@@ -2,7 +2,7 @@
 // Superadmin interface for viewing, updating, adding, and deleting global site configuration key-value settings.
 define("PAGE_NAME", "sa_settings");
 require_once(__DIR__ . '/../includes/auth.php');
-if ($priv < 3) {
+if ($privilege < 3) {
     header("Location: ../home");
     exit();
 }

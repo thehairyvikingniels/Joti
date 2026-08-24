@@ -2,7 +2,7 @@
 // AJAX handler for whiteboard assignments: moves users and vehicles between tasks and manages custom categories.
 require_once('includes/auth.php');
 
-if ($priv < 1 && (!$is_kiosk || ($_SESSION['kiosk_priv'] ?? 0) < 1)) {
+if ($privilege < 1 && (!$is_kiosk || ($_SESSION['kiosk_priv'] ?? 0) < 1)) {
     http_response_code(403);
     echo json_encode(["status" => "error", "message" => "Geen rechten voor bewerken (403 Forbidden)"]);
     exit();

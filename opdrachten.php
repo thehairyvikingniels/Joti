@@ -119,7 +119,7 @@ require_once('includes/auth.php');
                 <div id="toewijzingen-avatars-opdracht-' . $row['id'] . '" class="flex -space-x-2 overflow-visible items-center p-1">
                     ' . $avatars_html . '
                 </div>';
-                        if ($priv > 0) {
+                        if ($privilege > 0) {
                             echo '<button id="toewijzingen-btn-opdracht-' . $row['id'] . '" onclick="toggleToewijzing(\'opdracht\', ' . $row['id'] . ')" class="text-sm font-bold ' . $btn_class . ' px-3 py-1.5 rounded transition shadow-sm whitespace-nowrap ml-4">
                     ' . $btn_text . '
                 </button>';

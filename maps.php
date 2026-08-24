@@ -1,7 +1,7 @@
 <?php
 // Standalone Mapbox map interface displaying markers and routes for fox locations, scout groups, and hunting vehicles.
 require_once('includes/auth.php');
-if ($priv < 1) {
+if ($privilege < 1) {
     header("Location: home");
     exit();
 }
@@ -64,8 +64,8 @@ if (isset($_GET['punt_lat'])){
 // Removed functies.php include because it intercepts GET variables and echoes HTML into JS
 
 // If halves haven't been set, use these default values
-$helft1_end = !empty($siteSettings['FOXEXCHANGE_STARTDATE']) ? new DateTime($siteSettings['FOXEXCHANGE_STARTDATE']) : new DateTime('2025-10-11T22:45:00+02:00');
-$helft2_start = !empty($siteSettings['FOXEXCHANGE_ENDDATE']) ? new DateTime($siteSettings['FOXEXCHANGE_ENDDATE']) : new DateTime('2025-10-12T23:15:00+02:00');
+$helft1_end = !empty($site_settings['FOXEXCHANGE_STARTDATE']) ? new DateTime($site_settings['FOXEXCHANGE_STARTDATE']) : new DateTime('2025-10-11T22:45:00+02:00');
+$helft2_start = !empty($site_settings['FOXEXCHANGE_ENDDATE']) ? new DateTime($site_settings['FOXEXCHANGE_ENDDATE']) : new DateTime('2025-10-12T23:15:00+02:00');
 
 
 
@@ -160,7 +160,7 @@ if ($show_helft1 && !$show_helft2) {
 }
 
 // Get Mapbox API Key from settings
-$mapbox_api_key = $siteSettings['API_KEY_MAPBOX'] ?? '';
+$mapbox_api_key = $site_settings['API_KEY_MAPBOX'] ?? '';
 
 echo "mapboxgl.accessToken = '" . addslashes($mapbox_api_key) . "';";
 

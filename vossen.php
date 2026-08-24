@@ -81,7 +81,7 @@ if ($result_hunts->num_rows > 0) {
 $stmt_hunts->close();
 // ------------------------
 
-$fox_teams = $vossen_names;
+$fox_teams = $fox_names;
 $status_colors = [
     0 => 'w3-red',    // Red
     1 => 'w3-orange', // Orange

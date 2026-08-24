@@ -73,11 +73,11 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1 opacity-80">Voornaam</label>
-              <input name="firstname" type="text" value="<?= htmlspecialchars(ucfirst($vn)) ?>" required class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+              <input name="firstname" type="text" value="<?= htmlspecialchars(ucfirst($first_name)) ?>" required class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1 opacity-80">Achternaam</label>
-              <input name="lastname" type="text" value="<?= htmlspecialchars(ucfirst($an)) ?>" required class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+              <input name="lastname" type="text" value="<?= htmlspecialchars(ucfirst($last_name)) ?>" required class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1 opacity-80">Email</label>
@@ -135,7 +135,7 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
               <img src="<?= $notInAdminfolder ?? '' ?>profile_image.php?hash=<?= urlencode($profile_picture) ?>&res=high" alt="Profielfoto" class="w-32 h-32 rounded-full object-cover shadow-md mb-2 border-2 border-gray-200">
             <?php else: ?>
               <div class="w-32 h-32 rounded-full theme-bg-primary text-white flex items-center justify-center font-bold text-4xl shadow-md mb-2">
-                 <?php echo strtoupper(substr($vn ?? 'U', 0, 1)); ?>
+                 <?php echo strtoupper(substr($first_name ?? 'U', 0, 1)); ?>
               </div>
             <?php endif; ?>
           </div>

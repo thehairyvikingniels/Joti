@@ -2,7 +2,7 @@
 // Manages kiosk and service accounts: create, edit, delete, regenerate tokens, and configure target pages and permissions.
 define("PAGE_NAME", "a_serviceaccounts");
 require_once(__DIR__ . '/../includes/auth.php');
-if ($priv < 2) {
+if ($privilege < 2) {
   header("Location: ../home");
   exit();
 }
@@ -25,9 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($action === 'create') {
         $naam = trim($_POST['naam'] ?? '');
-        $doel_pagina = trim($_POST['doel_pagina'] ?? '');
-        if (empty($doel_pagina)) $doel_pagina = 'home';
-        $rechten = intval($_POST['rechten'] ?? 0);
+        $target_page = trim($_POST['doel_pagina'] ?? '');
+        if (empty($target_page)) $target_page = 'home';
+        $permissions = intval($_POST['rechten'] ?? 0);
         $ip_whitelist = trim($_POST['ip_whitelist'] ?? '');
         $refresh_interval = intval($_POST['refresh_interval'] ?? 0);
         $token = generateToken();
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error_msg = "Naam is verplicht.";
         } else {
             $stmt = $conn->prepare("INSERT INTO Kiosk_Accounts (auth_token, naam, doel_pagina, rechten, ip_whitelist, refresh_interval) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssisi", $token, $naam, $doel_pagina, $rechten, $ip_whitelist, $refresh_interval);
+            $stmt->bind_param("sssisi", $token, $naam, $target_page, $permissions, $ip_whitelist, $refresh_interval);
             if ($stmt->execute()) {
                 $succes = true;
             } else {
@@ -47,14 +47,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'edit') {
         $id = intval($_POST['account_id'] ?? 0);
         $naam = trim($_POST['naam'] ?? '');
-        $doel_pagina = trim($_POST['doel_pagina'] ?? '');
-        if (empty($doel_pagina)) $doel_pagina = 'home';
-        $rechten = intval($_POST['rechten'] ?? 0);
+        $target_page = trim($_POST['doel_pagina'] ?? '');
+        if (empty($target_page)) $target_page = 'home';
+        $permissions = intval($_POST['rechten'] ?? 0);
         $ip_whitelist = trim($_POST['ip_whitelist'] ?? '');
         $refresh_interval = intval($_POST['refresh_interval'] ?? 0);
         
         $stmt = $conn->prepare("UPDATE Kiosk_Accounts SET naam=?, doel_pagina=?, rechten=?, ip_whitelist=?, refresh_interval=? WHERE id=?");
-        $stmt->bind_param("ssisii", $naam, $doel_pagina, $rechten, $ip_whitelist, $refresh_interval, $id);
+        $stmt->bind_param("ssisii", $naam, $target_page, $permissions, $ip_whitelist, $refresh_interval, $id);
         if ($stmt->execute()) {
             $succes = true;
         } else {
@@ -103,13 +103,13 @@ if ($res) {
 }
 
 // Get global site settings (for topbar/sidebar)
-$siteSettings = [];
+$site_settings = [];
 $stmt_settings = $conn->prepare("SELECT * FROM Site_Instellingen");
 $stmt_settings->execute();
 $result_settings = $stmt_settings->get_result();
 if ($result_settings->num_rows > 0) {
     while($row = $result_settings->fetch_assoc()) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
+      $site_settings[$row['Instelling']] = $row['Waarde'];
     }
 }
 $stmt_settings->close();

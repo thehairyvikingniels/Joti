@@ -3,7 +3,7 @@
 define("PAGE_NAME", "whiteboard");
 require_once('includes/auth.php');
 
-$is_guest = ($priv < 1 && !$is_kiosk); // Guests can't see the board unless they are a Kiosk
+$is_guest = ($privilege < 1 && !$is_kiosk); // Guests can't see the board unless they are a Kiosk
 if ($is_guest) {
     header("Location: home");
     exit();
@@ -13,14 +13,14 @@ require_once('includes/globals.php');
 
 // Fetch data
 $users = [];
-$vn = "Gebruiker";
+$first_name = "Gebruiker";
 $stmt = $conn->prepare("SELECT id, voornaam, achternaam, profile_picture FROM Gebruikers ORDER BY voornaam");
 $stmt->execute();
 $res = $stmt->get_result();
 while($row = $res->fetch_assoc()) {
     $users[$row['id']] = $row;
     if ($row['id'] == $_SESSION['id']) {
-        $vn = $row['voornaam'];
+        $first_name = $row['voornaam'];
     }
 }
 $stmt->close();
@@ -157,7 +157,7 @@ $stmt->close();
 
 // Fetch latest hunt times for foxes
 $fox_hunts = [];
-foreach ($vossen_names as $k => $v) {
+foreach ($fox_names as $k => $v) {
     $fox_hunts[$k] = ['naam' => $v, 'laatste_hunt' => null];
 }
 
@@ -171,7 +171,7 @@ $stmt->execute();
 $res = $stmt->get_result();
 while($row = $res->fetch_assoc()) {
     $fox_name = ucfirst(strtolower($row['deelgebied']));
-    $idx = array_search(trim($fox_name), $vossen_names);
+    $idx = array_search(trim($fox_name), $fox_names);
     if ($idx !== false) {
         $fox_hunts[$idx]['laatste_hunt'] = $row['laatste_hunt'];
     }

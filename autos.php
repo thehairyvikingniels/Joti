@@ -21,13 +21,13 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
-      $vn = $row['voornaam'];
-      $priv = $row['priv'];
+      $first_name = $row['voornaam'];
+      $privilege = $row['priv'];
     }
 }
 $stmt->close();
 
-if (!isset($priv) || ($priv < 1 && !isset($_SESSION['kiosk_id']))) {
+if (!isset($privilege) || ($privilege < 1 && !isset($_SESSION['kiosk_id']))) {
   header("Location: home");
   exit();
 }

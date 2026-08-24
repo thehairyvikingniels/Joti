@@ -10,10 +10,10 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {
-    $hintaantal = $row['NUM'];
+    $hint_count = $row['NUM'];
   }
 } else {
-  $hintaantal = "0";
+  $hint_count = "0";
 }
 $stmt->close();
 
@@ -24,10 +24,10 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {
-    $huntaantal = $row['NUM'];
+    $hunt_count = $row['NUM'];
   }
 } else {
-  $huntaantal = "0";
+  $hunt_count = "0";
 }
 $stmt->close();
 
@@ -38,8 +38,8 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {
-    $puntentotaal = ($row['hunts'] ?? 0) + ($row['tegenhunts'] ?? 0) + ($row['opdrachten'] ?? 0) + ($row['foto_opdrachten'] ?? 0) + ($row['hints'] ?? 0) - ($row['strafpunten'] ?? 0);
-    $plaats = $row['plaats'] ?? "?";
+    $total_points = ($row['hunts'] ?? 0) + ($row['tegenhunts'] ?? 0) + ($row['opdrachten'] ?? 0) + ($row['foto_opdrachten'] ?? 0) + ($row['hints'] ?? 0) - ($row['strafpunten'] ?? 0);
+    $rank = $row['plaats'] ?? "?";
   }
 }
 $stmt->close();
@@ -76,8 +76,8 @@ $stmt->close();
   <!-- Mobile Fox Status -->
   <div class="md:hidden p-4 grid grid-cols-3 sm:grid-cols-4 gap-2">
     <?php
-      if (isset($vossen_names)) {
-          foreach ($vossen_names as $n) {
+      if (isset($fox_names)) {
+          foreach ($fox_names as $n) {
             $tw_color = 'bg-gray-200 text-gray-700';
             if ($vos[$n]['Kleur'] == 'red') $tw_color = 'bg-red-500 text-white';
             elseif ($vos[$n]['Kleur'] == 'orange') $tw_color = 'bg-orange-500 text-white';
@@ -111,28 +111,28 @@ $stmt->close();
             <p class="text-xs font-semibold uppercase tracking-wider opacity-60">Punten Totaal</p>
             <i class="fas fa-trophy opacity-40"></i>
           </div>
-          <h3 class="text-3xl font-bold"><?php echo isset($puntentotaal) ? $puntentotaal : 0; ?></h3>
+          <h3 class="text-3xl font-bold"><?php echo isset($total_points) ? $total_points : 0; ?></h3>
         </div>
         <div class="theme-card rounded p-5 border shadow-sm flex flex-col justify-between">
           <div class="flex justify-between items-center mb-2">
             <p class="text-xs font-semibold uppercase tracking-wider opacity-60">Huidige Plaats</p>
             <i class="fas fa-star opacity-40"></i>
           </div>
-          <h3 class="text-3xl font-bold"><?php echo isset($plaats) ? $plaats : 0; ?><span class="text-xl opacity-60">e</span></h3>
+          <h3 class="text-3xl font-bold"><?php echo isset($rank) ? $rank : 0; ?><span class="text-xl opacity-60">e</span></h3>
         </div>
         <div class="theme-card rounded p-5 border shadow-sm flex flex-col justify-between">
           <div class="flex justify-between items-center mb-2">
             <p class="text-xs font-semibold uppercase tracking-wider opacity-60">Aantal Hunts</p>
             <i class="fas fa-bullseye opacity-40"></i>
           </div>
-          <h3 class="text-3xl font-bold"><?php echo $huntaantal; ?></h3>
+          <h3 class="text-3xl font-bold"><?php echo $hunt_count; ?></h3>
         </div>
         <div class="theme-card rounded p-5 border shadow-sm flex flex-col justify-between">
           <div class="flex justify-between items-center mb-2">
             <p class="text-xs font-semibold uppercase tracking-wider opacity-60">Hints Opgestuurd</p>
             <i class="fas fa-question-circle opacity-40"></i>
           </div>
-          <h3 class="text-3xl font-bold"><?php echo $hintaantal; ?></h3>
+          <h3 class="text-3xl font-bold"><?php echo $hint_count; ?></h3>
         </div>
       </div>
 
@@ -202,7 +202,7 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
       </header>
       <div class="p-6 space-y-4 text-sm">
         <p>
-          Hoi <strong><?php echo ucfirst($vn); ?></strong>, als nieuwe gebruiker van dit platform willen we je graag welkom heten!
+          Hoi <strong><?php echo ucfirst($first_name); ?></strong>, als nieuwe gebruiker van dit platform willen we je graag welkom heten!
         </p>
         <p>
           Dit platform is speciaal ontwikkeld voor de Jotihunt en biedt verschillende functies om je ervaring te verbeteren. Hier zijn enkele belangrijke punten:
@@ -323,7 +323,7 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
 <script>
   // Your web app's Firebase configuration
   const firebaseConfig = {
-    apiKey: "<?php echo addslashes($siteSettings['API_KEY_FIREBASE'] ?? ''); ?>",
+    apiKey: "<?php echo addslashes($site_settings['API_KEY_FIREBASE'] ?? ''); ?>",
     authDomain: "jotihunt-1539122761269.firebaseapp.com",
     databaseURL: "https://jotihunt-1539122761269.firebaseio.com",
     projectId: "jotihunt-1539122761269",
@@ -376,7 +376,7 @@ async function autosonderweg(str = '6') {
   }
 }
 
-<?php if ($priv > 0): ?>
+<?php if ($privilege > 0): ?>
 async function invulgegevens(str = '6') {
   const icon = document.getElementById('invulgegevens_icon');
   if (icon) icon.classList.add('w3-spin');
@@ -400,13 +400,13 @@ async function invulgegevens(str = '6') {
 document.addEventListener('DOMContentLoaded', () => {
   gebeurtenissen();
   autosonderweg();
-  <?php if ($priv > 0): ?>
+  <?php if ($privilege > 0): ?>
   invulgegevens();
   <?php endif; ?>
   setInterval(() => {
     gebeurtenissen();
     autosonderweg();
-    <?php if ($priv > 0): ?>
+    <?php if ($privilege > 0): ?>
     invulgegevens();
     <?php endif; ?>
   }, 11111);
