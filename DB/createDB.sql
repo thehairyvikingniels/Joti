@@ -272,7 +272,7 @@ CREATE TABLE IF NOT EXISTS `Auto_Toewijzingen` (
 CREATE TABLE `Voslocaties` (
   `id` int(11) NOT NULL,
   `ingestuurd_op` datetime DEFAULT NULL,
-  `type` enum('Hint','Hunt','Spot','Voorspelling') NOT NULL,
+  `type` enum('Hint','Hunt','Spot','Voorspelling','Tegenhunt') NOT NULL,
   `deelgebied` varchar(8) NOT NULL,
   `ingeleverd` tinyint(4) NOT NULL DEFAULT 0,
   `ingeleverd_door` int(11) DEFAULT NULL,
@@ -462,6 +462,50 @@ CREATE TABLE IF NOT EXISTS `Kiosk_Accounts` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `auth_token` (`auth_token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+--
+-- Tabelstructuur voor tabel `Tegenhunt_Sessions`
+--
+
+CREATE TABLE IF NOT EXISTS `Tegenhunt_Sessions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `start_time` datetime NOT NULL,
+  `end_time` datetime NOT NULL,
+  `wind_direction` varchar(10) NOT NULL,
+  `compass_degrees` int(11) NOT NULL,
+  `message` text DEFAULT NULL,
+  `status` enum('active','found','expired','cancelled') NOT NULL DEFAULT 'active',
+  `found_by_user_id` int(11) DEFAULT NULL,
+  `found_code` varchar(50) DEFAULT NULL,
+  `found_lat` decimal(10,8) DEFAULT NULL,
+  `found_lon` decimal(11,8) DEFAULT NULL,
+  `found_photo_url` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `found_by_user_id` (`found_by_user_id`),
+  CONSTRAINT `Tegenhunt_Sessions_ibfk_1` FOREIGN KEY (`found_by_user_id`) REFERENCES `Gebruikers` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Tabelstructuur voor tabel `Tegenhunt_Breadcrumbs`
+--
+
+CREATE TABLE IF NOT EXISTS `Tegenhunt_Breadcrumbs` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `session_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `lat` decimal(10,8) NOT NULL,
+  `lon` decimal(11,8) NOT NULL,
+  `accuracy` float NOT NULL DEFAULT 10,
+  `recorded_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `session_id` (`session_id`),
+  KEY `user_id` (`user_id`),
+  KEY `idx_session_time` (`session_id`,`recorded_at`),
+  CONSTRAINT `Tegenhunt_Breadcrumbs_ibfk_1` FOREIGN KEY (`session_id`) REFERENCES `Tegenhunt_Sessions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `Tegenhunt_Breadcrumbs_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 COMMIT;
 

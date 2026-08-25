@@ -137,6 +137,7 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
     
     $prefs = [
         'welkomsberichten' => isset($_POST['notif_welkomsberichten']),
+        'tegenhunt' => isset($_POST['notif_tegenhunt']),
         'assignment_changes' => isset($_POST['notif_assignment_changes']),
         'vosstatus' => isset($_POST['notif_vosstatus']),
         'locatiestatus' => isset($_POST['notif_locatiestatus']),

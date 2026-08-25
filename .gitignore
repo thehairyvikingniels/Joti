@@ -3,3 +3,6 @@
 dblogin.php
 checklist.txt
 media/profiles/
+
+media/tegenhunt/*
+!media/tegenhunt/.gitkeep

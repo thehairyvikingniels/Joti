@@ -1,4 +1,4 @@
-# Jotify — LLM Agent Rules
+# Jotify ??? LLM Agent Rules
 
 > These rules govern AI assistant behavior when working on the Jotify codebase.
 > This file is local-only (.gitignored) and not shared via version control.
@@ -24,7 +24,7 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 
 ### 2.1 Technology Stack
 - **Backend**: PHP 8.x (no framework, procedural MVC pattern)
-- **Database**: MySQL/MariaDB via `mysqli` (OOP style, prepared statements only)
+- **Database**: MySQL/MariaDB via `mysqli` (OOP style, prepared statements only, `utf8mb4` charset)
 - **Frontend**: HTML5, Tailwind CSS (via CDN), vanilla JavaScript (ES6+)
 - **Maps**: Mapbox GL JS and Leaflet
 - **Notifications**: Web Push API via `minishlink/web-push`
@@ -36,24 +36,33 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 - **Bootstrap file**: `includes/auth.php` handles session, user loading, and site settings
 - **Shared components**: `includes/sidebar.php`, `includes/topbar.php`, `includes/footer.php`
 - **AJAX handlers**: `*_helper.php` files process POST/AJAX requests
-- **Cron jobs**: `cron/` directory contains scheduled background tasks
+- **Cron jobs**: `cron/` directory contains scheduled background tasks (executed headless without session auth)
 - **Database schema**: `DB/createDB.sql` is the canonical schema reference
 
-### 2.3 Access Levels
-| Level | Name | Access |
-|---|---|---|
-| 0 | Gast / Kiosk | Read-only, limited pages |
-| 1 | Vossenjager | Full read/write access to regular pages |
-| 2 | Admin | Admin panel access |
-| 3 | Superadmin | Site settings, system configuration |
+### 2.3 Access Levels & Test Accounts
+| Level | Name | Test Username | Test Password | Access |
+|### 2.5 Jotihunt Game Domain & Terminology
+- **The Game**: 26-hour tactical foxhunt (Saturday 10:00 ??? Sunday 12:00, third weekend of October) across Gelderland.
+- **Deelgebieden**: Named with **NATO phonetic alphabet** (Alpha, Bravo, Charlie, Delta, Echo, Foxtrot, etc.).
+- **Fox Statuses**: `green` (actief/huntable), `orange` (onderweg/huntable), `red` (inactief/immune).
+- **60-Minute Immunity**: Hunters cannot hunt the same fox team within 60 minutes of a previous hunt.
+- **Scoring**: Own cluster fox = 6 pts; other permitted cluster = 3 pts (double during Happy Hour).
+- **Tegenhunt (Counterhunt)**: 450m???500m radius near HQ, Telegram alert, 30-min window (-10 pts start, +20 pts on find).
+- **Official API**: `https://jotihunt.nl/api/2.0/` with a strict rate limit of **30 calls/minute** (HTTP 429).
+
+---|---|---|---|---|
+| 0 | Gast / Kiosk | `Test0` | `Test0!!!!!` | Read-only, limited pages |
+| 1 | Vossenjager | `Test1` | `Test1!!!!!` | Full read/write access to regular hunter pages |
+| 2 | Admin | `Test2` | `test2!!!!!` | Admin portal, users, service accounts, database, cronjobs |
+| 3 | Superadmin | `Test3` | `Test3!!!!!` | Full access, site settings, global notifications |
 
 ### 2.4 Key Files
-- `dblogin.php` — Database credentials (gitignored, never touch)
-- `includes/auth.php` — Session bootstrap (require_once on every page)
-- `includes/helpers.php` — Utility functions
-- `includes/globals.php` — Site settings and global constants
-- `functies.php` — Legacy AJAX router (being refactored)
-- `kiosk.php` — Kiosk authentication and status API
+- `dblogin.php` ??? Database credentials (gitignored, must set `$conn->set_charset("utf8mb4")`)
+- `includes/auth.php` ??? Session bootstrap (require_once on every page controller)
+- `includes/helpers.php` ??? Shared utility functions and cron loggers
+- `includes/db.php` ??? Parameterized data access layer
+- `includes/globals.php` ??? Site settings and global constants
+- `kiosk.php` ??? Kiosk authentication and status API
 
 ---
 
@@ -66,9 +75,11 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 4. If the change is non-trivial, present a plan before implementing
 
 ### 3.2 When Writing PHP
-- Start every page with `require_once('includes/auth.php');` (or `require_once('../includes/auth.php');` for admin pages)
-- Use `$conn` for database access (provided by `dblogin.php` via auth.php)
-- Use prepared statements for ALL queries — no exceptions
+- Start every page controller with `require_once('includes/auth.php');` (or `require_once('../includes/auth.php');` for admin pages)
+- Standalone cron scripts in `cron/` must **NEVER** include `includes/auth.php` or `functies.php`
+- Use `$conn` for database access (provided by `dblogin.php`)
+- Always ensure `$conn->set_charset("utf8mb4");` is configured
+- Use prepared statements for ALL queries ??? no exceptions
 - Use `htmlspecialchars()` when outputting any user-provided data
 - Use `require_once` for critical includes, `include_once` for optional UI components
 - Single quotes by default, double quotes only for string interpolation
@@ -78,7 +89,7 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 - `const` by default, `let` when needed, never `var`
 - `fetch()` for HTTP requests, never `XMLHttpRequest`
 - No IE compatibility code
-- Extract scripts > 30 lines into separate `.js` files in `js/` or `includes/`
+- Extract scripts > 30 lines into separate modular `.js` files in `js/`
 
 ### 3.4 When Writing SQL
 - Always use `$conn->prepare()` with bound parameters
@@ -106,7 +117,7 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 | AJAX/POST handler | `*_helper.php` (next to its page) |
 | Reusable PHP function | `includes/helpers.php` or `includes/db.php` |
 | Shared UI component | `includes/*.php` |
-| JavaScript (shared) | `js/*.js` or `includes/*.js` |
+| JavaScript (shared) | `js/*.js` |
 | CSS (shared) | `includes/*.css` |
 | API endpoint | `api/*.php` |
 | Cron job | `cron/*.php` |
@@ -122,7 +133,7 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 
 ---
 
-## 5. Communication Style
+## 5. Communication & Quality Standards
 
 ### 5.1 Language
 - Respond to the user in **English** (their preferred language)
@@ -133,16 +144,16 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 - Highlight anything the user needs to manually verify
 - If changes affect the database, explicitly state what was altered
 
-### 5.3 Error Handling
+### 5.3 Verification & Testing Standards
 - When encountering errors, diagnose before guessing fixes
-- Check PHP syntax with `php -l` after editing PHP files
-- Test via `curl` or browser when possible
+- Check PHP syntax with `php -l` across all modified files
+- Perform automated multi-role Chromium browser testing with Selenium (`Test0`, `Test1`, `Test2`, `Test3`) before declaring features ready for commit/release
 
 ---
 
 ## 6. Naming Reference (Quick Lookup)
 
-### Database Table Name Mapping (Legacy → New)
+### Database Table Name Mapping (Legacy ??? New)
 | Legacy (Dutch) | New (English) |
 |---|---|
 | `Gebruikers` | `Users` |
@@ -166,7 +177,7 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 | `Notification_Subscriptions` | `Notification_Subscriptions` |
 | `Notification_Backlog` | `Notification_Backlog` |
 
-### Common Variable Name Mapping (Legacy → New)
+### Common Variable Name Mapping (Legacy ??? New)
 | Legacy | New | Context |
 |---|---|---|
 | `$vn` | `$first_name` | User's first name |

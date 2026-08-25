@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'status') {
         exit();
     }
 
-    $stmt = $conn->prepare("SELECT id, auth_token, doel_pagina, refresh_interval, updated_at FROM Kiosk_Accounts WHERE id = ?");
+    $stmt = $conn->prepare("SELECT id, auth_token, doel_pagina, refresh_interval, laatst_gezien FROM Kiosk_Accounts WHERE id = ?");
     $stmt->bind_param("i", $_SESSION['kiosk_id']);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -89,7 +89,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'status') {
             "status" => "active",
             "target_page" => $row['doel_pagina'] ?: "whiteboard.php",
             "refresh_interval" => (int)$row['refresh_interval'],
-            "config_version" => strtotime($row['updated_at'] ?? 'now')
+            "config_version" => strtotime($row['laatst_gezien'] ?? 'now')
         ]);
         exit();
     } else {

@@ -18,6 +18,7 @@ $res_prefs = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs['notification_prefs'], true) : [
     'welkomsberichten' => true,
+    'tegenhunt' => true,
     'assignment_changes' => true,
     'vosstatus' => false,
     'locatiestatus' => false,
@@ -224,6 +225,7 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
                 <?php
                 $channels = [
                     'welkomsberichten' => 'Welkomsberichten',
+                    'tegenhunt' => 'Tegenhunt Alerts',
                     'assignment_changes' => 'Wijzigingen in je opdracht',
                     'vosstatus' => 'Vosstatussen',
                     'locatiestatus' => 'Voslocatie status',
@@ -232,7 +234,7 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
                     'nieuws' => 'Elk nieuw Nieuws artikel'
                 ];
                 foreach ($channels as $key => $label):
-                  $default_val = in_array($key, ['welkomsberichten', 'assignment_changes']);
+                  $default_val = in_array($key, ['welkomsberichten', 'assignment_changes', 'tegenhunt']);
                   $is_enabled = isset($notification_prefs[$key]) ? $notification_prefs[$key] : $default_val;
                   $checked = $is_enabled ? 'checked' : '';
                 ?>

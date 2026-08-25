@@ -121,7 +121,7 @@ $stmt_users->close();
                   echo "  <td class='px-6 py-4 opacity-80'>".htmlspecialchars(time2str($row['first_login']))."</td>";
                   
                   echo "  <td class='px-6 py-4 text-right'>";
-                  echo "    <form id='priv_form_desk_".$row['id']."' method='POST' class='flex items-center justify-end gap-2'>";
+                  echo "    <form id='priv_form_desk_".$row['id']."' action='users_helper.php' method='POST' class='flex items-center justify-end gap-2'>";
                   echo "      <input type='hidden' value='".htmlspecialchars($row['id'])."' name='user'>";
                   echo "      <select class='border rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white text-gray-800' name='priv'>";
                   echo "        <option value='0' ".$priv0.">Gast</option>";
@@ -207,7 +207,7 @@ $stmt_users->close();
                 echo "    <p><b>Eerste:</b> ".htmlspecialchars(time2str($row['first_login']))."</p>";
                 echo "  </div>";
                 
-                echo "  <form id='priv_form_mob_".$row['id']."' method='POST' class='flex items-center gap-2 w-full'>";
+                echo "  <form id='priv_form_mob_".$row['id']."' action='users_helper.php' method='POST' class='flex items-center gap-2 w-full'>";
                 echo "    <input type='hidden' value='".htmlspecialchars($row['id'])."' name='user'>";
                 echo "    <select class='flex-1 border rounded px-2 py-2 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white text-gray-800' name='priv'>";
                 echo "      <option value='0' ".$priv0.">Gast</option>";
@@ -275,7 +275,7 @@ $stmt_users->close();
                           <p>Weet je zeker dat je wilt inloggen als <strong>".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."</strong>?</p>
                         </div>
                         <div class='bg-gray-50 px-4 py-3 flex flex-row-reverse gap-3'>
-                          <form method='POST' class='m-0 p-0 flex-1 sm:flex-none'>
+                          <form action='users_helper.php' method='POST' class='m-0 p-0 flex-1 sm:flex-none'>
                             <input type='hidden' name='impersonate_user_id' value='".htmlspecialchars($row['id'])."'>
                             <button type='submit' class='w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Ja, log in</button>
                           </form>

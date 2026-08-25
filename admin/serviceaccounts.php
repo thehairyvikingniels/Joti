@@ -83,7 +83,7 @@ $stmt_settings->close();
             </h2>
             <p class="text-sm opacity-70 mt-1">Beheer set-and-forget schermen en externe API verbindingen</p>
           </div>
-          <button onclick="document.getElementById('createModal').classList.remove('hidden')" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded text-sm transition shadow flex items-center gap-2">
+          <button onclick="openCreateModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded text-sm transition shadow flex items-center gap-2">
             <i class="fas fa-plus"></i> Nieuw Account
           </button>
         </div>
@@ -169,7 +169,7 @@ $stmt_settings->close();
         </div>
         
         <div class="flex justify-between items-center mt-6">
-            <form id="regen_form" method="POST" class="inline">
+            <form id="regen_form" method="POST" action="serviceaccounts_helper.php" class="inline">
                 <input type="hidden" name="action" value="regenerate">
                 <input type="hidden" name="account_id" id="regenAccountId" value="">
                 <button type="button" onclick="document.getElementById('regenConfirmModal').classList.remove('hidden')" class="text-yellow-600 hover:text-yellow-700 text-sm font-medium transition flex items-center gap-1"><i class="fas fa-sync-alt"></i> Regenereer</button>
@@ -202,7 +202,7 @@ $stmt_settings->close();
         
         <div class="flex justify-end gap-2 mt-6">
             <button onclick="document.getElementById('deleteModal').classList.add('hidden')" class="theme-card-header border hover:bg-black/10 py-2 px-4 rounded font-medium transition">Annuleren</button>
-            <form id="delete_form" method="POST" class="inline">
+            <form id="delete_form" method="POST" action="serviceaccounts_helper.php" class="inline">
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="account_id" id="deleteAccountId" value="">
                 <button type="submit" class="bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded font-medium transition shadow">Verwijderen</button>
@@ -218,7 +218,7 @@ $stmt_settings->close();
         <div class="p-6 border-b theme-card-header">
             <h3 class="text-lg font-bold" id="modalTitle">Nieuw Service Account</h3>
         </div>
-        <form method="POST" action="" class="p-6">
+        <form method="POST" action="serviceaccounts_helper.php" class="p-6">
             <input type="hidden" name="action" id="formAction" value="create">
             <input type="hidden" name="account_id" id="formAccountId" value="">
             

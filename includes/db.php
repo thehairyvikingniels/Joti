@@ -175,7 +175,7 @@ function send_push_notification(
     foreach ($users as $uId => $prefsJson) {
         if ($channel !== null) {
             $prefs = $prefsJson ? json_decode((string)$prefsJson, true) : [];
-            $defaultVal = in_array($channel, ['welkomsberichten', 'assignment_changes'], true);
+            $defaultVal = in_array($channel, ['welkomsberichten', 'assignment_changes', 'tegenhunt'], true);
             $enabled = isset($prefs[$channel]) ? (bool)$prefs[$channel] : $defaultVal;
 
             if (!$enabled) {
@@ -233,4 +233,85 @@ function fetchFoxPathPoints(
         }
     }
     return $results;
+}
+
+/**
+ * Retrieve dynamic home coordinates and address for the current group from Groepen table.
+ *
+ * @param mysqli $conn
+ * @param int $groupId
+ * @return array|null
+ */
+function getMyGroupCoordinates(mysqli $conn, int $groupId): ?array {
+    $stmt = $conn->prepare("SELECT id, naam, lat, lon, straat, huisnummer, postal_code, plaats, deelgebied FROM Groepen WHERE id = ?");
+    if ($stmt) {
+        $stmt->bind_param("i", $groupId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $group = $res->fetch_assoc();
+        $stmt->close();
+        if ($group && !empty($group['lat']) && !empty($group['lon'])) {
+            return [
+                'id' => (int)$group['id'],
+                'naam' => $group['naam'],
+                'lat' => (float)$group['lat'],
+                'lon' => (float)$group['lon'],
+                'address' => trim(($group['straat'] ?? '') . ' ' . ($group['huisnummer'] ?? '') . ', ' . ($group['plaats'] ?? '')),
+                'deelgebied' => $group['deelgebied'] ?? ''
+            ];
+        }
+    }
+    return null;
+}
+
+/**
+ * Fetch the currently active Tegenhunt session if one exists within the 30-minute window.
+ *
+ * @param mysqli $conn
+ * @return array|null
+ */
+function getActiveTegenhunt(mysqli $conn): ?array {
+    $now = date('Y-m-d H:i:s');
+    $stmt = $conn->prepare("SELECT t.*, u.voornaam AS finder_first_name, u.achternaam AS finder_last_name 
+        FROM Tegenhunt_Sessions t 
+        LEFT JOIN Gebruikers u ON t.found_by_user_id = u.id 
+        WHERE t.status = 'active' AND t.end_time > ? 
+        ORDER BY t.start_time DESC LIMIT 1");
+    if ($stmt) {
+        $stmt->bind_param("s", $now);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $session = $res->fetch_assoc();
+        $stmt->close();
+        if ($session) {
+            $session['remaining_seconds'] = max(0, strtotime($session['end_time']) - time());
+            return $session;
+        }
+    }
+    return null;
+}
+
+/**
+ * Record a high-accuracy GPS breadcrumb for an active Tegenhunt session.
+ *
+ * @param mysqli $conn
+ * @param int $sessionId
+ * @param int $userId
+ * @param float $lat
+ * @param float $lon
+ * @param float $accuracy
+ * @return bool
+ */
+function recordTegenhuntBreadcrumb(mysqli $conn, int $sessionId, int $userId, float $lat, float $lon, float $accuracy): bool {
+    if ($accuracy > 25.0) {
+        return false; // Discard inaccurate GPS points
+    }
+    $stmt = $conn->prepare("INSERT INTO Tegenhunt_Breadcrumbs (session_id, user_id, lat, lon, accuracy, recorded_at) VALUES (?, ?, ?, ?, ?, NOW())");
+    if ($stmt) {
+        $stmt->bind_param("iiddd", $sessionId, $userId, $lat, $lon, $accuracy);
+        $success = $stmt->execute();
+        $stmt->close();
+        return $success;
+    }
+    return false;
 }

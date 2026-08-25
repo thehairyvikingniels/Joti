@@ -132,6 +132,18 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
     <a href="<?=$notInAdminfolder?>home" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['home']['active']?>"><i class="fa fa-users fa-fw w-5 opacity-70"></i><span>Overzicht</span></a>
     <?php if ($privilege > 0): ?>
     <a href="<?=$notInAdminfolder?>kaarten" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['kaarten']['active']?>"><i class="fas fa-map-marked-alt fa-fw w-5 opacity-70"></i><span>Kaarten</span></a>
+    <?php 
+    $activeTegenhunt = function_exists('getActiveTegenhunt') ? getActiveTegenhunt($conn) : null;
+    if ($activeTegenhunt !== null || ($privilege ?? 0) >= 2): 
+        $isTegenhuntActive = ($activeTegenhunt !== null);
+    ?>
+    <a href="<?=$notInAdminfolder?>tegenhunt" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['tegenhunt']['active'] ?? $inactive_classes ?> <?= $isTegenhuntActive ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : '' ?>">
+      <i class="fas <?= $isTegenhuntActive ? 'fa-bullseye text-red-500 animate-pulse' : 'fa-bullseye' ?> fa-fw w-5 opacity-80"></i>
+      <span class="<?= $isTegenhuntActive ? 'font-bold text-red-500' : '' ?>">
+        <?= $isTegenhuntActive ? '<span class="text-red-500 mr-1 font-extrabold text-base animate-ping">!</span>' : '' ?>Tegenhunt
+      </span>
+    </a>
+    <?php endif; ?>
     <a href="<?=$notInAdminfolder?>vossen" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['vossen']['active']?>"><i class="fas fa-bullseye fa-fw w-5 opacity-70"></i><span>Vossen</span></a>
     <a href="<?=$notInAdminfolder?>voslocaties" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['voslocaties']['active']?>"><i class="fas fa-circle-nodes fa-fw w-5 opacity-70"></i><span>Voslocaties</span></a>
     <?php endif; ?>
@@ -164,4 +176,4 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
 <!-- Overlay effect when opening sidebar on small screens -->
 <div id="myOverlay" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden transition-opacity" onclick="w3_close()"></div>
 
-<script src="<?= $inAdminfolder ?? '' ?>js/app.js"></script>
+<script src="/js/app.js"></script>

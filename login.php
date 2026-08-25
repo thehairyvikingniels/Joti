@@ -105,8 +105,12 @@ if (isset($_POST['pswd1'])){
           $stmt_login_time->close();
 
           // Setup user session
+          unset($_SESSION['kiosk_id'], $_SESSION['kiosk_priv'], $_SESSION['kiosk_naam']);
           $_SESSION['id'] = $row['id'];
           $_SESSION['priv'] = $row['priv'];
+          $_SESSION['voornaam'] = $row['voornaam'] ?? '';
+          $_SESSION['achternaam'] = $row['achternaam'] ?? '';
+          $_SESSION['gebruikersnaam'] = $row['gebruikersnaam'] ?? '';
           $_SESSION['gps'] = "false";
           $_SESSION['theme'] = $row['theme'] ?? 'light';
           

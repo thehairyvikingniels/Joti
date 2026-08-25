@@ -119,10 +119,11 @@ if (isset($_GET['autos']) && $_GET['autos'] === 'true') {
 
 // 3. People
 if (isset($_GET['personen']) && $_GET['personen'] === 'true') {
-    $users = dbFetchAll($conn, 'SELECT * FROM Gebruikers');
+    $users = dbFetchAll($conn, 'SELECT * FROM Gebruikers WHERE lat IS NOT NULL AND lon IS NOT NULL AND geotijd IS NOT NULL');
     $time_15_mins_ago = time() - (15 * 60);
     foreach ($users as $u) {
-        if (!empty($u['lat']) && !empty($u['lon']) && !empty($u['geotijd']) && (int)$u['geotijd'] > $time_15_mins_ago) {
+        $geotijd_ts = is_numeric($u['geotijd']) ? (int)$u['geotijd'] : strtotime((string)$u['geotijd']);
+        if (!empty($u['lat']) && !empty($u['lon']) && $geotijd_ts > $time_15_mins_ago) {
             $map_payload['people'][] = [
                 'voornaam' => ucfirst((string)$u['voornaam']),
                 'lat' => (float)$u['lat'],
