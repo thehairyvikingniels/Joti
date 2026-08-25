@@ -248,7 +248,7 @@ if (isset($site_settings['GROUP_ID'])) {
             </div>
             
             <div>
-              <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Code</label>
+              <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Code (optioneel)</label>
               <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-gray-100 disabled:opacity-60 disabled:cursor-not-allowed" type="text" name="code" id="code_input" maxlength="32" disabled>
             </div>
             

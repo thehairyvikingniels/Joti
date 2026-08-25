@@ -85,7 +85,7 @@ function toggleCodeInput() {
 
     if (typeSelect.value === "Hunt") {
         codeInput.disabled = false;
-        codeInput.required = true;
+        codeInput.required = false;
         codeInput.classList.remove("bg-gray-100");
         codeInput.classList.add("bg-white");
     } else {

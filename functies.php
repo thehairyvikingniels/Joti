@@ -90,11 +90,7 @@ if (isset($_POST['update_voslocatie'])) {
         $code = $_POST['code'];
         $opmerking = $_POST['opmerking'];
 
-        // Validation for 'code' when type is 'Hunt'
-        if ($type === 'Hunt' && empty($code)) {
-            header("Location: admin/database?error=" . urlencode("Code is verplicht bij het type Hunt."));
-            exit();
-        }
+        // Code is optional for Hunt locations
 
         $stmt_upd = $conn->prepare("UPDATE Voslocaties SET type=?, deelgebied=?, ingestuurd_op=?, coordinaat_x=?, coordinaat_y=?, code=?, opmerking=? WHERE id=?");
         $stmt_upd->bind_param("sssssssi", $type, $deelgebied, $ingestuurd_op, $coord_x, $coord_y, $code, $opmerking, $id);

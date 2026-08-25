@@ -3,6 +3,10 @@
 require_once(__DIR__ . '/helpers.php');
 require_once(__DIR__ . '/db.php');
 
+if (isset($conn) && $conn instanceof mysqli) {
+    $conn->set_charset('utf8mb4');
+}
+
 // Load global settings
 $site_settings = fetchSiteSettings($conn);
 
