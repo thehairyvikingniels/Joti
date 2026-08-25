@@ -282,7 +282,7 @@ if (isset($site_settings['GROUP_ID'])) {
         </div>
         
         <div class="mt-8 border-t pt-6" style="border-color: var(--theme-card-border);">
-          <button type="submit" name="submit_fox_location" class="theme-bg-primary text-white font-bold py-3 px-8 rounded shadow-sm hover:opacity-90 transition"><i class="fas fa-plus mr-2"></i>Locatie Toevoegen</button>
+          <button type="submit" name="submit_fox_location" class="theme-bg-primary text-white font-bold py-2.5 px-8 rounded-xl shadow-sm hover:opacity-90 transition"><i class="fas fa-plus mr-2"></i>Locatie Toevoegen</button>
         </div>
       </form>
     </div>

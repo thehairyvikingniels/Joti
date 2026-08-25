@@ -72,7 +72,7 @@ require_once('includes/auth.php');
                         }
 
                         echo '
-          <article class="theme-card rounded border shadow-sm overflow-hidden">
+          <article class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
             <header class="theme-card-header px-6 py-4 border-b text-white flex flex-col md:flex-row md:justify-between md:items-center gap-2" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
               <h3 class="text-xl font-bold">' . $row['titel'] . '</h3>
               <div class="text-sm font-medium opacity-80 md:text-right">

@@ -51,10 +51,12 @@ $themeConfig = getThemeConfig($theme);
         background-color: var(--theme-card-bg);
         border-color: var(--theme-card-border);
         color: var(--theme-text);
+        border-radius: 0.75rem;
     }
     .theme-card-header {
-        background-color: rgba(0,0,0,0.05);
+        background-color: var(--theme-sidebar-active);
         border-bottom-color: var(--theme-card-border);
+        color: #ffffff;
     }
     .theme-primary {
         color: var(--theme-primary);
@@ -75,6 +77,16 @@ $themeConfig = getThemeConfig($theme);
     }
     .theme-override-text {
         color: var(--theme-text) !important;
+    }
+    .theme-input {
+        background-color: var(--theme-card-bg) !important;
+        color: var(--theme-text) !important;
+        border: 1px solid var(--theme-card-border) !important;
+        border-radius: 0.75rem !important;
+    }
+    .theme-input:focus {
+        outline: none !important;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) !important;
     }
 </style>
 <script>

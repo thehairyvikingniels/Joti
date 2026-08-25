@@ -60,7 +60,7 @@ $stmt_users->close();
     <div class="space-y-6 mb-24">
       
       <!-- Users Table Card -->
-      <div class="theme-card rounded border shadow-sm overflow-hidden w-full">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden w-full mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
           <h3 class="text-xl font-bold">Gebruikers</h3>
         </div>
@@ -123,7 +123,7 @@ $stmt_users->close();
                   echo "  <td class='px-6 py-4 text-right'>";
                   echo "    <form id='priv_form_desk_".$row['id']."' action='users_helper.php' method='POST' class='flex items-center justify-end gap-2'>";
                   echo "      <input type='hidden' value='".htmlspecialchars($row['id'])."' name='user'>";
-                  echo "      <select class='border rounded px-2 py-1 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white text-gray-800' name='priv'>";
+                  echo "      <select class='theme-override-bg theme-override-text border rounded-lg px-2.5 py-1 text-xs outline-none focus:ring-2 focus:ring-blue-500 shadow-sm' name='priv'>";
                   echo "        <option value='0' ".$priv0.">Gast</option>";
                   echo "        <option value='1' ".$priv1.">Vossenjager</option>";
                   echo "        <option value='2' ".$priv2.">Admin</option>";

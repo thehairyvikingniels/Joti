@@ -57,7 +57,7 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       
       <!-- Gegevens Wijzigen -->
-      <div class="theme-card rounded border shadow-sm p-5">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
         <?php if (isset($_GET['t']) && $_GET['t'] == "gegevens"): ?>
           <div class="bg-blue-100 text-blue-800 p-3 rounded mb-4 flex justify-between items-start">
             <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
@@ -65,35 +65,35 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
           </div>
         <?php endif; ?>
         <form method="POST" action="instellingen_helper.php">
-          <h3 class="text-lg font-bold mb-4">Gegevens wijzigen</h3>
+          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center -mx-5 -mt-5 mb-5" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);"><h3 class="text-xl font-bold"><i class="fas fa-user-edit mr-2"></i> Gegevens wijzigen</h3></div>
           
           <div class="space-y-3">
             <div>
               <label class="block text-sm font-semibold mb-1 opacity-80">Gebruikersnaam</label>
-              <input name="username" type="text" value="<?= htmlspecialchars($username) ?>" required minlength="5" maxlength="32" class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+              <input name="username" type="text" value="<?= htmlspecialchars($username) ?>" required minlength="5" maxlength="32" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1 opacity-80">Voornaam</label>
-              <input name="firstname" type="text" value="<?= htmlspecialchars(ucfirst($first_name)) ?>" required class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+              <input name="firstname" type="text" value="<?= htmlspecialchars(ucfirst($first_name)) ?>" required class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1 opacity-80">Achternaam</label>
-              <input name="lastname" type="text" value="<?= htmlspecialchars(ucfirst($last_name)) ?>" required class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+              <input name="lastname" type="text" value="<?= htmlspecialchars(ucfirst($last_name)) ?>" required class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1 opacity-80">Email</label>
-              <input name="email" type="email" value="<?= htmlspecialchars($email) ?>" required class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+              <input name="email" type="email" value="<?= htmlspecialchars($email) ?>" required class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
             </div>
           </div>
           
           <div class="mt-5 text-center">
-            <button type="submit" class="theme-bg-primary text-white font-bold py-2 px-6 rounded hover:opacity-90 transition shadow-sm">Verander</button>
+            <button type="submit" class="theme-bg-primary text-white font-bold py-2.5 px-6 rounded-xl hover:opacity-90 transition shadow-sm">Verander</button>
           </div>
         </form>
       </div>
 
       <!-- Wachtwoord Wijzigen -->
-      <div class="theme-card rounded border shadow-sm p-5">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
         <?php if (isset($_GET['t']) && $_GET['t'] == "wachtwoord"): ?>
           <div class="bg-blue-100 text-blue-800 p-3 rounded mb-4 flex justify-between items-start">
             <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
@@ -101,27 +101,27 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
           </div>
         <?php endif; ?>
         <form method="POST" action="instellingen_helper.php">
-          <h3 class="text-lg font-bold mb-4">Wachtwoord wijzigen</h3>
+          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center -mx-5 -mt-5 mb-5" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);"><h3 class="text-xl font-bold"><i class="fas fa-key mr-2"></i> Wachtwoord wijzigen</h3></div>
           
           <div class="space-y-3">
             <div>
               <label class="block text-sm font-semibold mb-1 opacity-80">Wachtwoord</label>
-              <input name="pswd0" type="password" placeholder="Nieuw Wachtwoord" required minlength="8" class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+              <input name="pswd0" type="password" placeholder="Nieuw Wachtwoord" required minlength="8" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
             </div>
             <div>
               <label class="block text-sm font-semibold mb-1 opacity-80">Herhaal Wachtwoord</label>
-              <input name="pswd1" type="password" placeholder="Herhaal Wachtwoord" required minlength="8" class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500">
+              <input name="pswd1" type="password" placeholder="Herhaal Wachtwoord" required minlength="8" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
             </div>
           </div>
           
           <div class="mt-5 text-center">
-            <button type="submit" class="theme-bg-primary text-white font-bold py-2 px-6 rounded hover:opacity-90 transition shadow-sm">Verander</button>
+            <button type="submit" class="theme-bg-primary text-white font-bold py-2.5 px-6 rounded-xl hover:opacity-90 transition shadow-sm">Verander</button>
           </div>
         </form>
       </div>
 
       <!-- Profielfoto Wijzigen -->
-      <div class="theme-card rounded border shadow-sm p-5">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
         <?php if (isset($_GET['t']) && $_GET['t'] == "profielfoto"): ?>
           <div class="bg-blue-100 text-blue-800 p-3 rounded mb-4 flex justify-between items-start">
             <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
@@ -129,7 +129,7 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
           </div>
         <?php endif; ?>
         <form method="POST" action="instellingen_helper.php" enctype="multipart/form-data">
-          <h3 class="text-lg font-bold mb-4">Profielfoto</h3>
+          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center -mx-5 -mt-5 mb-5" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);"><h3 class="text-xl font-bold"><i class="fas fa-camera mr-2"></i> Profielfoto</h3></div>
           
           <div class="flex flex-col items-center mb-4">
             <?php if ($profile_picture): ?>
@@ -149,7 +149,7 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
           </div>
           
           <div class="mt-5 text-center flex gap-2 justify-center">
-            <button type="submit" class="theme-bg-primary text-white font-bold py-2 px-6 rounded hover:opacity-90 transition shadow-sm">Uploaden</button>
+            <button type="submit" class="theme-bg-primary text-white font-bold py-2.5 px-6 rounded-xl hover:opacity-90 transition shadow-sm">Uploaden</button>
             <?php if ($profile_picture): ?>
             <a href="instellingen_helper.php?delete_profile_picture=1" class="bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-600 transition shadow-sm"><i class="fas fa-trash-alt"></i></a>
             <?php endif; ?>
@@ -158,7 +158,7 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
       </div>
 
       <!-- Theme Switcher -->
-      <div class="theme-card rounded border shadow-sm p-5">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
         <h3 class="text-lg font-bold mb-4">Thema Voorkeur</h3>
         <p class="text-sm opacity-80 mb-4">Kies je favoriete kleurenschema. Deze wordt opgeslagen in je profiel en geladen op alle apparaten.</p>
         

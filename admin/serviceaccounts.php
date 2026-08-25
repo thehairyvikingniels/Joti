@@ -75,15 +75,15 @@ $stmt_settings->close();
     <div class="space-y-6 mb-24">
       
       <!-- Table Card -->
-      <div class="theme-card rounded border shadow-sm overflow-hidden w-full">
-        <div class="theme-card-header p-4 border-b flex justify-between items-center bg-gray-50/5">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden w-full mb-6">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center flex-wrap gap-2" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
           <div>
             <h2 class="text-xl font-bold flex items-center">
-              <i class="fas fa-tv text-blue-500 mr-2"></i> Service Accounts / Kiosks
+              <i class="fas fa-tv mr-2"></i> Service Accounts / Kiosks
             </h2>
-            <p class="text-sm opacity-70 mt-1">Beheer set-and-forget schermen en externe API verbindingen</p>
+            <p class="text-xs opacity-80 mt-0.5">Beheer set-and-forget schermen en externe API verbindingen</p>
           </div>
-          <button onclick="openCreateModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded text-sm transition shadow flex items-center gap-2">
+          <button onclick="openCreateModal()" class="bg-white/20 hover:bg-white/30 text-white font-bold py-2 px-4 rounded-xl text-sm transition shadow-sm flex items-center gap-2 border border-white/30">
             <i class="fas fa-plus"></i> Nieuw Account
           </button>
         </div>

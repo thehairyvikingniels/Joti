@@ -70,7 +70,7 @@ if (isset($privilege) && $privilege > 0 && isset($_POST['subarea']) && isset($_P
             }
 
             echo '
-              <div class="theme-card rounded border shadow-sm overflow-hidden">
+              <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
                 <div class="theme-card-header px-6 py-4 flex justify-between items-center border-b" style="border-color: var(--theme-card-border);">
                   <h3 class="text-xl font-bold">' . htmlspecialchars($row['titel']) . '</h3>
                   <span class="text-sm opacity-60 font-medium">' . date("d/m H:i", strtotime($row['datum'])) . '</span>

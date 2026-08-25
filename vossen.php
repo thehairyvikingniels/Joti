@@ -339,7 +339,7 @@ foreach ($fox_teams as $team) {
     <div class="space-y-6">
       
       <!-- Timeline Card -->
-      <div class="theme-card rounded border shadow-sm overflow-hidden">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold">Vossen Status Tijdlijn</h5>
         </div>
@@ -445,7 +445,7 @@ foreach ($fox_teams as $team) {
       </div>
 
       <!-- Statistics Card -->
-      <div class="theme-card rounded border shadow-sm overflow-hidden">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold">Vossen Statistieken</h5>
         </div>

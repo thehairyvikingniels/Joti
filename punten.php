@@ -76,7 +76,7 @@ $stmt->close();
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
       <!-- Your Team Score Card -->
-      <div class="theme-card rounded border shadow-sm overflow-hidden lg:col-span-1 h-fit">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden lg:col-span-1 h-fit mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold flex items-center">
               <span class="text-2xl mr-2 font-black"><?php echo $rank;?>e</span> Plaats
@@ -123,7 +123,7 @@ $stmt->close();
       </div>
 
       <!-- Scoreboard Card -->
-      <div class="theme-card rounded border shadow-sm overflow-hidden lg:col-span-2">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden lg:col-span-2 mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold">Scorelijst</h5>
         </div>

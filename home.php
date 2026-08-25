@@ -139,17 +139,17 @@ $stmt->close();
       <!-- Panels -->
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
         <div class="xl:col-span-1 space-y-6">
-          <div class="theme-card rounded border shadow-sm">
-            <div class="px-5 py-3 border-b flex justify-between items-center rounded-t" style="border-color: var(--theme-card-border); background: rgba(0,0,0,0.02);">
-              <h4 class="font-semibold text-sm">Invulgegevens</h4>
+          <div class="theme-card rounded-xl border shadow-sm overflow-hidden">
+            <div class="theme-card-header px-5 py-3.5 border-b flex justify-between items-center text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+              <h4 class="font-bold text-sm text-white">Invulgegevens</h4>
               <button id="invulgegevens_icon" class="opacity-50 hover:opacity-100 transition" onclick="invulgegevens()"><i class="fas fa-sync-alt text-xs"></i></button>
             </div>
             <div id="invulgegevens" class="p-0 overflow-x-auto">
             </div>
           </div>
-          <div class="theme-card rounded border shadow-sm">
-            <div class="px-5 py-3 border-b flex justify-between items-center rounded-t" style="border-color: var(--theme-card-border); background: rgba(0,0,0,0.02);">
-              <h4 class="font-semibold text-sm">Auto's Onderweg</h4>
+          <div class="theme-card rounded-xl border shadow-sm overflow-hidden">
+            <div class="theme-card-header px-5 py-3.5 border-b flex justify-between items-center text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+              <h4 class="font-bold text-sm text-white">Auto's Onderweg</h4>
               <button id="autosonderweg_icon" class="opacity-50 hover:opacity-100 transition" onclick="autosonderweg()"><i class="fas fa-sync-alt text-xs"></i></button>
             </div>
             <div id="autosonderweg" class="p-4">
@@ -157,9 +157,9 @@ $stmt->close();
           </div>
         </div>
         <div class="xl:col-span-2">
-          <div class="theme-card rounded border shadow-sm h-full flex flex-col">
-            <div class="px-5 py-3 border-b flex justify-between items-center rounded-t" style="border-color: var(--theme-card-border); background: rgba(0,0,0,0.02);">
-              <h4 class="font-semibold text-sm">Recente Gebeurtenissen</h4>
+          <div class="theme-card rounded-xl border shadow-sm overflow-hidden h-full flex flex-col">
+            <div class="theme-card-header px-5 py-3.5 border-b flex justify-between items-center text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+              <h4 class="font-bold text-sm text-white">Recente Gebeurtenissen</h4>
               <button id="gebeurtenissen_icon" class="opacity-50 hover:opacity-100 transition" onclick="gebeurtenissen()"><i class="fas fa-sync-alt text-xs"></i></button>
             </div>
             <div id="gebeurtenissen" class="p-0 flex-1 overflow-x-auto">
@@ -172,17 +172,17 @@ $stmt->close();
   <?php require_once('includes/footer.php') ?>
 </div> <!-- End Main Content / flex-1 -->
 
-<div id="modal01" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
-  <div class="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden theme-card theme-text">
-    <header class="bg-red-500 text-white p-4 relative"> 
-      <span onclick="document.getElementById('modal01').style.display='none'" class="absolute top-4 right-4 cursor-pointer hover:opacity-80"><i class="fas fa-times"></i></span>
-      <h2 class="text-xl font-bold">Zeker weten?</h2>
+<div id="modal01" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+  <div class="theme-card border max-w-md w-full rounded-2xl shadow-2xl overflow-hidden relative">
+    <header class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+      <h3 class="text-lg font-bold flex items-center gap-2"><i class="fas fa-check-double"></i> <span>Markeren als ingeleverd?</span></h3>
+      <button onclick="document.getElementById('modal01').style.display='none'" class="text-white opacity-70 hover:opacity-100 transition"><i class="fas fa-times"></i></button>
     </header>
     <div class="p-6">
-      <p class="mb-6 font-medium">Door dit te markeren als klaar betekend het dat iemand dit in de officiele jotihuntwebsite heeft opgestuurd.</p>
-      <div class="flex space-x-3">
-        <a href="#" id="opgestuurdurl" class="px-4 py-2 bg-red-500 text-white rounded font-bold hover:bg-red-600 transition" onclick="">Ja</a>
-        <button class="px-4 py-2 bg-gray-200 text-gray-800 rounded font-bold hover:bg-gray-300 transition" onclick="document.getElementById('modal01').style.display='none'">Nee</button>
+      <p class="text-sm opacity-80 mb-6 leading-relaxed">Door dit te markeren als klaar bevestig je dat dit item succesvol is ingediend op de offici??le Jotihunt-website.</p>
+      <div class="flex justify-end gap-3">
+        <button type="button" class="theme-card border hover:bg-black/5 dark:hover:bg-white/5 py-2.5 px-5 rounded-xl font-bold text-sm transition" onclick="document.getElementById('modal01').style.display='none'">Annuleren</button>
+        <a href="#" id="opgestuurdurl" class="bg-green-600 hover:bg-green-700 text-white py-2.5 px-6 rounded-xl font-bold text-sm transition shadow-md">Ja, ingeleverd</a>
       </div>
     </div>
   </div>

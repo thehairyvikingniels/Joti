@@ -78,9 +78,9 @@ $backlogRes = $stmt_backlog->get_result();
             <?php endif; ?>
 
             <!-- Form Card -->
-            <div class="theme-card rounded-lg shadow-sm border overflow-hidden">
-                <div class="px-6 py-4 theme-card-header border-b">
-                    <h3 class="text-lg font-semibold"><i class="fas fa-paper-plane mr-2"></i>Nieuwe Notificatie Versturen</h3>
+            <div class="theme-card rounded-xl shadow-sm border overflow-hidden mb-6">
+                <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+                    <h3 class="text-xl font-bold"><i class="fas fa-paper-plane mr-2"></i> Nieuwe Notificatie Versturen</h3>
                 </div>
                 <div class="p-6">
                     <form method="POST" action="notifications.php">
@@ -91,15 +91,15 @@ $backlogRes = $stmt_backlog->get_result();
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium mb-1">Titel</label>
-                                    <input type="text" name="title" required class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 theme-override-bg theme-override-text border-gray-300">
+                                    <input type="text" name="title" required class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium mb-1">Bericht</label>
-                                    <textarea name="message" rows="3" required class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 theme-override-bg theme-override-text border-gray-300"></textarea>
+                                    <textarea name="message" rows="3" required class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"></textarea>
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium mb-1">URL (Doel link bij klikken)</label>
-                                    <input type="text" name="url" value="/" required class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 theme-override-bg theme-override-text border-gray-300">
+                                    <input type="text" name="url" value="/" required class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
                                 </div>
                             </div>
                             
@@ -137,7 +137,7 @@ $backlogRes = $stmt_backlog->get_result();
                         </div>
                         
                         <div class="mt-6">
-                            <button type="submit" class="w-full md:w-auto px-6 py-2 theme-bg-primary text-white font-medium rounded shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2">
+                            <button type="submit" class="w-full md:w-auto px-8 py-2.5 theme-bg-primary text-white font-bold rounded-xl shadow-sm hover:opacity-90 transition">
                                 <i class="fas fa-paper-plane mr-2"></i>Versturen
                             </button>
                         </div>
@@ -146,8 +146,8 @@ $backlogRes = $stmt_backlog->get_result();
             </div>
 
             <!-- Table Card -->
-            <div class="theme-card rounded-lg shadow-sm border overflow-hidden">
-                <div class="px-6 py-4 theme-card-header border-b">
+            <div class="theme-card rounded-xl shadow-sm border overflow-hidden mb-6">
+                <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
                     <h3 class="text-lg font-semibold"><i class="fas fa-list mr-2"></i>Recente Notificaties (Backlog)</h3>
                 </div>
                 <div class="overflow-x-auto">
