@@ -1,57 +1,166 @@
 /**
- * js/admin_cronjobs.js ??? Real-time countdown refresh and JSON status polling for cron jobs.
+ * js/admin_cronjobs.js ??? Real-time countdown timer and JSON status polling for cron jobs.
  */
 
 let countAmount = 0;
+const cronTimers = [];
 
+/**
+ * Initialize cron timers from rendered DOM and start 1s tick and 5s polling intervals.
+ */
 function initCronjobs() {
-    countAmount = document.getElementsByClassName("cronTimer").length;
-    setInterval(() => {
-        TimerRefresh();
-    }, 1000);
+    const cards = document.getElementsByClassName("cronTimer");
+    countAmount = cards.length;
 
-    setInterval(() => {
-        cronjobs();
-    }, 5000);
+    for (let i = 0; i < countAmount; i++) {
+        const nextEl = document.getElementById(`cron_exec_next_${i}`);
+        const enabledEl = document.getElementById(`cron_enabled_${i}`);
+        if (!nextEl) continue;
+
+        let isEnabled = true;
+        if (nextEl.hasAttribute("data-enabled")) {
+            isEnabled = nextEl.getAttribute("data-enabled") === "1";
+        } else if (enabledEl) {
+            isEnabled = !enabledEl.innerHTML.includes("toggle-off");
+        }
+
+        let seconds = parseInt(nextEl.getAttribute("data-seconds"), 10);
+        if (isNaN(seconds)) {
+            seconds = parseInt(nextEl.textContent, 10);
+            if (isNaN(seconds)) seconds = 0;
+        }
+
+        cronTimers[i] = {
+            seconds: seconds,
+            enabled: isEnabled
+        };
+        renderTimer(i);
+    }
+
+    // 1-second countdown tick
+    setInterval(TimerRefresh, 1000);
+
+    // 5-second backend status poll
+    setInterval(CronRefresh, 5000);
 }
 
-function TimerRefresh() {
-    for (let i = 0; i < countAmount; i++) {
-        const timerEl = document.getElementById(`timer${i}`);
-        if (!timerEl) continue;
-        let value = parseInt(timerEl.getAttribute("data-interval"), 10);
-        if (value <= 0) {
-            timerEl.innerHTML = "Wachten op cronjob...";
-        } else {
-            value -= 1;
-            timerEl.setAttribute("data-interval", value);
-            timerEl.innerHTML = `Over: ${value} sec`;
+/**
+ * Toggle active status of a cronjob.
+ * @param {string} name
+ */
+async function toggleCron(name) {
+    try {
+        const response = await fetch(`cronjobs_helper.php?toggleCron=${encodeURIComponent(name)}`);
+        if (response.ok) {
+            CronRefresh();
         }
+    } catch (err) {
+        console.error("Error toggling cronjob:", err);
     }
 }
 
-async function cronjobs() {
+/**
+ * Render a single cron timer element based on current state.
+ * @param {number} i
+ */
+function renderTimer(i) {
+    const timerEl = document.getElementById(`cron_exec_next_${i}`);
+    if (!timerEl || !cronTimers[i]) return;
+
+    if (!cronTimers[i].enabled) {
+        timerEl.textContent = " - disabled - ";
+        timerEl.className = "font-medium opacity-50";
+        return;
+    }
+
+    if (cronTimers[i].seconds <= 0) {
+        timerEl.textContent = "executing...";
+        timerEl.className = "font-bold text-orange-500 animate-pulse";
+    } else {
+        timerEl.textContent = `${cronTimers[i].seconds} sec`;
+        timerEl.className = "font-medium text-blue-600 dark:text-blue-400";
+    }
+}
+
+/**
+ * Decrement each active cron countdown timer by 1 second.
+ */
+function TimerRefresh() {
+    for (let i = 0; i < countAmount; i++) {
+        if (!cronTimers[i]) continue;
+        if (cronTimers[i].enabled && cronTimers[i].seconds > 0) {
+            cronTimers[i].seconds--;
+        }
+        renderTimer(i);
+    }
+}
+
+/**
+ * Poll cronjobs_helper.php and sync timers and status indicators with backend.
+ */
+async function CronRefresh() {
     try {
-        const res = await fetch("cronjobs_helper.php");
-        const json = await res.json();
+        const response = await fetch("cronjobs_helper.php?cronjobs");
+        if (!response.ok) return;
+        const json = await response.json();
+        countAmount = json.length;
 
         for (let i = 0; i < json.length; i++) {
-            const timerEl = document.getElementById(`timer${i}`);
-            const stateEl = document.getElementById(`state${i}`);
-            if (timerEl) timerEl.setAttribute("data-interval", json[i].interval);
-            if (stateEl) {
-                stateEl.className = "flex items-center space-x-2";
-                if (json[i].status === "actief") {
-                    stateEl.innerHTML = '<span class="inline-block w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></span><span class="text-sm font-semibold text-green-700 dark:text-green-400">Actief</span>';
-                } else if (json[i].status === "inactief") {
-                    stateEl.innerHTML = '<span class="inline-block w-2.5 h-2.5 bg-red-500 rounded-full"></span><span class="text-sm font-semibold text-red-700 dark:text-red-400">Inactief</span>';
+            const isEnabled = (json[i].raw_enabled !== undefined)
+                ? (json[i].raw_enabled === 1)
+                : (json[i].enabled ? json[i].enabled.includes("toggle-on") : true);
+
+            let seconds = json[i].raw_seconds;
+            if (typeof seconds === "undefined") {
+                seconds = parseInt(json[i].exec_next, 10);
+                if (isNaN(seconds)) seconds = 0;
+            }
+
+            cronTimers[i] = {
+                seconds: seconds,
+                enabled: isEnabled
+            };
+            renderTimer(i);
+
+            const cronEnabled = document.getElementById(`cron_enabled_${i}`);
+            const cronStatus = document.getElementById(`cron_status_${i}`);
+            const cronName = document.getElementById(`cron_name_${i}`);
+            const cronInterval = document.getElementById(`cron_interval_${i}`);
+            const cronExecTime = document.getElementById(`cron_exec_time_${i}`);
+            const cronExecLength = document.getElementById(`cron_exec_length_${i}`);
+
+            if (cronEnabled) {
+                if (isEnabled) {
+                    cronEnabled.innerHTML = '<i class="fas fa-toggle-on fa-fw text-green-500 text-xl align-middle"></i>';
                 } else {
-                    stateEl.innerHTML = '<span class="inline-block w-2.5 h-2.5 bg-yellow-500 rounded-full"></span><span class="text-sm font-semibold text-yellow-700 dark:text-yellow-400">Onbekend</span>';
+                    cronEnabled.innerHTML = '<i class="fas fa-toggle-off fa-fw text-gray-400 text-xl align-middle"></i>';
                 }
             }
+
+            if (cronStatus) {
+                let colorClass = "text-gray-400";
+                if (json[i].exec_status === 200) {
+                    colorClass = "text-green-500";
+                } else if (json[i].exec_status === 429) {
+                    colorClass = "text-yellow-500";
+                } else if (json[i].exec_status === 500) {
+                    colorClass = "text-red-500";
+                } else if (json[i].exec_status !== null) {
+                    colorClass = "text-red-500";
+                }
+                cronStatus.className = `${colorClass} text-sm`;
+                cronStatus.title = `HTML ${json[i].exec_status} code.`;
+            }
+            if (cronName) {
+                cronName.innerHTML = json[i].name;
+                cronName.title = json[i].description;
+            }
+            if (cronInterval) cronInterval.innerHTML = json[i].interval;
+            if (cronExecTime) cronExecTime.innerHTML = json[i].exec_time;
+            if (cronExecLength) cronExecLength.innerHTML = json[i].exec_length;
         }
     } catch (e) {
-        console.error("Invalid JSON from cronjobs_helper.php:", e);
+        console.error("Error updating cronjobs status from helper:", e);
     }
 }
 

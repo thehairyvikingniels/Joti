@@ -77,7 +77,19 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
               $exec_length = $row['exec_length'] ? number_format($row['exec_length'] / 1000, 2, ',')." sec" : "0,00 sec";
               $exec_status = $row['exec_stat'];
               
-              $exec_next = $row['exec_time'] ? ($row['interval'] + strtotime($row['exec_time']) - time())." sec" : "Onbekend";
+              $exec_next_val = $row['exec_time'] ? ($row['interval'] + strtotime($row['exec_time']) - time()) : 0;
+              if ($row['enabled'] == 1) {
+                  if ($exec_next_val <= 0) {
+                      $exec_next = "executing...";
+                      $next_class = "font-bold text-orange-500 animate-pulse";
+                  } else {
+                      $exec_next = $exec_next_val . " sec";
+                      $next_class = "text-blue-600 dark:text-blue-400";
+                  }
+              } else {
+                  $exec_next = " - disabled - ";
+                  $next_class = "opacity-50";
+              }
 
               if ($row['enabled'] == 1) {
                 $enabled = '<i class="fas fa-toggle-on fa-fw text-green-500 text-xl align-middle"></i>';
@@ -116,7 +128,7 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
                         </div>
                         <div class='bg-black/5 p-2 rounded'>
                           <div class='opacity-70 mb-1'><i class='far fa-clock mr-1'></i> <b>Next exec.</b></div>
-                          <div id='cron_exec_next_".$i."' class='font-medium text-blue-600 dark:text-blue-400'>".$exec_next."</div>
+                          <div id='cron_exec_next_".$i."' data-seconds='".$exec_next_val."' data-enabled='".$row['enabled']."' class='font-medium ".$next_class."'>".$exec_next."</div>
                         </div>
                         <div class='bg-black/5 p-2 rounded'>
                           <div class='opacity-70 mb-1'><i class='fas fa-history mr-1'></i> <b>Last exec.</b></div>

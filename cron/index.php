@@ -1,15 +1,16 @@
 <?php
 // Master cron scheduler that queries due scheduled tasks and executes them asynchronously via CLI or HTTP.
-$sleep = intval(@$_GET['sleep']);
-sleep($sleep);
+$sleep = intval(@$_GET['sleep'] ?? 0);
+if ($sleep > 0) {
+    sleep($sleep);
+}
 
 define("NAME", "main");
-define("JOTI_URL", "https://jotihunt.nl");
 define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');
-$output = "";
 
-require_once('../dblogin.php');
+require_once(__DIR__ . '/../dblogin.php');
+require_once(__DIR__ . '/../includes/helpers.php');
 
 $sql = "SELECT 
   cj.*,
@@ -25,26 +26,28 @@ HAVING
   nextcron IS NULL OR (UNIX_TIMESTAMP(now()) + 7200) >= nextcron - 12"; 
 
 $stmt_cron = $conn->prepare($sql);
-$stmt_cron->execute();
-$result = $stmt_cron->get_result();
+if ($stmt_cron) {
+    $stmt_cron->execute();
+    $result = $stmt_cron->get_result();
 
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $target = $row['URL'];
-    
-    // Execute as an isolated CLI process if it's a local file path (e.g., /var/www/...)
-    if (strpos($target, '/') === 0) {
-        exec("php " . escapeshellarg($target) . " > /dev/null 2>&1 &");
-    } 
-    // Execute as an isolated HTTP request if it's a web URL (e.g., http://...)
-    else if (strpos($target, 'http') === 0) {
-        $ch = curl_init($target);
-        // Set a 1-second timeout so the main index.php loop doesn't hang waiting for a response
-        curl_setopt($ch, CURLOPT_TIMEOUT, 1);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_exec($ch);
-        curl_close($ch);
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $target = $row['URL'];
+            
+            // Execute as an isolated CLI process if it's a local file path
+            if (strpos($target, '/') === 0) {
+                exec("php " . escapeshellarg($target) . " > /dev/null 2>&1 &");
+            } 
+            // Execute as an isolated HTTP request if it's a web URL
+            else if (strpos($target, 'http') === 0) {
+                $ch = curl_init($target);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 1);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_exec($ch);
+                curl_close($ch);
+            }
+        }
     }
-  }
+    $stmt_cron->close();
 }
 $conn->close();
