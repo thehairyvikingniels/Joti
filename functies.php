@@ -370,9 +370,7 @@ if (isset($_GET['invulgegevens'])){
         exit();
     }
     $stmt = $conn->prepare("
-        SELECT * FROM Voslocaties 
-        WHERE ingeleverd = '0' 
-        ORDER BY ingestuurd_op DESC
+        SELECT * FROM Voslocaties WHERE ingeleverd = '0' AND type NOT IN ('Voorspelling', 'Spot') ORDER BY ingestuurd_op DESC
     ");
     $stmt->execute();
     $result = $stmt->get_result();
@@ -406,7 +404,7 @@ if (isset($_GET['invulgegevens'])){
         }
         echo "</tbody></table>";
     } else {
-        echo "<p class=\"m-4 text-xs opacity-70 italic\">Hier verschijnen hunts en tegenhunts die ingeleverd moeten worden bij de offici??le Jotihunt website.</p>";
+        echo "<p class=\"m-4 text-xs opacity-70 italic\">Hier verschijnen hunts en tegenhunts die ingeleverd moeten worden bij de offici&euml;le Jotihunt website.</p>";
     }
     $stmt->close();
 }
