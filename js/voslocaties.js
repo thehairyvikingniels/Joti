@@ -81,19 +81,28 @@ function getGPSLocation() {
 function toggleCodeInput() {
     const typeSelect = document.getElementById("type_select");
     const codeInput = document.getElementById("code_input");
-    if (!typeSelect || !codeInput) return;
+    const photoInput = document.getElementById("hunt_photo_input");
+    if (!typeSelect) return;
 
-    if (typeSelect.value === "Hunt") {
-        codeInput.disabled = false;
-        codeInput.required = false;
-        codeInput.classList.remove("bg-gray-100");
-        codeInput.classList.add("bg-white");
-    } else {
-        codeInput.disabled = true;
-        codeInput.required = false;
-        codeInput.value = "";
-        codeInput.classList.add("bg-gray-100");
-        codeInput.classList.remove("bg-white");
+    const isHunt = (typeSelect.value === "Hunt");
+
+    if (codeInput) {
+        codeInput.disabled = !isHunt;
+        if (isHunt) {
+            codeInput.classList.remove("bg-gray-100");
+            codeInput.classList.add("bg-white");
+        } else {
+            codeInput.value = "";
+            codeInput.classList.add("bg-gray-100");
+            codeInput.classList.remove("bg-white");
+        }
+    }
+
+    if (photoInput) {
+        photoInput.disabled = !isHunt;
+        if (!isHunt) {
+            photoInput.value = "";
+        }
     }
 }
 

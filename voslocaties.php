@@ -48,9 +48,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_fox_location'])
 
     $submitted_at = str_replace('T', ' ', $datetime_str) . ':00';
 
+    $photoUrl = null;
+    if ($type === 'Hunt' && isset($_FILES['hunt_photo']) && $_FILES['hunt_photo']['error'] === UPLOAD_ERR_OK) {
+        $uploadDir = __DIR__ . '/media/hunts/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0775, true);
+        }
+        $ext = strtolower(pathinfo($_FILES['hunt_photo']['name'], PATHINFO_EXTENSION));
+        if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+            $filename = 'hunt_' . time() . '_' . substr(md5(uniqid()), 0, 8) . '.' . $ext;
+            $dest = $uploadDir . $filename;
+            if (move_uploaded_file($_FILES['hunt_photo']['tmp_name'], $dest)) {
+                $photoUrl = 'media/hunts/' . $filename;
+            }
+        }
+    }
+
     if ($lat && $lon) {
-        $stmt = $conn->prepare("INSERT INTO Voslocaties (type, deelgebied, ingestuurd_op, coordinaat_x, coordinaat_y, code, opmerking, ingeleverd_door, ingeleverd) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)");
-        $stmt->bind_param("sssddssi", $type, $fox_team, $submitted_at, $lat, $lon, $code, $remarks, $submitted_by);
+        $stmt = $conn->prepare("INSERT INTO Voslocaties (type, deelgebied, ingestuurd_op, coordinaat_x, coordinaat_y, code, opmerking, foto, ingeleverd_door, ingeleverd) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)");
+        $stmt->bind_param("sssddsssi", $type, $fox_team, $submitted_at, $lat, $lon, $code, $remarks, $photoUrl, $submitted_by);
         
         if ($stmt->execute()) {
             send_push_notification('ALL', 'Nieuwe Voslocatie', "Nieuwe {$type} toegevoegd voor {$fox_team}.", '/voslocaties', 'voslocaties', null, 'locatiestatus');
@@ -142,7 +158,7 @@ if (isset($site_settings['GROUP_ID'])) {
       <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
         <h3 class="text-xl font-bold">Nieuwe voslocatie toevoegen</h3>
       </div>
-      <form class="p-6" method="post" action="voslocaties.php">
+      <form class="p-6" method="post" action="voslocaties.php" enctype="multipart/form-data">
         
         <?php echo $message; ?>
 
@@ -250,6 +266,12 @@ if (isset($site_settings['GROUP_ID'])) {
             <div>
               <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Code (optioneel)</label>
               <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-gray-100 disabled:opacity-60 disabled:cursor-not-allowed" type="text" name="code" id="code_input" maxlength="32" disabled>
+            </div>
+            
+            <div id="hunt_photo_container">
+              <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Foto van Huntcode (optioneel)</label>
+              <input class="w-full text-xs file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" type="file" name="hunt_photo" id="hunt_photo_input" accept="image/*" capture="environment" disabled>
+              <p class="text-[11px] opacity-60 mt-1">Alleen van toepassing bij type Hunt.</p>
             </div>
             
             <div>
