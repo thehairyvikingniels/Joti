@@ -147,19 +147,17 @@ $stmt_users->close();
                   
                   // Desktop Role Change Modal
                   echo "
-                  <div id='priv_modal_desk_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm' aria-labelledby='modal-title' role='dialog' aria-modal='true'>
-                    <div class='flex items-center justify-center min-h-screen px-4 text-center'>
-                      <div class='relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full'>
-                        <div class='theme-bg-primary px-4 py-3 sm:px-6 flex justify-between items-center text-white'>
-                          <h3 class='text-lg font-bold'><i class='fas fa-question-circle mr-2'></i>Bevestiging</h3>
-                          <button type='button' onclick=\"document.getElementById('priv_modal_desk_".$row['id']."').classList.add('hidden')\" class='hover:text-gray-200 transition'><i class='fas fa-times text-xl'></i></button>
-                        </div>
-                        <div class='bg-white px-4 pt-5 pb-4 sm:p-6 text-gray-800'>
-                          <p>Weet je zeker dat je de rol/rechten van <strong>".htmlspecialchars($row['voornaam'])."</strong> wilt wijzigen?</p>
-                        </div>
-                        <div class='bg-gray-50 px-4 py-3 sm:px-6 flex flex-row-reverse gap-3'>
-                          <button type='submit' form='priv_form_desk_".$row['id']."' class='bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Ja, wijzig</button>
-                          <button type='button' onclick=\"document.getElementById('priv_modal_desk_".$row['id']."').classList.add('hidden')\" class='bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Annuleer</button>
+                  <div id='priv_modal_desk_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm modal-backdrop flex items-center justify-center p-4' aria-labelledby='modal-title' role='dialog' aria-modal='true' onclick='if(event.target === this) closeModal(this)'>
+                    <div class='relative inline-block theme-card border rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-md w-full' onclick='event.stopPropagation()'>
+                      <header class='theme-card-header px-6 py-4 border-b text-white flex justify-between items-center' style='background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);'>
+                        <h3 class='text-lg font-bold flex items-center gap-2'><i class='fas fa-user-shield'></i> <span>Rechten Wijzigen</span></h3>
+                        <button type='button' onclick=\"closeModal(this)\" class='text-white opacity-70 hover:opacity-100 transition'><i class='fas fa-times text-xl'></i></button>
+                      </header>
+                      <div class='p-6'>
+                        <p class='text-sm opacity-90 mb-6 leading-relaxed'>Weet je zeker dat je de rol/rechten van <strong>".htmlspecialchars($row['voornaam'])."</strong> wilt wijzigen?</p>
+                        <div class='flex justify-end gap-3'>
+                          <button type='button' onclick=\"closeModal(this)\" class='theme-card border hover:bg-black/5 dark:hover:bg-white/5 py-2.5 px-5 rounded-xl font-bold text-sm transition'>Annuleren</button>
+                          <button type='submit' form='priv_form_desk_".$row['id']."' class='bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-xl transition shadow'>Ja, wijzig</button>
                         </div>
                       </div>
                     </div>
@@ -232,19 +230,17 @@ $stmt_users->close();
                 
                 // Mobile Role Change Modal
                 echo "
-                <div id='priv_modal_mob_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm' aria-labelledby='modal-title' role='dialog' aria-modal='true'>
-                  <div class='flex items-center justify-center min-h-screen px-4 text-center'>
-                    <div class='relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 w-full max-w-sm'>
-                      <div class='theme-bg-primary px-4 py-3 flex justify-between items-center text-white'>
-                        <h3 class='text-lg font-bold'><i class='fas fa-question-circle mr-2'></i>Bevestiging</h3>
-                        <button type='button' onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').classList.add('hidden')\" class='hover:text-gray-200 transition'><i class='fas fa-times text-xl'></i></button>
-                      </div>
-                      <div class='bg-white px-4 pt-5 pb-4 text-gray-800'>
-                        <p>Weet je zeker dat je de rol/rechten van <strong>".htmlspecialchars($row['voornaam'])."</strong> wilt wijzigen?</p>
-                      </div>
-                      <div class='bg-gray-50 px-4 py-3 flex flex-row-reverse gap-3'>
-                        <button type='submit' form='priv_form_mob_".$row['id']."' class='w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Ja, wijzig</button>
-                        <button type='button' onclick=\"document.getElementById('priv_modal_mob_".$row['id']."').classList.add('hidden')\" class='w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Annuleer</button>
+                <div id='priv_modal_mob_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm modal-backdrop flex items-center justify-center p-4' aria-labelledby='modal-title' role='dialog' aria-modal='true' onclick='if(event.target === this) closeModal(this)'>
+                  <div class='relative inline-block theme-card border rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-sm w-full' onclick='event.stopPropagation()'>
+                    <header class='theme-card-header px-6 py-4 border-b text-white flex justify-between items-center' style='background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);'>
+                      <h3 class='text-lg font-bold flex items-center gap-2'><i class='fas fa-user-shield'></i> <span>Rechten Wijzigen</span></h3>
+                      <button type='button' onclick=\"closeModal(this)\" class='text-white opacity-70 hover:opacity-100 transition'><i class='fas fa-times text-xl'></i></button>
+                    </header>
+                    <div class='p-6'>
+                      <p class='text-sm opacity-90 mb-6 leading-relaxed'>Weet je zeker dat je de rol/rechten van <strong>".htmlspecialchars($row['voornaam'])."</strong> wilt wijzigen?</p>
+                      <div class='flex justify-end gap-3'>
+                        <button type='button' onclick=\"closeModal(this)\" class='theme-card border hover:bg-black/5 dark:hover:bg-white/5 py-2.5 px-5 rounded-xl font-bold text-sm transition'>Annuleren</button>
+                        <button type='submit' form='priv_form_mob_".$row['id']."' class='bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-xl transition shadow'>Ja, wijzig</button>
                       </div>
                     </div>
                   </div>
@@ -264,22 +260,20 @@ $stmt_users->close();
               if ($can_impersonate) {
                   // Impersonate Modal
                   echo "
-                  <div id='imp_modal_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm' aria-labelledby='modal-title' role='dialog' aria-modal='true'>
-                    <div class='flex items-center justify-center min-h-screen px-4 text-center'>
-                      <div class='relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full'>
-                        <div class='bg-gray-800 px-4 py-3 flex justify-between items-center text-white'>
-                          <h3 class='text-lg font-bold'><i class='fas fa-user-secret mr-2'></i>Bevestiging</h3>
-                          <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').classList.add('hidden')\" class='hover:text-gray-200 transition'><i class='fas fa-times text-xl'></i></button>
-                        </div>
-                        <div class='bg-white px-4 pt-5 pb-4 text-gray-800'>
-                          <p>Weet je zeker dat je wilt inloggen als <strong>".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."</strong>?</p>
-                        </div>
-                        <div class='bg-gray-50 px-4 py-3 flex flex-row-reverse gap-3'>
-                          <form action='users_helper.php' method='POST' class='m-0 p-0 flex-1 sm:flex-none'>
+                  <div id='imp_modal_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm modal-backdrop flex items-center justify-center p-4' aria-labelledby='modal-title' role='dialog' aria-modal='true' onclick='if(event.target === this) closeModal(this)'>
+                    <div class='relative inline-block theme-card border rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-md w-full' onclick='event.stopPropagation()'>
+                      <header class='theme-card-header px-6 py-4 border-b text-white flex justify-between items-center' style='background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);'>
+                        <h3 class='text-lg font-bold flex items-center gap-2'><i class='fas fa-user-secret'></i> <span>Imiteren Bevestiging</span></h3>
+                        <button type='button' onclick=\"closeModal(this)\" class='text-white opacity-70 hover:opacity-100 transition'><i class='fas fa-times text-xl'></i></button>
+                      </header>
+                      <div class='p-6'>
+                        <p class='text-sm opacity-90 mb-6 leading-relaxed'>Weet je zeker dat je wilt inloggen als <strong>".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."</strong>?</p>
+                        <div class='flex justify-end gap-3'>
+                          <button type='button' onclick=\"closeModal(this)\" class='theme-card border hover:bg-black/5 dark:hover:bg-white/5 py-2.5 px-5 rounded-xl font-bold text-sm transition'>Annuleren</button>
+                          <form action='users_helper.php' method='POST' class='m-0 p-0 inline'>
                             <input type='hidden' name='impersonate_user_id' value='".htmlspecialchars($row['id'])."'>
-                            <button type='submit' class='w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Ja, log in</button>
+                            <button type='submit' class='bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-xl transition shadow'>Ja, log in</button>
                           </form>
-                          <button type='button' onclick=\"document.getElementById('imp_modal_".$row['id']."').classList.add('hidden')\" class='w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Annuleer</button>
                         </div>
                       </div>
                     </div>
@@ -287,49 +281,41 @@ $stmt_users->close();
                   
                   // Password Reset Modal
                   echo "
-                  <div id='reset_modal_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm' aria-labelledby='modal-title' role='dialog' aria-modal='true'>
-                    <div class='flex items-center justify-center min-h-screen px-4 text-center'>
-                      <div class='relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full'>
-                        <div class='bg-orange-500 px-4 py-3 flex justify-between items-center text-white'>
-                          <h3 class='text-lg font-bold'><i class='fas fa-key mr-2'></i>Nieuw Wachtwoord</h3>
-                          <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').classList.add('hidden')\" class='hover:text-gray-200 transition'><i class='fas fa-times text-xl'></i></button>
+                  <div id='reset_modal_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm modal-backdrop flex items-center justify-center p-4' aria-labelledby='modal-title' role='dialog' aria-modal='true' onclick='if(event.target === this) closeModal(this)'>
+                    <div class='relative inline-block theme-card border rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-md w-full' onclick='event.stopPropagation()'>
+                      <header class='theme-card-header px-6 py-4 border-b text-white flex justify-between items-center' style='background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);'>
+                        <h3 class='text-lg font-bold flex items-center gap-2'><i class='fas fa-key'></i> <span>Nieuw Wachtwoord</span></h3>
+                        <button type='button' onclick=\"closeModal(this)\" class='text-white opacity-70 hover:opacity-100 transition'><i class='fas fa-times text-xl'></i></button>
+                      </header>
+                      <form action='users_helper.php' method='POST' class='p-6 space-y-4'>
+                        <p class='text-sm opacity-90'>Vul een nieuw wachtwoord in voor <strong>".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."</strong>:</p>
+                        <input type='hidden' name='reset_password_user_id' value='".htmlspecialchars($row['id'])."'>
+                        <input type='text' name='new_password' class='w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm' required placeholder='Nieuw wachtwoord'>
+                        <div class='mt-6 pt-4 border-t flex justify-end gap-3' style='border-color: var(--theme-card-border);'>
+                          <button type='button' onclick=\"closeModal(this)\" class='theme-card border hover:bg-black/5 dark:hover:bg-white/5 py-2.5 px-5 rounded-xl font-bold text-sm transition'>Annuleren</button>
+                          <button type='submit' class='bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition shadow'>Reset Wachtwoord</button>
                         </div>
-                        <form action='users_helper.php' method='POST'>
-                          <div class='bg-white px-4 pt-5 pb-4 text-gray-800 space-y-4'>
-                            <p>Vul een nieuw wachtwoord in voor <strong>".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."</strong>:</p>
-                            <input type='hidden' name='reset_password_user_id' value='".htmlspecialchars($row['id'])."'>
-                            <input type='text' name='new_password' class='w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm' required placeholder='Nieuw wachtwoord'>
-                          </div>
-                          <div class='bg-gray-50 px-4 py-3 flex flex-row-reverse gap-3'>
-                            <button type='submit' class='w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Reset Wachtwoord</button>
-                            <button type='button' onclick=\"document.getElementById('reset_modal_".$row['id']."').classList.add('hidden')\" class='w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Annuleer</button>
-                          </div>
-                        </form>
-                      </div>
+                      </form>
                     </div>
                   </div>";
                   
                   // Profile Picture Upload Modal
                   echo "
-                  <div id='pic_modal_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm' aria-labelledby='modal-title' role='dialog' aria-modal='true'>
-                    <div class='flex items-center justify-center min-h-screen px-4 text-center'>
-                      <div class='relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg w-full'>
-                        <div class='bg-blue-500 px-4 py-3 flex justify-between items-center text-white'>
-                          <h3 class='text-lg font-bold'><i class='fas fa-image mr-2'></i>Foto Uploaden</h3>
-                          <button type='button' onclick=\"document.getElementById('pic_modal_".$row['id']."').classList.add('hidden')\" class='hover:text-gray-200 transition'><i class='fas fa-times text-xl'></i></button>
+                  <div id='pic_modal_".$row['id']."' class='hidden fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm modal-backdrop flex items-center justify-center p-4' aria-labelledby='modal-title' role='dialog' aria-modal='true' onclick='if(event.target === this) closeModal(this)'>
+                    <div class='relative inline-block theme-card border rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-md w-full' onclick='event.stopPropagation()'>
+                      <header class='theme-card-header px-6 py-4 border-b text-white flex justify-between items-center' style='background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);'>
+                        <h3 class='text-lg font-bold flex items-center gap-2'><i class='fas fa-camera'></i> <span>Foto Uploaden</span></h3>
+                        <button type='button' onclick=\"closeModal(this)\" class='text-white opacity-70 hover:opacity-100 transition'><i class='fas fa-times text-xl'></i></button>
+                      </header>
+                      <form action='users_helper.php' method='POST' enctype='multipart/form-data' class='p-6 space-y-4'>
+                        <p class='text-sm opacity-90'>Upload een profielfoto voor <strong>".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."</strong>:</p>
+                        <input type='hidden' name='admin_upload_user_id' value='".htmlspecialchars($row['id'])."'>
+                        <input type='file' name='admin_profile_picture' accept='image/jpeg, image/png, image/webp' class='w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer' required>
+                        <div class='mt-6 pt-4 border-t flex justify-end gap-3' style='border-color: var(--theme-card-border);'>
+                          <button type='button' onclick=\"closeModal(this)\" class='theme-card border hover:bg-black/5 dark:hover:bg-white/5 py-2.5 px-5 rounded-xl font-bold text-sm transition'>Annuleren</button>
+                          <button type='submit' class='bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition shadow'>Uploaden</button>
                         </div>
-                        <form action='users_helper.php' method='POST' enctype='multipart/form-data'>
-                          <div class='bg-white px-4 pt-5 pb-4 text-gray-800 space-y-4'>
-                            <p>Upload een profielfoto voor <strong>".htmlspecialchars($row['voornaam'])." ".htmlspecialchars($row['achternaam'])."</strong>:</p>
-                            <input type='hidden' name='admin_upload_user_id' value='".htmlspecialchars($row['id'])."'>
-                            <input type='file' name='admin_profile_picture' accept='image/jpeg, image/png, image/webp' class='w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm' required>
-                          </div>
-                          <div class='bg-gray-50 px-4 py-3 flex flex-row-reverse gap-3'>
-                            <button type='submit' class='w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Uploaden</button>
-                            <button type='button' onclick=\"document.getElementById('pic_modal_".$row['id']."').classList.add('hidden')\" class='w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm'>Annuleer</button>
-                          </div>
-                        </form>
-                      </div>
+                      </form>
                     </div>
                   </div>";
               }

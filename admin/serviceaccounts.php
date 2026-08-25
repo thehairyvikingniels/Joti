@@ -157,115 +157,123 @@ $stmt_settings->close();
 </div>
 
 <!-- Modal Token View -->
-<div id="tokenModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-    <div class="theme-card border w-full max-w-md rounded-xl shadow-2xl p-6 relative">
-        <button onclick="document.getElementById('tokenModal').classList.add('hidden')" class="absolute top-4 right-4 opacity-50 hover:opacity-100 text-lg transition"><i class="fas fa-times"></i></button>
-        <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-link text-green-500"></i> Account URL</h3>
-        <p class="text-sm opacity-70 mb-4">Kopieer de onderstaande URL om direct toegang in te stellen op het kiosk apparaat.</p>
-        
-        <div class="flex items-center gap-2 mb-6">
-            <input type="text" id="tokenDisplay" readonly class="theme-override-bg theme-override-text border rounded w-full py-2 px-3 focus:outline-none focus:border-blue-500 font-mono text-xs" value="">
-            <button onclick="copyToken()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded shrink-0"><i class="fas fa-copy"></i></button>
-        </div>
-        
-        <div class="flex justify-between items-center mt-6">
-            <form id="regen_form" method="POST" action="serviceaccounts_helper.php" class="inline">
-                <input type="hidden" name="action" value="regenerate">
-                <input type="hidden" name="account_id" id="regenAccountId" value="">
-                <button type="button" onclick="document.getElementById('regenConfirmModal').classList.remove('hidden')" class="text-yellow-600 hover:text-yellow-700 text-sm font-medium transition flex items-center gap-1"><i class="fas fa-sync-alt"></i> Regenereer</button>
-            </form>
-            <button onclick="document.getElementById('tokenModal').classList.add('hidden')" class="theme-card-header border hover:bg-black/10 py-2 px-4 rounded font-medium transition">Sluiten</button>
+<div id="tokenModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm modal-backdrop flex items-center justify-center p-4" aria-labelledby="modal-title" role="dialog" aria-modal="true" onclick="if(event.target === this) closeModal(this)">
+    <div class="relative inline-block theme-card border rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-md w-full" onclick="event.stopPropagation()">
+        <header class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h3 class="text-lg font-bold flex items-center gap-2"><i class="fas fa-link"></i> <span>Account URL</span></h3>
+            <button onclick="closeModal(this)" class="text-white opacity-70 hover:opacity-100 transition"><i class="fas fa-times text-xl"></i></button>
+        </header>
+        <div class="p-6">
+            <p class="text-sm opacity-80 mb-4">Kopieer de onderstaande URL om direct toegang in te stellen op het kiosk apparaat.</p>
+            
+            <div class="flex items-center gap-2 mb-6">
+                <input type="text" id="tokenDisplay" readonly class="theme-override-bg theme-override-text border rounded-xl w-full py-2.5 px-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs" value="">
+                <button onclick="copyTokenUrl()" class="theme-bg-primary text-white px-4 py-2.5 rounded-xl hover:opacity-90 transition flex-shrink-0 shadow-sm" title="Kopieer"><i class="fas fa-copy"></i></button>
+            </div>
+            
+            <div class="flex justify-between items-center mt-6 pt-4 border-t" style="border-color: var(--theme-card-border);">
+                <form id="regen_form" method="POST" action="serviceaccounts_helper.php" class="inline">
+                    <input type="hidden" name="action" value="regenerate">
+                    <input type="hidden" name="account_id" id="regenAccountId" value="">
+                    <button type="button" onclick="document.getElementById('regenConfirmModal').classList.remove('hidden'); document.getElementById('regenConfirmModal').style.display='flex';" class="text-yellow-600 hover:text-yellow-700 text-sm font-bold transition flex items-center gap-1"><i class="fas fa-sync-alt"></i> Regenereer</button>
+                </form>
+                <button onclick="closeModal(this)" class="theme-card border hover:bg-black/5 dark:hover:bg-white/5 py-2.5 px-5 rounded-xl font-bold text-sm transition">Sluiten</button>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Modal Regen Confirm -->
-<div id="regenConfirmModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-    <div class="theme-card border w-full max-w-sm rounded-xl shadow-2xl p-6 relative">
-        <button onclick="document.getElementById('regenConfirmModal').classList.add('hidden')" class="absolute top-4 right-4 opacity-50 hover:opacity-100 text-lg transition"><i class="fas fa-times"></i></button>
-        <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-yellow-500"><i class="fas fa-exclamation-circle"></i> Token Vernieuwen</h3>
-        <p class="text-sm opacity-90 mb-6">Weet je zeker dat je het token wilt regenereren? Gekoppelde apparaten verliezen direct toegang!</p>
-        
-        <div class="flex justify-end gap-2 mt-6">
-            <button onclick="document.getElementById('regenConfirmModal').classList.add('hidden')" class="theme-card-header border hover:bg-black/10 py-2 px-4 rounded font-medium transition">Annuleren</button>
-            <button onclick="document.getElementById('regen_form').submit()" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-6 rounded font-medium transition shadow">Vernieuwen</button>
+<div id="regenConfirmModal" class="hidden fixed inset-0 z-[60] overflow-y-auto bg-black/60 backdrop-blur-sm modal-backdrop flex items-center justify-center p-4" aria-labelledby="modal-title" role="dialog" aria-modal="true" onclick="if(event.target === this) closeModal(this)">
+    <div class="relative inline-block theme-card border rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-md w-full" onclick="event.stopPropagation()">
+        <header class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h3 class="text-lg font-bold flex items-center gap-2 text-yellow-300"><i class="fas fa-exclamation-circle"></i> <span>Token Vernieuwen</span></h3>
+            <button onclick="closeModal(this)" class="text-white opacity-70 hover:opacity-100 transition"><i class="fas fa-times text-xl"></i></button>
+        </header>
+        <div class="p-6">
+            <p class="text-sm opacity-90 mb-6 leading-relaxed">Weet je zeker dat je het token wilt regenereren? Gekoppelde apparaten verliezen direct toegang!</p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal(this)" class="theme-card border hover:bg-black/5 dark:hover:bg-white/5 py-2.5 px-5 rounded-xl font-bold text-sm transition">Annuleren</button>
+                <button onclick="document.getElementById('regen_form').submit()" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2.5 px-6 rounded-xl font-bold text-sm transition shadow">Vernieuwen</button>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Modal Delete -->
-<div id="deleteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-    <div class="theme-card border w-full max-w-md rounded-xl shadow-2xl p-6 relative">
-        <button onclick="document.getElementById('deleteModal').classList.add('hidden')" class="absolute top-4 right-4 opacity-50 hover:opacity-100 text-lg transition"><i class="fas fa-times"></i></button>
-        <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-red-500"><i class="fas fa-exclamation-triangle"></i> Account Verwijderen</h3>
-        <p class="text-sm opacity-90 mb-6">Weet je zeker dat je het service account <strong id="deleteAccountName"></strong> wilt verwijderen? Dit kan niet ongedaan gemaakt worden.</p>
-        
-        <div class="flex justify-end gap-2 mt-6">
-            <button onclick="document.getElementById('deleteModal').classList.add('hidden')" class="theme-card-header border hover:bg-black/10 py-2 px-4 rounded font-medium transition">Annuleren</button>
-            <form id="delete_form" method="POST" action="serviceaccounts_helper.php" class="inline">
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="account_id" id="deleteAccountId" value="">
-                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white py-2 px-6 rounded font-medium transition shadow">Verwijderen</button>
-            </form>
+<div id="deleteModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm modal-backdrop flex items-center justify-center p-4" aria-labelledby="modal-title" role="dialog" aria-modal="true" onclick="if(event.target === this) closeModal(this)">
+    <div class="relative inline-block theme-card border rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-md w-full" onclick="event.stopPropagation()">
+        <header class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h3 class="text-lg font-bold flex items-center gap-2"><i class="fas fa-trash-alt"></i> <span>Account Verwijderen</span></h3>
+            <button onclick="closeModal(this)" class="text-white opacity-70 hover:opacity-100 transition"><i class="fas fa-times text-xl"></i></button>
+        </header>
+        <div class="p-6">
+            <p class="text-sm opacity-90 mb-6 leading-relaxed">Weet je zeker dat je het service account <strong id="deleteAccountName"></strong> wilt verwijderen? Dit kan niet ongedaan gemaakt worden.</p>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal(this)" class="theme-card border hover:bg-black/5 dark:hover:bg-white/5 py-2.5 px-5 rounded-xl font-bold text-sm transition">Annuleren</button>
+                <form id="delete_form" method="POST" action="serviceaccounts_helper.php" class="inline m-0 p-0">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="account_id" id="deleteAccountId" value="">
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white py-2.5 px-6 rounded-xl font-bold text-sm transition shadow">Verwijderen</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Modal Create / Edit -->
-<div id="createModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-    <div class="theme-card border w-full max-w-xl rounded-xl shadow-2xl relative max-h-[90vh] overflow-y-auto">
-        <button onclick="closeEditModal()" class="absolute top-4 right-4 opacity-50 hover:opacity-100 text-lg transition"><i class="fas fa-times"></i></button>
-        <div class="p-6 border-b theme-card-header">
-            <h3 class="text-lg font-bold" id="modalTitle">Nieuw Service Account</h3>
-        </div>
-        <form method="POST" action="serviceaccounts_helper.php" class="p-6">
+<div id="createModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm modal-backdrop flex items-center justify-center p-4" aria-labelledby="modal-title" role="dialog" aria-modal="true" onclick="if(event.target === this) closeModal(this)">
+    <div class="relative inline-block theme-card border rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-xl w-full max-h-[90vh] flex flex-col" onclick="event.stopPropagation()">
+        <header class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h3 class="text-lg font-bold flex items-center gap-2"><i class="fas fa-tv"></i> <span id="modalTitle">Nieuw Service Account</span></h3>
+            <button onclick="closeModal(this)" class="text-white opacity-70 hover:opacity-100 transition"><i class="fas fa-times text-xl"></i></button>
+        </header>
+        <form method="POST" action="serviceaccounts_helper.php" class="p-6 overflow-y-auto space-y-4">
             <input type="hidden" name="action" id="formAction" value="create">
             <input type="hidden" name="account_id" id="formAccountId" value="">
             
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium mb-1">Naam <span class="text-red-500">*</span></label>
-                    <input type="text" name="naam" id="formNaam" required class="theme-override-bg theme-override-text border rounded w-full py-2 px-3 focus:outline-none focus:border-blue-500" placeholder="bijv. Meldkamer Scherm">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Doel Pagina</label>
-                    <input type="text" name="doel_pagina" id="formDoel" list="paginas_list" class="theme-override-bg theme-override-text border rounded w-full py-2 px-3 focus:outline-none focus:border-blue-500" value="home" placeholder="bijv. home of /whiteboard">
-                    <datalist id="paginas_list">
-                        <option value="home">Home / Dashboard</option>
-                        <option value="vossen">Vossen overzicht</option>
-                        <option value="kaarten">Kaarten</option>
-                        <option value="voslocaties">Voslocaties</option>
-                        <option value="opdrachten">Opdrachten</option>
-                        <option value="hints">Hints</option>
-                        <option value="groepen">Groepen</option>
-                        <option value="nieuws">Nieuws</option>
-                        <option value="punten">Punten</option>
-                        <option value="whiteboard">Whiteboard</option>
-                        <option value="autos">Auto's</option>
-                    </datalist>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Rechten</label>
-                    <select name="rechten" id="formRechten" class="theme-override-bg theme-override-text border rounded w-full py-2 px-3 focus:outline-none focus:border-blue-500">
-                        <option value="0">Alleen Lezen (0)</option>
-                        <option value="1">Lezen & Schrijven (1)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">IP Whitelist (optioneel)</label>
-                    <input type="text" name="ip_whitelist" id="formIp" class="theme-override-bg theme-override-text border rounded w-full py-2 px-3 focus:outline-none focus:border-blue-500" placeholder="bijv. 192.168.1.1, 192.168.1.5">
-                    <p class="text-xs opacity-60 mt-1">Komma gescheiden lijst van IP-adressen die zijn toegestaan.</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Refresh Interval (seconden)</label>
-                    <input type="number" name="refresh_interval" id="formRefresh" class="theme-override-bg theme-override-text border rounded w-full py-2 px-3 focus:outline-none focus:border-blue-500" value="0" min="0">
-                    <p class="text-xs opacity-60 mt-1">0 is uitgeschakeld. Bij inactiviteit ververst de pagina automatisch na x seconden.</p>
-                </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1 opacity-70">Naam <span class="text-red-500">*</span></label>
+                <input type="text" name="naam" id="formNaam" required class="theme-override-bg theme-override-text border rounded-xl w-full py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" placeholder="bijv. Meldkamer Scherm">
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1 opacity-70">Doel Pagina</label>
+                <input type="text" name="doel_pagina" id="formDoel" list="paginas_list" class="theme-override-bg theme-override-text border rounded-xl w-full py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" value="home" placeholder="bijv. home of /whiteboard">
+                <datalist id="paginas_list">
+                    <option value="home">Home / Dashboard</option>
+                    <option value="vossen">Vossen overzicht</option>
+                    <option value="kaarten">Kaarten</option>
+                    <option value="voslocaties">Voslocaties</option>
+                    <option value="opdrachten">Opdrachten</option>
+                    <option value="hints">Hints</option>
+                    <option value="groepen">Groepen</option>
+                    <option value="nieuws">Nieuws</option>
+                    <option value="punten">Punten</option>
+                    <option value="whiteboard">Whiteboard</option>
+                    <option value="autos">Auto's</option>
+                </datalist>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1 opacity-70">Rechten</label>
+                <select name="rechten" id="formRechten" class="theme-override-bg theme-override-text border rounded-xl w-full py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer">
+                    <option value="0">Alleen Lezen (0)</option>
+                    <option value="1">Lezen & Schrijven (1)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1 opacity-70">IP Whitelist (optioneel)</label>
+                <input type="text" name="ip_whitelist" id="formIp" class="theme-override-bg theme-override-text border rounded-xl w-full py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm font-mono text-xs" placeholder="bijv. 192.168.1.1, 192.168.1.5">
+                <p class="text-xs opacity-60 mt-1">Komma gescheiden lijst van IP-adressen die zijn toegestaan.</p>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1 opacity-70">Refresh Interval (seconden)</label>
+                <input type="number" name="refresh_interval" id="formRefresh" class="theme-override-bg theme-override-text border rounded-xl w-full py-2.5 px-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" value="0" min="0">
+                <p class="text-xs opacity-60 mt-1">0 is uitgeschakeld. Bij inactiviteit ververst de pagina automatisch na x seconden.</p>
             </div>
             
-            <div class="mt-6 flex justify-end gap-2">
-                <button type="button" onclick="closeEditModal()" class="theme-card-header border hover:bg-black/10 py-2 px-4 rounded font-medium transition">Annuleren</button>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded font-medium transition shadow">Opslaan</button>
+            <div class="mt-6 pt-4 border-t flex justify-end gap-3" style="border-color: var(--theme-card-border);">
+                <button type="button" onclick="closeModal(this)" class="theme-card border hover:bg-black/5 dark:hover:bg-white/5 py-2.5 px-5 rounded-xl font-bold text-sm transition">Annuleren</button>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-6 rounded-xl font-bold text-sm transition shadow">Opslaan</button>
             </div>
         </form>
     </div>

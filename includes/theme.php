@@ -122,3 +122,49 @@ if ('serviceWorker' in navigator) {
 <?php if (isset($_SESSION['kiosk_id'])): ?>
 <script src="/includes/kiosk_controller.js?v=1"></script>
 <?php endif; ?>
+
+<script>
+// Universal Modal Esc & Backdrop Click Handler
+function closeModal(el) {
+    if (!el) {
+        document.querySelectorAll('.modal-backdrop, [id*="modal"], [id*="Modal"]').forEach(function(m) {
+            if (!m.classList.contains('hidden') && (m.classList.contains('fixed') || m.style.display === 'block' || m.style.display === 'flex')) {
+                m.classList.add('hidden');
+                m.style.display = 'none';
+            }
+        });
+        return;
+    }
+    if (typeof el === 'string') {
+        const target = document.getElementById(el);
+        if (target) {
+            target.classList.add('hidden');
+            target.style.display = 'none';
+        }
+        return;
+    }
+    const modal = el.closest('.modal-backdrop, [role="dialog"], .fixed.inset-0') || el;
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-backdrop, [id*="modal"], [id*="Modal"], [role="dialog"]').forEach(function(m) {
+            if (!m.classList.contains('hidden') && (m.classList.contains('fixed') || m.style.display === 'block' || m.style.display === 'flex')) {
+                m.classList.add('hidden');
+                m.style.display = 'none';
+            }
+        });
+    }
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal-backdrop') || (e.target.classList.contains('fixed') && e.target.classList.contains('inset-0') && !e.target.classList.contains('hidden'))) {
+        e.target.classList.add('hidden');
+        e.target.style.display = 'none';
+    }
+});
+</script>

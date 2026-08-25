@@ -57,15 +57,17 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       
       <!-- Gegevens Wijzigen -->
-      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
-        <?php if (isset($_GET['t']) && $_GET['t'] == "gegevens"): ?>
-          <div class="bg-blue-100 text-blue-800 p-3 rounded mb-4 flex justify-between items-start">
-            <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
-            <button onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
-          </div>
-        <?php endif; ?>
-        <form method="POST" action="instellingen_helper.php" class="p-6">
-          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);"><h3 class="text-xl font-bold"><i class="fas fa-user-edit mr-2"></i> Gegevens wijzigen</h3></div>
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6 flex flex-col">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-user-edit"></i> <span>Gegevens wijzigen</span></h3>
+        </div>
+        <form method="POST" action="instellingen_helper.php" class="p-6 flex-1 flex flex-col justify-between">
+          <?php if (isset($_GET['t']) && $_GET['t'] == "gegevens"): ?>
+            <div class="bg-blue-100 text-blue-800 p-3 rounded-xl mb-4 flex justify-between items-start">
+              <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
+              <button type="button" onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
+            </div>
+          <?php endif; ?>
           
           <div class="space-y-3">
             <div>
@@ -86,56 +88,64 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
             </div>
           </div>
           
-          <div class="mt-5 text-center">
-            <button type="submit" class="theme-bg-primary text-white font-bold py-2.5 px-6 rounded-xl hover:opacity-90 transition shadow-sm">Verander</button>
+          <div class="mt-6 text-center">
+            <button type="submit" class="theme-bg-primary text-white font-bold py-2.5 px-8 rounded-xl hover:opacity-90 transition shadow-sm">Opslaan</button>
           </div>
         </form>
       </div>
 
       <!-- Wachtwoord Wijzigen -->
-      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
-        <?php if (isset($_GET['t']) && $_GET['t'] == "wachtwoord"): ?>
-          <div class="bg-blue-100 text-blue-800 p-3 rounded mb-4 flex justify-between items-start">
-            <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
-            <button onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
-          </div>
-        <?php endif; ?>
-        <form method="POST" action="instellingen_helper.php" class="p-6">
-          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);"><h3 class="text-xl font-bold"><i class="fas fa-key mr-2"></i> Wachtwoord wijzigen</h3></div>
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6 flex flex-col">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-key"></i> <span>Wachtwoord wijzigen</span></h3>
+        </div>
+        <form method="POST" action="instellingen_helper.php" class="p-6 flex-1 flex flex-col justify-between">
+          <?php if (isset($_GET['t']) && $_GET['t'] == "wachtwoord"): ?>
+            <div class="bg-blue-100 text-blue-800 p-3 rounded-xl mb-4 flex justify-between items-start">
+              <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
+              <button type="button" onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
+            </div>
+          <?php endif; ?>
           
           <div class="space-y-3">
             <div>
-              <label class="block text-sm font-semibold mb-1 opacity-80">Wachtwoord</label>
+              <label class="block text-sm font-semibold mb-1 opacity-80">Nieuw Wachtwoord</label>
               <input name="pswd0" type="password" placeholder="Nieuw Wachtwoord" required minlength="8" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
             </div>
             <div>
-              <label class="block text-sm font-semibold mb-1 opacity-80">Herhaal Wachtwoord</label>
+              <label class="block text-sm font-semibold mb-1 opacity-80">Bevestig Nieuw Wachtwoord</label>
               <input name="pswd1" type="password" placeholder="Herhaal Wachtwoord" required minlength="8" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold mb-1 opacity-80">Huidig Wachtwoord</label>
+              <input name="pswd" type="password" placeholder="Huidig Wachtwoord" required minlength="8" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
             </div>
           </div>
           
-          <div class="mt-5 text-center">
-            <button type="submit" class="theme-bg-primary text-white font-bold py-2.5 px-6 rounded-xl hover:opacity-90 transition shadow-sm">Verander</button>
+          <div class="mt-6 text-center">
+            <button type="submit" class="theme-bg-primary text-white font-bold py-2.5 px-8 rounded-xl hover:opacity-90 transition shadow-sm">Verander</button>
           </div>
         </form>
       </div>
 
-      <!-- Profielfoto Wijzigen -->
-      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
-        <?php if (isset($_GET['t']) && $_GET['t'] == "profielfoto"): ?>
-          <div class="bg-blue-100 text-blue-800 p-3 rounded mb-4 flex justify-between items-start">
-            <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
-            <button onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
-          </div>
-        <?php endif; ?>
-        <form method="POST" action="instellingen_helper.php" enctype="multipart/form-data" class="p-6">
-          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);"><h3 class="text-xl font-bold"><i class="fas fa-camera mr-2"></i> Profielfoto</h3></div>
+      <!-- Profielfoto -->
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6 flex flex-col">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-camera"></i> <span>Profielfoto</span></h3>
+        </div>
+        <form method="POST" action="instellingen_helper.php" enctype="multipart/form-data" class="p-6 flex-1 flex flex-col justify-between">
+          <?php if (isset($_GET['t']) && $_GET['t'] == "profielfoto"): ?>
+            <div class="bg-blue-100 text-blue-800 p-3 rounded-xl mb-4 flex justify-between items-start">
+              <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
+              <button type="button" onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
+            </div>
+          <?php endif; ?>
           
           <div class="flex flex-col items-center mb-4">
             <?php if ($profile_picture): ?>
-              <img src="<?= $notInAdminfolder ?? '' ?>profile_image.php?hash=<?= urlencode($profile_picture) ?>&res=high" alt="Profielfoto" class="w-32 h-32 rounded-full object-cover shadow-md mb-2 border-2 border-gray-200">
+              <img src="<?= $notInAdminfolder ?? '' ?>profile_image.php?hash=<?= urlencode($profile_picture) ?>&res=high" alt="Profielfoto" class="w-28 h-28 rounded-full object-cover shadow-md mb-2 border-2 border-gray-200">
             <?php else: ?>
-              <div class="w-32 h-32 rounded-full theme-bg-primary text-white flex items-center justify-center font-bold text-4xl shadow-md mb-2">
+              <div class="w-28 h-28 rounded-full theme-bg-primary text-white flex items-center justify-center font-bold text-3xl shadow-md mb-2">
                  <?php echo strtoupper(substr($first_name ?? 'U', 0, 1)); ?>
               </div>
             <?php endif; ?>
@@ -144,116 +154,131 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
           <div class="space-y-3">
             <div>
               <label class="block text-sm font-semibold mb-1 opacity-80">Nieuwe foto uploaden</label>
-              <input name="profile_picture" type="file" accept="image/jpeg, image/png, image/webp" class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer bg-white">
+              <input name="profile_picture" type="file" accept="image/jpeg, image/png, image/webp" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm">
             </div>
           </div>
           
-          <div class="mt-5 text-center flex gap-2 justify-center">
+          <div class="mt-6 text-center flex gap-2 justify-center">
             <button type="submit" class="theme-bg-primary text-white font-bold py-2.5 px-6 rounded-xl hover:opacity-90 transition shadow-sm">Uploaden</button>
             <?php if ($profile_picture): ?>
-            <a href="instellingen_helper.php?delete_profile_picture=1" class="bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-600 transition shadow-sm"><i class="fas fa-trash-alt"></i></a>
+            <a href="instellingen_helper.php?delete_profile_picture=1" class="bg-red-500 text-white font-bold py-2.5 px-4 rounded-xl hover:bg-red-600 transition shadow-sm"><i class="fas fa-trash-alt"></i></a>
             <?php endif; ?>
           </div>
         </form>
       </div>
 
       <!-- Theme Switcher -->
-      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
-        <h3 class="text-lg font-bold mb-4">Thema Voorkeur</h3>
-        <p class="text-sm opacity-80 mb-4">Kies je favoriete kleurenschema. Deze wordt opgeslagen in je profiel en geladen op alle apparaten.</p>
-        
-        <div class="space-y-3">
-          <select onchange="changeTheme(this.value)" class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm cursor-pointer">
-            <option value="light" <?= $theme == 'light' ? 'selected' : '' ?>>Light</option>
-            <option value="dark" <?= $theme == 'dark' ? 'selected' : '' ?>>Dark</option>
-            <option value="rose-gold" <?= $theme == 'rose-gold' ? 'selected' : '' ?>>Rose Gold</option>
-            <option value="cyber" <?= $theme == 'cyber' ? 'selected' : '' ?>>Cyber</option>
-            <option value="nature" <?= $theme == 'nature' ? 'selected' : '' ?>>Nature</option>
-            <option value="coral" <?= $theme == 'coral' ? 'selected' : '' ?>>Coral</option>
-          </select>
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6 flex flex-col">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-palette"></i> <span>Kleur Thema</span></h3>
         </div>
-        
-        
+        <div class="p-6 flex-1 flex flex-col justify-between">
+          <p class="text-sm opacity-80 mb-4 leading-relaxed">Kies je favoriete kleurenschema. Deze wordt opgeslagen in je profiel en geladen op alle apparaten.</p>
+          
+          <div class="space-y-3">
+            <select onchange="changeTheme(this.value)" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer">
+              <option value="light" <?= $theme == 'light' ? 'selected' : '' ?>>Light</option>
+              <option value="dark" <?= $theme == 'dark' ? 'selected' : '' ?>>Dark</option>
+              <option value="rose-gold" <?= $theme == 'rose-gold' ? 'selected' : '' ?>>Rose Gold</option>
+              <option value="cyber" <?= $theme == 'cyber' ? 'selected' : '' ?>>Cyber</option>
+              <option value="nature" <?= $theme == 'nature' ? 'selected' : '' ?>>Nature</option>
+              <option value="coral" <?= $theme == 'coral' ? 'selected' : '' ?>>Coral</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <!-- Notificaties -->
-      <div class="theme-card rounded border shadow-sm p-5 lg:col-span-2 xl:col-span-3" id="notificaties">
-        <?php if (isset($_GET['t']) && $_GET['t'] == "notificaties"): ?>
-          <div class="bg-blue-100 text-blue-800 p-3 rounded mb-4 flex justify-between items-start">
-            <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
-            <button onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
-          </div>
-        <?php endif; ?>
-        <h3 class="text-lg font-bold mb-4">Notificaties</h3>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <!-- Gekoppelde apparaten -->
-          <div>
-            <h4 class="font-semibold mb-3 border-b pb-2">Gekoppelde Apparaten</h4>
-            <?php if (empty($subscriptions)): ?>
-              <p class="text-sm opacity-70 mb-4">Je hebt nog geen apparaten gekoppeld voor push notificaties.</p>
-            <?php else: ?>
-              <ul class="space-y-2 mb-4">
-                <?php foreach ($subscriptions as $sub): ?>
-                  <li class="flex justify-between items-center theme-override-bg bg-opacity-50 p-2 rounded border theme-card-border text-sm">
-                    <span class="truncate max-w-[150px] sm:max-w-[200px]" title="<?= htmlspecialchars($sub['device_name']) ?>">
-                      <i class="fas fa-mobile-alt mr-2 opacity-50"></i><?= htmlspecialchars($sub['device_name']) ?>
-                    </span>
-                    <div>
-                      <button onclick="renameDevice(<?= $sub['id'] ?>, '<?= addslashes(htmlspecialchars($sub['device_name'])) ?>')" class="text-blue-500 hover:text-blue-700 p-1 mr-1" title="Hernoem apparaat">
-                        <i class="fas fa-edit"></i>
-                      </button>
-                      <button onclick="unsubscribeDevice('<?= htmlspecialchars($sub['endpoint']) ?>')" class="text-red-500 hover:text-red-700 p-1" title="Verwijder apparaat">
-                        <i class="fas fa-trash-alt"></i>
-                      </button>
-                    </div>
-                  </li>
-                <?php endforeach; ?>
-              </ul>
-            <?php endif; ?>
-            <button onclick="requestAndSubscribeToPush()" class="theme-bg-primary text-white text-sm font-bold py-2 px-4 rounded hover:opacity-90 transition shadow-sm w-full sm:w-auto">
-              <i class="fas fa-bell mr-2"></i> Zet meldingen aan voor dit apparaat
-            </button>
-            
-          </div>
-
-          <!-- Voorkeuren -->
-          <div>
-            <h4 class="font-semibold mb-3 border-b pb-2">Melding Voorkeuren</h4>
-            <form method="POST" action="instellingen_helper.php" class="p-6">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6 lg:col-span-2 xl:col-span-2 flex flex-col" id="notificaties">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-bell"></i> <span>Notificaties</span></h3>
+        </div>
+        <div class="p-6">
+          <?php if (isset($_GET['t']) && $_GET['t'] == "notificaties"): ?>
+            <div class="bg-blue-100 text-blue-800 p-3 rounded-xl mb-4 flex justify-between items-start">
+              <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
+              <button type="button" onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
+            </div>
+          <?php endif; ?>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Gekoppelde apparaten -->
+            <div>
+              <h4 class="font-bold text-base mb-3 opacity-90">Gekoppelde Apparaten</h4>
+              <p class="text-xs opacity-70 mb-4">Beheer welke apparaten pushnotificaties ontvangen.</p>
+              
               <div class="space-y-3 mb-4">
-                <?php
-                $channels = [
-                    'welkomsberichten' => 'Welkomsberichten',
-                    'tegenhunt' => 'Tegenhunt Alerts',
-                    'assignment_changes' => 'Wijzigingen in je opdracht',
-                    'vosstatus' => 'Vosstatussen',
-                    'locatiestatus' => 'Voslocatie status',
-                    'hints' => 'Elke nieuwe Hint',
-                    'opdrachten' => 'Elke nieuwe Opdracht',
-                    'nieuws' => 'Elk nieuw Nieuws artikel'
-                ];
-                foreach ($channels as $key => $label):
-                  $default_val = in_array($key, ['welkomsberichten', 'assignment_changes', 'tegenhunt']);
-                  $is_enabled = isset($notification_prefs[$key]) ? $notification_prefs[$key] : $default_val;
-                  $checked = $is_enabled ? 'checked' : '';
-                ?>
-                <label class="flex items-center space-x-3 cursor-pointer">
-                  <input type="checkbox" name="notif_<?= $key ?>" value="1" <?= $checked ?> class="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out cursor-pointer">
-                  <span class="text-sm font-medium opacity-90"><?= htmlspecialchars($label) ?></span>
-                </label>
-                <?php endforeach; ?>
+                <button id="push-toggle-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2">
+                  <i class="fas fa-bell"></i> <span>Pushnotificaties inschakelen</span>
+                </button>
+                <div id="push-status-msg" class="text-xs text-center"></div>
               </div>
-              <button type="submit" name="save_notif_prefs" class="bg-green-500 text-white text-sm font-bold py-2 px-6 rounded hover:bg-green-600 transition shadow-sm">
-                Voorkeuren Opslaan
-              </button>
-            </form>
+
+              <?php if (empty($subs)): ?>
+                <p class="text-xs opacity-50 italic">Nog geen gekoppelde apparaten gevonden.</p>
+              <?php else: ?>
+                <div class="divide-y text-xs border rounded-xl overflow-hidden" style="border-color: var(--theme-card-border);">
+                  <?php foreach ($subs as $sub): ?>
+                    <div class="p-3 flex items-center justify-between hover:bg-black/5 transition">
+                      <div>
+                        <span class="font-bold block"><?= htmlspecialchars($sub['device_name'] ?: 'Browser Sessie') ?></span>
+                        <span class="opacity-50 text-[10px]">Toegevoegd: <?= date('d-m-Y H:i', strtotime($sub['created_at'])) ?></span>
+                      </div>
+                      <form method="POST" action="instellingen_helper.php" class="m-0">
+                        <input type="hidden" name="delete_sub_id" value="<?= $sub['id'] ?>">
+                        <button type="submit" class="text-red-500 hover:text-red-700 p-1.5 transition" title="Verwijder apparaat"><i class="fas fa-trash-alt"></i></button>
+                      </form>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              <?php endif; ?>
+            </div>
+
+            <!-- Melding Voorkeuren -->
+            <div>
+              <h4 class="font-bold text-base mb-3 opacity-90">Melding Voorkeuren</h4>
+              <p class="text-xs opacity-70 mb-4">Kies welke type meldingen je direct wilt ontvangen.</p>
+              
+              <form method="POST" action="instellingen_helper.php" class="space-y-3 text-sm">
+                <input type="hidden" name="action" value="update_notif_channels">
+                
+                <label class="flex items-center justify-between p-2.5 rounded-xl border hover:bg-black/5 cursor-pointer transition" style="border-color: var(--theme-card-border);">
+                  <span>Nieuwe Hints</span>
+                  <input type="checkbox" name="chan_hint" class="rounded w-4 h-4 text-blue-600" <?= ($prefs['notif_hint'] ?? 1) ? 'checked' : '' ?>>
+                </label>
+                
+                <label class="flex items-center justify-between p-2.5 rounded-xl border hover:bg-black/5 cursor-pointer transition" style="border-color: var(--theme-card-border);">
+                  <span>Nieuwsberichten</span>
+                  <input type="checkbox" name="chan_nieuws" class="rounded w-4 h-4 text-blue-600" <?= ($prefs['notif_nieuws'] ?? 1) ? 'checked' : '' ?>>
+                </label>
+                
+                <label class="flex items-center justify-between p-2.5 rounded-xl border hover:bg-black/5 cursor-pointer transition" style="border-color: var(--theme-card-border);">
+                  <span>Nieuwe Opdrachten</span>
+                  <input type="checkbox" name="chan_opdracht" class="rounded w-4 h-4 text-blue-600" <?= ($prefs['notif_opdracht'] ?? 1) ? 'checked' : '' ?>>
+                </label>
+
+                <label class="flex items-center justify-between p-2.5 rounded-xl border hover:bg-black/5 cursor-pointer transition" style="border-color: var(--theme-card-border);">
+                  <span>Locatie & Hunt Status</span>
+                  <input type="checkbox" name="chan_locatiestatus" class="rounded w-4 h-4 text-blue-600" <?= ($prefs['notif_locatiestatus'] ?? 1) ? 'checked' : '' ?>>
+                </label>
+
+                <label class="flex items-center justify-between p-2.5 rounded-xl border hover:bg-black/5 cursor-pointer transition" style="border-color: var(--theme-card-border);">
+                  <span>Tegenhunt Alarm</span>
+                  <input type="checkbox" name="chan_tegenhunt" class="rounded w-4 h-4 text-blue-600" <?= ($prefs['notif_tegenhunt'] ?? 1) ? 'checked' : '' ?>>
+                </label>
+
+                <div class="pt-3">
+                  <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm">Voorkeuren Opslaan</button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>
 
     </div>
   </main>
+
 
   <!-- Delete Modal -->
   <div id="deleteModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm" aria-labelledby="modal-title" role="dialog" aria-modal="true">

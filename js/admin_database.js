@@ -37,15 +37,31 @@ function sortTable(columnIndex) {
 }
 
 function openEditModal(data) {
-    document.getElementById("edit_id").value = data.id;
-    document.getElementById("edit_type").value = data.type;
-    document.getElementById("edit_deelgebied").value = data.deelgebied;
-    document.getElementById("edit_ingestuurd_op").value = data.ingestuurd_op;
-    document.getElementById("edit_coordinaat_x").value = data.coordinaat_x;
-    document.getElementById("edit_coordinaat_y").value = data.coordinaat_y;
-    document.getElementById("edit_code").value = data.code;
-    document.getElementById("edit_opmerking").value = data.opmerking;
-    document.getElementById("editModal").classList.remove("hidden");
+    if (document.getElementById("edit_id")) document.getElementById("edit_id").value = data.id || '';
+    if (document.getElementById("edit_type")) document.getElementById("edit_type").value = data.type || '';
+    if (document.getElementById("edit_deelgebied")) document.getElementById("edit_deelgebied").value = data.deelgebied || '';
+    if (document.getElementById("edit_ingestuurd_op")) document.getElementById("edit_ingestuurd_op").value = data.ingestuurd_op ? data.ingestuurd_op.replace(' ', 'T').substring(0, 16) : '';
+    if (document.getElementById("edit_coord_x")) document.getElementById("edit_coord_x").value = data.coordinaat_x || '';
+    if (document.getElementById("edit_coord_y")) document.getElementById("edit_coord_y").value = data.coordinaat_y || '';
+    if (document.getElementById("edit_coordinaat_x")) document.getElementById("edit_coordinaat_x").value = data.coordinaat_x || '';
+    if (document.getElementById("edit_coordinaat_y")) document.getElementById("edit_coordinaat_y").value = data.coordinaat_y || '';
+    if (document.getElementById("edit_code")) document.getElementById("edit_code").value = data.code || '';
+    if (document.getElementById("edit_opmerking")) document.getElementById("edit_opmerking").value = data.opmerking || '';
+    const modal = document.getElementById("editModal");
+    if (modal) {
+        modal.classList.remove("hidden");
+        modal.style.display = "flex";
+    }
+}
+
+function openDeleteModal(id) {
+    const deleteLink = document.getElementById("deleteLink");
+    if (deleteLink) deleteLink.href = `../functies.php?verwijder_voslocatie=${id}`;
+    const modal = document.getElementById("deleteModal");
+    if (modal) {
+        modal.classList.remove("hidden");
+        modal.style.display = "flex";
+    }
 }
 
 function openDeleteModal(id) {
