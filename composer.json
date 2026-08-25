@@ -1,0 +1,14 @@
+{
+    "name": "thehairyvikingniels/joti",
+    "description": "Jotify",
+    "authors": [
+        {
+            "name": "Niels"
+        }
+    ],
+    "require": {
+        "minishlink/web-push": "^11.0",
+        "guzzlehttp/guzzle": "^7.15",
+        "http-interop/http-factory-guzzle": "^1.2"
+    }
+}

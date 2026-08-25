@@ -1,46 +1,8 @@
 <?php
+// Displays game assignments and challenges with their time limits, completion statuses, and formatted instructions.
 define("PAGE_NAME", "opdrachten");
 
-session_start();
-
-if (!isset($_SESSION['id'])) {
-
-    header("Location: index");
-
-}
-
-require("dblogin.php");
-require_once("functies.php");
-
-// Get userdata
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $vn = $row['voornaam'];
-        $priv = $row['priv'];
-    }
-}
-$stmt->close();
-
-
-// Get global site settings
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-$siteSettings = array();
-
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-}
-$stmt->close();
-
+require_once('includes/auth.php');
 
 ?>
 
@@ -70,7 +32,6 @@ $stmt->close();
         <?php include_once('includes/topbar.php') ?>
 
         <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
             <div class="space-y-6">
                 <?php
@@ -158,7 +119,7 @@ $stmt->close();
                 <div id="toewijzingen-avatars-opdracht-' . $row['id'] . '" class="flex -space-x-2 overflow-visible items-center p-1">
                     ' . $avatars_html . '
                 </div>';
-                        if ($priv > 0) {
+                        if ($privilege > 0) {
                             echo '<button id="toewijzingen-btn-opdracht-' . $row['id'] . '" onclick="toggleToewijzing(\'opdracht\', ' . $row['id'] . ')" class="text-sm font-bold ' . $btn_class . ' px-3 py-1.5 rounded transition shadow-sm whitespace-nowrap ml-4">
                     ' . $btn_text . '
                 </button>';
@@ -190,193 +151,13 @@ $stmt->close();
             </div>
         </main>
 
-        <!-- Footer -->
         <?php require_once('includes/footer.php') ?>
     </div>
 
-    <script>
-        if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true") {
-            setInterval(function () {
-                GPSrefresh();
-            }, 5555);
-        }
-
-        function GPSrefresh() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(showPosition);
-            } else {
-                console.log("Geolocation is not supported by this browser.");
-            }
-            function showPosition(position) {
-                console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
-
-                var xmlhttp;
-                if (window.XMLHttpRequest) {
-                    xmlhttp = new XMLHttpRequest();
-                } else {
-                    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-                }
-                xmlhttp.onreadystatechange = function () {
-                    if (this.readyState == 4 && this.status == 200) {
-                    }
-                };
-                xmlhttp.open("GET", "functies.php?lat=" + position.coords.latitude + "&lon=" + position.coords.longitude, true);
-                xmlhttp.send();
-            }
-        } 
-    </script>
-
-    <script>
-        const currentUserId = <?= isset($_SESSION['id']) ? $_SESSION['id'] : 0 ?>;
-
-        function updateAssignmentUI(type, id, users) {
-            const avatarContainer = document.getElementById(`toewijzingen-avatars-${type}-${id}`);
-            const btn = document.getElementById(`toewijzingen-btn-${type}-${id}`);
-            if (!avatarContainer || !btn) return;
-
-            let isAssigned = false;
-            let avatarsHtml = '';
-
-            if (users && users.length > 0) {
-                users.forEach(u => {
-                    if (u.id == currentUserId) isAssigned = true;
-                    const fullName = u.voornaam.charAt(0).toUpperCase() + u.voornaam.slice(1) + ' ' + u.achternaam.charAt(0).toUpperCase() + u.achternaam.slice(1);
-                    let avatarContent = '';
-                    if (u.profile_picture) {
-                        avatarContent = `<img class="inline-block h-10 w-10 rounded-full ring-2 ring-white object-cover bg-white pointer-events-none" src="profile_image.php?hash=${encodeURIComponent(u.profile_picture)}&res=low" alt="${fullName}"/>`;
-                    } else {
-                        const initial = u.voornaam.charAt(0).toUpperCase();
-                        avatarContent = `<div class="inline-flex items-center justify-center h-10 w-10 rounded-full ring-2 ring-white bg-blue-500 text-white font-bold text-xs pointer-events-none">${initial}</div>`;
-                    }
-                    const safeName = fullName.replace(/'/g, "\\'");
-                    avatarsHtml += `<div class="inline-block flex-shrink-0 cursor-pointer" onmouseenter="showAvatarTooltip(event, this, '${safeName}')" onmouseleave="hideAvatarTooltip()" onclick="showAvatarTooltip(event, this, '${safeName}')">${avatarContent}</div>`;
-                });
-            } else {
-                avatarsHtml = `<span class='text-xs opacity-50 italic mr-2'>Nog niemand toegewezen</span>`;
-            }
-
-            avatarContainer.innerHTML = avatarsHtml;
-
-            if (isAssigned) {
-                btn.className = `text-sm font-bold bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded transition shadow-sm whitespace-nowrap ml-4`;
-                btn.innerHTML = `<i class='fas fa-times mr-1'></i> Stop hiermee`;
-            } else {
-                btn.className = `text-sm font-bold bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1.5 rounded transition shadow-sm whitespace-nowrap ml-4`;
-                btn.innerHTML = `<i class='fas fa-hand-paper mr-1'></i> Ga hiermee aan de slag`;
-            }
-        }
-
-        function toggleToewijzing(type, id, force = false) {
-            const formData = new FormData();
-            formData.append('toggle_toewijzing', '1');
-            formData.append('type', type);
-            formData.append('referentie_id', id);
-            if (force) formData.append('force', '1');
-
-            fetch('functies.php', {
-                method: 'POST',
-                body: formData
-            }).then(res => res.json()).then(data => {
-                if (data.status === 'conflict') {
-                    showConflictModal(data.conflict_name, data.target_name, () => toggleToewijzing(type, id, true));
-                } else if (data.status === 'unassigned' || data.status === 'assigned') {
-                    updateAssignmentUI(data.target_type, data.target_id, data.users);
-                    if (data.unassigned_type && data.unassigned_id) {
-                        updateAssignmentUI(data.unassigned_type, data.unassigned_id, data.unassigned_users);
-                    }
-                }
-            }).catch(e => {
-                location.reload();
-            });
-        }
-
-        function showConflictModal(conflictName, targetName, confirmCallback) {
-            const overlay = document.createElement('div');
-            overlay.className = 'fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm';
-            overlay.innerHTML = `
-        <div class="theme-card rounded-xl max-w-md w-full p-6 shadow-2xl border" style="border-color: var(--theme-card-border); background-color: var(--theme-bg);">
-            <div class="flex items-center gap-4 mb-4">
-                <div class="h-12 w-12 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center text-xl shrink-0">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold theme-text">Taak Wisselen?</h3>
-                    <p class="text-sm opacity-80 theme-text mt-1">Je bent al met iets anders bezig.</p>
-                </div>
-            </div>
-            
-            <p class="theme-text mb-6">
-                Je bent momenteel toegewezen aan <strong>${conflictName}</strong>.<br><br>
-                Wil je hiermee stoppen en overschakelen naar <strong>${targetName}</strong>?
-            </p>
-            
-            <div class="flex gap-3 justify-end">
-                <button id="modal-cancel" class="px-4 py-2 rounded font-bold transition theme-text" style="background: rgba(128,128,128,0.2);">Annuleer</button>
-                <button id="modal-confirm" class="px-4 py-2 rounded font-bold theme-bg-primary text-white hover:opacity-90 transition">Ja, wissel taak</button>
-            </div>
-        </div>
-    `;
-            document.body.appendChild(overlay);
-
-            document.getElementById('modal-cancel').onclick = () => {
-                document.body.removeChild(overlay);
-            };
-            document.getElementById('modal-confirm').onclick = () => {
-                document.body.removeChild(overlay);
-                confirmCallback();
-            };
-        }
-
-        let customTooltip = null;
-
-        function showAvatarTooltip(e, el, text) {
-            if (e) e.stopPropagation();
-            if (!customTooltip) {
-                customTooltip = document.createElement('div');
-                customTooltip.className = 'fixed z-[9999] px-3 py-1.5 text-xs font-bold rounded shadow-lg whitespace-nowrap theme-bg-primary text-white border pointer-events-none transition-opacity duration-200 opacity-0';
-                customTooltip.style.borderColor = 'var(--theme-card-border)';
-                document.body.appendChild(customTooltip);
-            }
-            customTooltip.innerHTML = text;
-            
-            // Temporarily make it visible to get dimensions, but keep opacity 0
-            customTooltip.style.top = '0px';
-            customTooltip.style.left = '0px';
-            customTooltip.style.display = 'block';
-            
-            const rect = el.getBoundingClientRect();
-            const tooltipRect = customTooltip.getBoundingClientRect();
-            
-            let top = rect.top - tooltipRect.height - 8;
-            let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-            
-            if (left < 8) left = 8;
-            if (left + tooltipRect.width > window.innerWidth - 8) {
-                left = window.innerWidth - tooltipRect.width - 8;
-            }
-            if (top < 8) top = rect.bottom + 8;
-            
-            customTooltip.style.top = top + 'px';
-            customTooltip.style.left = left + 'px';
-            customTooltip.style.opacity = '1';
-        }
-
-        function hideAvatarTooltip() {
-            if (customTooltip) {
-                customTooltip.style.opacity = '0';
-                setTimeout(() => {
-                    if (customTooltip && customTooltip.style.opacity === '0') {
-                        customTooltip.style.top = '-9999px';
-                        customTooltip.style.display = 'none';
-                    }
-                }, 200);
-            }
-        }
-
-        document.addEventListener('click', hideAvatarTooltip);
-        window.addEventListener('scroll', hideAvatarTooltip, { capture: true, passive: true });
-    </script>
-
+    <script src="js/gps.js"></script>
+<script src="js/assignments.js"></script>
+<script>
+initAssignments(<?= (int)$user_id ?>);
+</script>
 </body>
-
 </html>

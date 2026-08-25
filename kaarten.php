@@ -1,45 +1,7 @@
 <?php
+// Full-screen map dashboard with interactive control panels for filtering sub-areas, game halves, radius circles, and vehicles.
 define("PAGE_NAME", "kaarten");
-session_start();
-
-if (!isset($_SESSION['id'])){
-  header("Location: index");
-  exit(); 
-}
-
-require("dblogin.php");
-
-// Get userdata
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $vn = $row['voornaam'];
-      $priv = $row['priv'];
-    }
-}
-$stmt->close();
-
-if (!isset($priv) || $priv < 1) {
-    header("Location: home");
-    exit();
-}
-
-// Get global site settings
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-        $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-}
-$stmt->close();
-
+require_once('includes/auth.php');
 
 // Check if there are any fox locations within the last 24 hours to enable the radius checkbox
 $stmt = $conn->prepare("SELECT id FROM Voslocaties WHERE ingestuurd_op >= NOW() - INTERVAL 24 HOUR LIMIT 1");
@@ -233,137 +195,12 @@ input:disabled + .slider { background-color: #e2e8f0; cursor: not-allowed; }
 
 </div>
 
+<script src="js/kaarten.js"></script>
 <script>
-const savedMapSettings = <?php echo isset($_SESSION['map_settings']) ? json_encode($_SESSION['map_settings']) : 'null'; ?>;
-let lastKnownMapState = savedMapSettings && savedMapSettings.mapState ? savedMapSettings.mapState : null;
-let mapSaveTimeout;
-
-window.addEventListener("message", (event) => {
-    if (event.data && event.data.type === 'mapUpdate') {
-        lastKnownMapState = event.data.state;
-        clearTimeout(mapSaveTimeout);
-        mapSaveTimeout = setTimeout(() => {
-            saveMapSettings();
-        }, 1000);
-    }
-}, false);
-
-function saveMapSettings() {
-  const layers = ['groepen', 'personen', 'autos', 'hints', 'vossenpad', 'predicted_route', 'zoekcirkel'];
-  const teams = Array.from(document.querySelectorAll('.team-filter:checked')).map(el => el.id);
-  const savePayload = {
-      checkboxes: {
-          'helft1': document.getElementById('helft1').checked,
-          'helft2': document.getElementById('helft2').checked
-      },
-      teams: teams,
-      mapState: lastKnownMapState
-  };
-  layers.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) savePayload.checkboxes[id] = el.checked;
-  });
-  
-  fetch('functies.php?save_map_settings=1', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(savePayload)
-  }).catch(e => console.error(e));
-}
-
-function kaartveranderen() {
-  const layers = ['groepen', 'personen', 'autos', 'hints', 'vossenpad', 'predicted_route', 'zoekcirkel'];
-  const params = layers.map(id => `${id}=${document.getElementById(id).checked}`);
-  
-  params.push(`helft1=${document.getElementById('helft1').checked}`);
-  params.push(`helft2=${document.getElementById('helft2').checked}`);
-  
-  const teams = Array.from(document.querySelectorAll('.team-filter:checked')).map(el => el.id);
-  if(teams.length > 0) {
-      params.push(`teams=${teams.join(',')}`);
-  }
-  
-  if(lastKnownMapState) {
-      params.push(`lon=${lastKnownMapState.lon}`);
-      params.push(`lat=${lastKnownMapState.lat}`);
-      params.push(`zoom=${lastKnownMapState.zoom}`);
-  }
-
-  document.getElementById('iframe01').src = `maps.php?${params.join('&')}`;
-  saveMapSettings();
-}
-
-function toggleCheckbox(id) {
-    const checkbox = document.getElementById(id);
-    if (!checkbox.disabled) {
-        checkbox.checked = !checkbox.checked;
-        kaartveranderen();
-    }
-}
-
-function togglePanel(panelId) {
-    const panel = document.getElementById(panelId);
-    if (panel.style.display === 'block') {
-        panel.style.display = 'none';
-    } else {
-        if(panelId === 'layers-panel') document.getElementById('filters-panel').style.display = 'none';
-        if(panelId === 'filters-panel') document.getElementById('layers-panel').style.display = 'none';
-        panel.style.display = 'block';
-    }
-}
-
-function toggleFullScreen() {
-    const elem = document.querySelector(".map-view-wrapper");
-    if (!document.fullscreenElement) {
-        elem.requestFullscreen().catch(err => alert(`Error: ${err.message}`));
-    } else {
-        document.exitFullscreen();
-    }
-}
-
-document.addEventListener('fullscreenchange', () => {
-    const icon = document.getElementById('fullscreen-icon');
-    if (!document.fullscreenElement) {
-        icon.classList.remove('fa-compress');
-        icon.classList.add('fa-expand');
-    } else {
-        icon.classList.remove('fa-expand');
-        icon.classList.add('fa-compress');
-    }
-});
-
-window.onload = function() {
-  if (savedMapSettings) {
-      if (savedMapSettings.checkboxes) {
-          Object.keys(savedMapSettings.checkboxes).forEach(id => {
-              const el = document.getElementById(id);
-              if (el) el.checked = savedMapSettings.checkboxes[id];
-          });
-      }
-      if (savedMapSettings.teams) {
-          document.querySelectorAll('.team-filter').forEach(el => {
-              el.checked = savedMapSettings.teams.includes(el.id);
-          });
-      }
-  }
-  kaartveranderen();
-};
-
-if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
-  setInterval(GPSrefresh, 5555);
-}
-
-function GPSrefresh() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    }
-}
-
-function showPosition(position) {
-    const xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", `functies.php?lat=${position.coords.latitude}&lon=${position.coords.longitude}`, true);
-    xmlhttp.send();
-}
+initKaarten(<?= isset($_SESSION['map_settings']) ? json_encode($_SESSION['map_settings']) : 'null' ?>);
+</script>
+<script src="js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');
 </script>
 
 </body>

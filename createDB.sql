@@ -106,7 +106,8 @@ CREATE TABLE `Gebruikers` (
   `lon` decimal(9,6) DEFAULT NULL,
   `geotijd` datetime DEFAULT NULL,
   `theme` varchar(32) NOT NULL DEFAULT 'light',
-  `profile_picture` varchar(255) DEFAULT NULL
+  `profile_picture` varchar(255) DEFAULT NULL,
+  `notification_prefs` json DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -217,7 +218,9 @@ INSERT INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) VALUES
 ('GROUP_LOGO_SMALL_URL', 'media/geusje_bevosd.png', 'A local or external URL for the group logo. '),
 ('GROUP_ID', '0', 'The ID of the scout group using this website. Used for point calculations.'),
 ('GROUP_URL', 'https://example.com/', 'The URL of the scout group using this website. '),
-('JOTIHUNT_CREDENTIALS',	'{\"username\":\"example@domain.com\",\"password\":\"example_password\"}',	'Credentials of the official Jotihunt website in JSON format.');
+('JOTIHUNT_CREDENTIALS',	'{\"username\":\"example@domain.com\",\"password\":\"example_password\"}',	'Credentials of the official Jotihunt website in JSON format.'),
+('VAPID_PUBLIC_KEY', 'PLACEHOLDER_PUBLIC_KEY', 'Web Push VAPID Public Key'),
+('VAPID_PRIVATE_KEY', 'PLACEHOLDER_PRIVATE_KEY', 'Web Push VAPID Private Key');
 
 -- --------------------------------------------------------
 
@@ -294,6 +297,41 @@ CREATE TABLE `Voslog` (
   `datumtijd` datetime NOT NULL,
   `vos` varchar(32) NOT NULL,
   `status` tinyint(4) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Tabelstructuur voor tabel `Notification_Subscriptions`
+--
+
+CREATE TABLE `Notification_Subscriptions` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `endpoint` text NOT NULL,
+  `device_name` varchar(255) DEFAULT 'Onbekend apparaat',
+  `p256dh` varchar(255) NOT NULL,
+  `auth` varchar(255) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Tabelstructuur voor tabel `Notification_Backlog`
+--
+
+CREATE TABLE `Notification_Backlog` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `message` text NOT NULL,
+  `url` varchar(1024) NOT NULL DEFAULT '/',
+  `status` varchar(32) NOT NULL DEFAULT 'pending',
+  `initiator` varchar(255) NOT NULL,
+  `added_on` datetime NOT NULL DEFAULT current_timestamp(),
+  `send_before` datetime DEFAULT NULL,
+  `sent` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -390,8 +428,34 @@ ALTER TABLE `Voslog`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexen voor tabel `Notification_Subscriptions`
+--
+ALTER TABLE `Notification_Subscriptions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
+-- Indexen voor tabel `Notification_Backlog`
+--
+ALTER TABLE `Notification_Backlog`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
 -- AUTO_INCREMENT voor geëxporteerde tabellen
 --
+
+--
+-- AUTO_INCREMENT voor een tabel `Notification_Subscriptions`
+--
+ALTER TABLE `Notification_Subscriptions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT voor een tabel `Notification_Backlog`
+--
+ALTER TABLE `Notification_Backlog`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT voor een tabel `Gebruikers`
@@ -446,6 +510,18 @@ ALTER TABLE `Cronlogs`
 --
 ALTER TABLE `Voslocaties`
   ADD CONSTRAINT `Voslocaties_ibfk_1` FOREIGN KEY (`ingeleverd_door`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Beperkingen voor tabel `Notification_Subscriptions`
+--
+ALTER TABLE `Notification_Subscriptions`
+  ADD CONSTRAINT `notification_subscriptions_user_id` FOREIGN KEY (`user_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE;
+
+--
+-- Beperkingen voor tabel `Notification_Backlog`
+--
+ALTER TABLE `Notification_Backlog`
+  ADD CONSTRAINT `notification_backlog_user_id` FOREIGN KEY (`user_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

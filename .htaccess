@@ -14,3 +14,6 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
 # Voeg intern .php toe aan het verzoek EN behoud de GET-parameters (QSA)
 RewriteRule ^([^\.]+)$ $1.php [QSA,NC,L]
+
+##------Custom Foutpagina's------##
+ErrorDocument 404 /404.php

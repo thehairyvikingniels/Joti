@@ -1,32 +1,26 @@
 <?php
+// Interactive tactical whiteboard for organizing real-time assignments of members and vehicles to fox hunting areas.
 define("PAGE_NAME", "whiteboard");
-session_start();
+require_once('includes/auth.php');
 
-if (!isset($_SESSION['id']) || !isset($_SESSION['priv'])) {
-    header("Location: index");
-    exit();
-}
-
-$priv = $_SESSION['priv'];
-$is_guest = ($priv < 1); // Guests can view? The user said: "Guests can't see the board but can be on it."
+$is_guest = ($privilege < 1 && !$is_kiosk); // Guests can't see the board unless they are a Kiosk
 if ($is_guest) {
     header("Location: home");
     exit();
 }
 
-require("dblogin.php");
 require_once('includes/globals.php');
 
 // Fetch data
 $users = [];
-$vn = "Gebruiker";
+$first_name = "Gebruiker";
 $stmt = $conn->prepare("SELECT id, voornaam, achternaam, profile_picture FROM Gebruikers ORDER BY voornaam");
 $stmt->execute();
 $res = $stmt->get_result();
 while($row = $res->fetch_assoc()) {
     $users[$row['id']] = $row;
     if ($row['id'] == $_SESSION['id']) {
-        $vn = $row['voornaam'];
+        $first_name = $row['voornaam'];
     }
 }
 $stmt->close();
@@ -163,7 +157,7 @@ $stmt->close();
 
 // Fetch latest hunt times for foxes
 $fox_hunts = [];
-foreach ($vossen_names as $k => $v) {
+foreach ($fox_names as $k => $v) {
     $fox_hunts[$k] = ['naam' => $v, 'laatste_hunt' => null];
 }
 
@@ -177,7 +171,7 @@ $stmt->execute();
 $res = $stmt->get_result();
 while($row = $res->fetch_assoc()) {
     $fox_name = ucfirst(strtolower($row['deelgebied']));
-    $idx = array_search(trim($fox_name), $vossen_names);
+    $idx = array_search(trim($fox_name), $fox_names);
     if ($idx !== false) {
         $fox_hunts[$idx]['laatste_hunt'] = $row['laatste_hunt'];
     }
@@ -204,79 +198,7 @@ foreach ($user_assignments as $uid => $ass) {
     if (!$valid) unset($user_assignments[$uid]);
 }
 
-// Helper to render user avatar
-function renderUser($user) {
-    $name = htmlspecialchars(ucfirst($user['voornaam']) . ' ' . ucfirst($user['achternaam']));
-    $short = strtoupper(substr($user['voornaam'], 0, 1));
-    $html = '<div class="wb-user cursor-move m-1 inline-block flex-shrink-0" draggable="true" ondragstart="drag(event)" id="user_' . $user['id'] . '" data-userid="' . $user['id'] . '" title="' . $name . '">';
-    if ($user['profile_picture']) {
-        $html .= '<img class="h-10 w-10 rounded-full ring-2 ring-white object-cover bg-white pointer-events-none" src="profile_image.php?hash=' . urlencode($user['profile_picture']) . '&res=low" alt="' . $name . '"/>';
-    } else {
-        $html .= '<div class="flex items-center justify-center h-10 w-10 rounded-full ring-2 ring-white bg-blue-500 text-white font-bold text-xs pointer-events-none">' . $short . '</div>';
-    }
-    $html .= '<div class="user-name text-[10px] text-center truncate w-10 mt-1 opacity-80 text-gray-800">' . htmlspecialchars(ucfirst($user['voornaam'])) . '</div>';
-    $html .= '</div>';
-    return $html;
-}
-
-// Helper to render a car in compact mode (inactive)
-function renderCompactCar($kenteken, $car, $users) {
-    $html = '<div class="car-draggable compact-car bg-yellow-400 text-black text-[10px] font-bold px-2 py-0.5 rounded border border-black m-1 inline-block shadow cursor-move self-start" draggable="true" ondragstart="dragCar(event)" id="car_' . htmlspecialchars($kenteken) . '" data-kenteken="' . htmlspecialchars($kenteken) . '">';
-    $html .= strtoupper(htmlspecialchars($kenteken));
-    $html .= '</div>';
-    return $html;
-}
-
-// Helper to render a car in vertical pill design
-function renderCar($kenteken, $car, $users) {
-    // 2 yellow headlights, 2 red tail lights, number plate in between. Vertical pill.
-    $html = '<div class="car-draggable bg-gray-800 rounded-[40px] p-2 m-2 flex flex-col items-center relative shadow-lg overflow-hidden" style="width: 130px; min-height: 200px;" draggable="true" ondragstart="dragCar(event)" id="car_' . htmlspecialchars($kenteken) . '" data-kenteken="' . htmlspecialchars($kenteken) . '">';
-    
-    // Headlights
-    $html .= '<div class="absolute top-1 left-3 w-4 h-3 bg-yellow-400 rounded-full shadow-[0_0_10px_rgba(250,204,21,0.8)]"></div>';
-    $html .= '<div class="absolute top-1 right-3 w-4 h-3 bg-yellow-400 rounded-full shadow-[0_0_10px_rgba(250,204,21,0.8)]"></div>';
-    
-    // Windshield
-    $html .= '<div class="w-10/12 h-6 bg-sky-200/40 rounded-t-xl mt-3 mb-2 border-b border-gray-600"></div>';
-    
-    // Interior Container (Grid)
-    $html .= '<div class="relative w-full mt-1 flex-1 flex flex-col items-center">';
-    
-    // Passenger & Driver Zone (Grid)
-    $html .= '<div class="wb-zone passenger-zone w-full" id="zone_auto_pass_' . htmlspecialchars($kenteken) . '" data-type="auto" data-ref="' . htmlspecialchars($kenteken) . '" data-driver="0" ondrop="drop(event)" ondragover="allowDrop(event)">';
-    
-    // Driver Zone (Grid item 1) - just a drop target in the first grid cell
-    $html .= '<div class="wb-zone driver-seat" style="grid-column: 1; grid-row: 1; min-height: auto;" id="zone_auto_driver_' . htmlspecialchars($kenteken) . '" data-type="auto" data-ref="' . htmlspecialchars($kenteken) . '" data-driver="1" ondrop="dropDriver(event)" ondragover="allowDrop(event)">';
-    if ($car['bestuurder']) {
-        $html .= renderUser($users[$car['bestuurder']]);
-    } else {
-        $html .= '<div class="steering-wheel-placeholder"><i class="fas fa-steering-wheel text-gray-400 text-xs opacity-50"></i></div>';
-    }
-    $html .= '</div>';
-    
-    foreach ($car['bijrijders'] as $uid) {
-        $html .= renderUser($users[$uid]);
-    }
-    $html .= '</div>';
-    
-    $html .= '</div>'; // End Interior
-    
-    // Rear Window
-    $html .= '<div class="w-10/12 h-4 bg-sky-200/30 rounded-b-lg mb-4 border-t border-gray-600 mt-2"></div>';
-    
-    // License Plate
-    $html .= '<div class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-yellow-400 text-black text-[10px] font-bold px-2 py-0.5 rounded border border-black">' . strtoupper(htmlspecialchars($kenteken)) . '</div>';
-    
-    // Taillights
-    $html .= '<div class="absolute bottom-1 left-3 w-5 h-2 bg-red-600 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.8)]"></div>';
-    $html .= '<div class="absolute bottom-1 right-3 w-5 h-2 bg-red-600 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.8)]"></div>';
-    
-    $html .= '</div>'; // End car wrapper
-    
-    return $html;
-}
-
-
+require_once('includes/whiteboard_components.php');
 ?>
 <!DOCTYPE html>
 <html lang="nl">
@@ -452,8 +374,6 @@ function renderCar($kenteken, $car, $users) {
                 </div>
             </div>
 
-
-
             <!-- Hints -->
             <div class="col-span-full mt-4">
                 <h2 class="text-xl font-bold mb-4 border-b pb-2" style="border-color: var(--theme-card-border);"><i class="fas fa-search mr-2"></i>Hints</h2>
@@ -576,268 +496,7 @@ function renderCar($kenteken, $car, $users) {
   <?php require_once('includes/footer.php') ?>
 </div>
 
-<script>
-// Initialize mobile drag and drop polyfill
-MobileDragDrop.polyfill({
-    dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
-});
-
-window.addEventListener('touchmove', function() {}, {passive: false});
-
-// Custom edge scrolling to ensure smooth up/down scroll while dragging
-document.addEventListener('dragover', function(e) {
-    const threshold = 300; // 300px from top/bottom
-    const container = document.querySelector('.overflow-y-auto');
-    if (!container) return;
-    
-    // Polyfill or native dragover clientY
-    const y = e.clientY || (e.touches && e.touches.length > 0 ? e.touches[0].clientY : 0);
-    if (y > 0) {
-        if (y < threshold) {
-            container.scrollTop -= 15;
-        } else if (window.innerHeight - y < threshold) {
-            container.scrollTop += 15;
-        }
-    }
-});
-
-// --- HTML5 Drag and Drop ---
-let draggedElement = null;
-let dragType = null; // 'user' or 'car'
-
-function allowDrop(ev) {
-    ev.preventDefault();
-    if (ev.target.classList) {
-        // Find closest wb-zone
-        const zone = ev.target.closest('.wb-zone');
-        if (zone) {
-            // Visual feedback
-            document.querySelectorAll('.wb-zone').forEach(el => el.classList.remove('drag-over'));
-            zone.classList.add('drag-over');
-        }
-    }
-}
-
-function drag(ev) {
-    ev.stopPropagation();
-    draggedElement = ev.target;
-    dragType = 'user';
-    ev.dataTransfer.setData("text", ev.target.id);
-    ev.dataTransfer.effectAllowed = "move";
-}
-
-function dragCar(ev) {
-    ev.stopPropagation();
-    draggedElement = ev.target.closest('.car-draggable');
-    dragType = 'car';
-    ev.dataTransfer.setData("text", draggedElement.id);
-    ev.dataTransfer.effectAllowed = "move";
-}
-
-document.addEventListener('dragend', function() {
-    document.querySelectorAll('.wb-zone').forEach(el => el.classList.remove('drag-over'));
-});
-
-// Dedicated handler for driver zone drops (prevents bubbling to parent passenger zone)
-function dropDriver(ev) {
-    ev.preventDefault();
-    ev.stopPropagation();
-    document.querySelectorAll('.wb-zone').forEach(el => el.classList.remove('drag-over'));
-    
-    const zone = ev.currentTarget;
-    if (!zone || !draggedElement || dragType !== 'user') return;
-    
-    const userId = draggedElement.getAttribute('data-userid');
-    const targetRef = zone.getAttribute('data-ref');
-    
-    // Store old zone to restore steering wheel if needed
-    const oldZone = draggedElement.parentElement;
-    const wasDriverZone = oldZone && oldZone.hasAttribute('data-driver') && oldZone.getAttribute('data-driver') === "1";
-    
-    // Move old driver to passenger zone
-    const oldDriver = zone.querySelector('.wb-user');
-    if (oldDriver && oldDriver !== draggedElement) {
-        const passZone = document.getElementById('zone_auto_pass_' + targetRef);
-        if (passZone) passZone.appendChild(oldDriver);
-    }
-    
-    // Remove steering wheel placeholder
-    const wheel = zone.querySelector('.steering-wheel-placeholder');
-    if (wheel) wheel.remove();
-    
-    zone.appendChild(draggedElement);
-    
-    // Restore steering wheel in old driver zone if we came from one
-    if (wasDriverZone && oldZone !== zone) {
-        if (!oldZone.querySelector('.steering-wheel-placeholder')) {
-            const wheelDiv = document.createElement('div');
-            wheelDiv.className = 'steering-wheel-placeholder';
-            wheelDiv.innerHTML = '<i class="fas fa-steering-wheel text-gray-400 text-xs opacity-50"></i>';
-            oldZone.appendChild(wheelDiv);
-        }
-    }
-    
-    // Send AJAX
-    const formData = new FormData();
-    formData.append('action', 'move_user');
-    formData.append('user_id', userId);
-    formData.append('target_type', 'auto');
-    formData.append('target_ref', targetRef);
-    formData.append('is_bestuurder', '1');
-    
-    fetch('whiteboard_helper.php', {
-        method: 'POST',
-        body: formData
-    }).then(r => r.json()).then(res => {
-        if (res.status !== 'success') {
-            window.location.reload();
-        }
-    }).catch(() => window.location.reload());
-}
-
-function drop(ev) {
-    ev.preventDefault();
-    document.querySelectorAll('.wb-zone').forEach(el => el.classList.remove('drag-over'));
-    
-    const zone = ev.target.closest('.wb-zone');
-    if (!zone || !draggedElement) return;
-    
-    // If this is a driver zone, let dropDriver handle it
-    if (zone.getAttribute('data-driver') === '1') return;
-
-    if (dragType === 'user') {
-        // Move user
-        const userId = draggedElement.getAttribute('data-userid');
-        const targetType = zone.getAttribute('data-type');
-        const targetRef = zone.getAttribute('data-ref');
-
-        // Store old zone to clean up if it was a driver zone
-        const oldZone = draggedElement.parentElement;
-        const wasDriverZone = oldZone && oldZone.hasAttribute('data-driver') && oldZone.getAttribute('data-driver') === "1";
-
-        if (zone.id === 'zone_unassigned') {
-            const sep = document.getElementById('unassigned-separator');
-            if (sep) {
-                zone.insertBefore(draggedElement, sep);
-            } else {
-                zone.appendChild(draggedElement);
-            }
-        } else {
-            zone.appendChild(draggedElement);
-        }
-
-        if (wasDriverZone && oldZone !== zone) {
-            if (!oldZone.querySelector('.steering-wheel-placeholder')) {
-                const wheelDiv = document.createElement('div');
-                wheelDiv.className = 'steering-wheel-placeholder';
-                wheelDiv.innerHTML = '<i class="fas fa-steering-wheel text-gray-400 text-xs opacity-50"></i>';
-                oldZone.appendChild(wheelDiv);
-            }
-        }
-
-        // Send AJAX
-        const formData = new FormData();
-        formData.append('action', 'move_user');
-        formData.append('user_id', userId);
-        formData.append('target_type', targetType);
-        formData.append('target_ref', targetRef);
-        formData.append('is_bestuurder', '0');
-
-        fetch('whiteboard_helper.php', {
-            method: 'POST',
-            body: formData
-        }).then(r => r.json()).then(res => {
-            if (res.status !== 'success') {
-                alert("Fout: " + (res.message || "Onbekend"));
-                window.location.reload();
-            }
-        }).catch(() => {
-            window.location.reload();
-        });
-
-    } else if (dragType === 'car') {
-        // Move car
-        const kenteken = draggedElement.getAttribute('data-kenteken');
-        const targetType = zone.getAttribute('data-type');
-        const targetRef = zone.getAttribute('data-ref');
-        
-        // Can drop cars on hint, opdracht, custom, hunt, or unassigned
-        if (['hint', 'opdracht', 'custom', 'hunt', 'unassigned'].includes(targetType)) {
-            // Optimistic UI append (Physically move the car)
-            zone.appendChild(draggedElement);
-
-            const formData = new FormData();
-            formData.append('action', 'move_car');
-            formData.append('auto', kenteken);
-            formData.append('target_type', targetType);
-            formData.append('target_ref', targetRef);
-
-            fetch('whiteboard_helper.php', {
-                method: 'POST',
-                body: formData
-            }).then(() => {
-                window.location.reload();
-            }).catch(() => {
-                window.location.reload();
-            });
-        }
-    }
-}
-
-function addCategory() {
-    const name = document.getElementById('cat-name').value;
-    const color = document.getElementById('cat-color').value;
-    if (!name) return;
-    
-    const formData = new FormData();
-    formData.append('action', 'add_category');
-    formData.append('naam', name);
-    formData.append('kleur', color);
-    
-    fetch('whiteboard_helper.php', {
-        method: 'POST',
-        body: formData
-    }).then(r => r.json()).then(res => {
-        if (res.status === 'success') {
-            window.location.reload();
-        }
-    });
-}
-
-let catToDelete = null;
-
-function delCategory(id) {
-    catToDelete = id;
-    document.getElementById('del-cat-modal').classList.remove('hidden');
-}
-
-function closeDelCategoryModal() {
-    catToDelete = null;
-    document.getElementById('del-cat-modal').classList.add('hidden');
-}
-
-function confirmDelCategory() {
-    if (!catToDelete) return;
-    
-    const formData = new FormData();
-    formData.append('action', 'del_category');
-    formData.append('id', catToDelete);
-    
-    fetch('whiteboard_helper.php', {
-        method: 'POST',
-        body: formData
-    }).then(r => r.json()).then(res => {
-        if (res.status === 'success') {
-            window.location.reload();
-        } else {
-            closeDelCategoryModal();
-            alert("Fout bij verwijderen");
-        }
-    }).catch(() => {
-        window.location.reload();
-    });
-}
-</script>
+<script src="js/whiteboard.js"></script>
 
 </body>
 </html>

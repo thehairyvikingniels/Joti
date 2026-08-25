@@ -1,15 +1,13 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+// Legacy AJAX router providing utility functions, coordinate transformations, time formatting, and push notification dispatch.
+// Online check for service worker
+if (isset($_GET['onlinecheck'])) {
+    http_response_code(200);
+    echo "OK";
+    exit();
 }
 
-if (empty($_SESSION['id'])){
-  header("Location: index.php");
-  exit();
-}
-
-require("dblogin.php");
-require_once("includes/globals.php");
+require_once(__DIR__ . '/includes/auth.php');
 
 // GPS Toggle
 if (isset($_GET['gpstoggle'])){
@@ -46,78 +44,9 @@ if (isset($_GET['save_map_settings'])) {
     }
     exit();
 }
-// Zet een tijd in een leesbare vorm
-function time2str($ts) {
-    if(!ctype_digit($ts)) {
-        $ts = strtotime($ts);
-    }
-    $diff = time() - $ts;
-    if($diff == 0) {
-        return 'Nu';
-    } elseif($diff > 0) {
-        $day_diff = floor($diff / 86400);
-        if($day_diff == 0) {
-            if($diff < 60) return 'Zojuist';
-            if($diff < 120) return '1 min geleden';
-            if($diff < 3600) return floor($diff / 60) . ' min geleden';
-            if($diff < 7200) return '1 uur geleden';
-            if($diff < 86400) return floor($diff / 3600) . ' uur geleden';
-        }
-        if($day_diff == 1) { return 'Gisteren'; }
-        if($day_diff < 7) { return $day_diff . ' dagen geleden'; }
-        if($day_diff < 8) { return ceil($day_diff / 7) . ' week geleden'; }
-        if($day_diff < 31) { return ceil($day_diff / 7) . ' weken geleden'; }
-        if($day_diff < 60) { return 'Vorige maand'; }
-        return date('F Y', $ts);
-    } else {
-        $diff = abs($diff);
-        $day_diff = floor($diff / 86400);
-        if($day_diff == 0) {
-            if($diff < 120) { return 'Over een min'; }
-            if($diff < 3600) { return 'Over ' . floor($diff / 60) . ' min'; }
-            if($diff < 7200) { return 'Over een uur'; }
-            if($diff < 86400) { return 'Over ' . floor($diff / 3600) . ' uur'; }
-        }
-        if($day_diff == 1) { return 'Morgen'; }
-        if($day_diff < 4) { return date('l', $ts); }
-        if($day_diff < 7 + (7 - date('w'))) { return 'Volgende week'; }
-        if(ceil($day_diff / 7) < 4) { return 'Over ' . ceil($day_diff / 7) . ' weken'; }
-        if(date('n', $ts) == date('n') + 1) { return 'Volgende maand'; }
-        return date('F Y', $ts);
-    }
-}
 
-/**
- * Calculates the great-circle distance between two points, with
- * the Haversine formula.
- */
-function latlon_dist($latitudeFrom, $longitudeFrom, $latitudeTo, $longitudeTo, $earthRadius = 6371000) {
-    $latFrom = deg2rad($latitudeFrom);
-    $lonFrom = deg2rad($longitudeFrom);
-    $latTo = deg2rad($latitudeTo);
-    $lonTo = deg2rad($longitudeTo);
 
-    $latDelta = $latTo - $latFrom;
-    $lonDelta = $lonTo - $lonFrom;
-
-    $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) + cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
-    return round($angle * $earthRadius);
-}
-
-// RD coordinaten omzetten naar WGS84 coordinaten
-function rdtowgs($rdx, $rdy){
-  $dx = ($rdx - 155000) * pow(10,-5);
-  $dy = ($rdy - 463000) * pow(10,-5);
-  
-  $somN = (3235.65389 * $dy) + (-32.58297 * pow($dx,2)) + (-0.2475 * pow($dy,2)) + (-0.84978 * pow($dx,2) * $dy) + (-0.0655 * pow($dy,3)) + (-0.01709 * pow($dx,2) * pow($dy,2)) + (-0.00738 * $dx) + (0.0053 * pow($dx,4)) + (-0.00039 * pow($dx,2) * pow($dy,3)) + (0.00033 * pow($dx,4) * $dy) + (-0.00012 * $dx * $dy);
-  $somE = (5260.52916 * $dx) + (105.94684 * $dx * $dy) + (2.45656 * $dx * pow($dy,2)) + (-0.81885 * pow($dx,3)) + (0.05594 * $dx * pow($dy,3)) + (-0.05607 * pow($dx,3) * $dy) + (0.01199 * $dy) + (-0.00256 * pow($dx,3) * pow($dy,2)) + (0.00128 * $dx * pow($dy,4)) + (0.00022 * pow($dy,2)) + (-0.00022 * pow($dx,2)) + (0.00026 * pow($dx,5));
-    
-  $a["lat"] = 52.15517 + ($somN / 3600);
-  $a["lon"] = 5.387206 + ($somE / 3600);
-  return($a);
-}
-
-// Verwijder een Voslocatie
+// Delete a fox location
 if (isset($_GET['verwijder_voslocatie'])) {
     // Check user privilege
     $stmt_priv = $conn->prepare("SELECT priv FROM Gebruikers WHERE id=?");
@@ -161,10 +90,7 @@ if (isset($_POST['update_voslocatie'])) {
         $code = $_POST['code'];
         $opmerking = $_POST['opmerking'];
 
-        // Validation for 'code' when type is 'Hunt'
-        if ($type === 'Hunt' && empty($code)) {
-            die("Error: Code is verplicht bij het type Hunt.");
-        }
+        // Code is optional for Hunt locations
 
         $stmt_upd = $conn->prepare("UPDATE Voslocaties SET type=?, deelgebied=?, ingestuurd_op=?, coordinaat_x=?, coordinaat_y=?, code=?, opmerking=? WHERE id=?");
         $stmt_upd->bind_param("sssssssi", $type, $deelgebied, $ingestuurd_op, $coord_x, $coord_y, $code, $opmerking, $id);
@@ -221,6 +147,8 @@ if (isset($_POST['toggle_toewijzing'])) {
         $stmt_del->execute();
         $stmt_del->close();
         
+        send_push_notification($user_id, "Taak gewijzigd", "Je bent van een taak verwijderd.", "/whiteboard", "functies/toewijzing", null, "assignment_changes");
+        
         $users = $get_users($conn, $type, $ref_id);
         echo json_encode(["status" => "unassigned", "target_type" => $type, "target_id" => $ref_id, "users" => $users]);
         exit();
@@ -273,7 +201,7 @@ if (isset($_POST['toggle_toewijzing'])) {
                 if ($r->num_rows > 0) $c_name = $r->fetch_assoc()['naam'];
                 $s->close();
             } else if ($c_type == 'hunt') {
-                $c_name = isset($vossen_names[$c_ref]) ? "Hunt: " . $vossen_names[$c_ref] : "Hunt " . $c_ref;
+                $c_name = isset($fox_names[$c_ref]) ? "Hunt: " . $fox_names[$c_ref] : "Hunt " . $c_ref;
             }
         } else {
             $conflict = $res_car->fetch_assoc();
@@ -308,7 +236,7 @@ if (isset($_POST['toggle_toewijzing'])) {
                 if ($r->num_rows > 0) $t_name = $r->fetch_assoc()['naam'];
                 $s->close();
             } else if ($type == 'hunt') {
-                $t_name = isset($vossen_names[$ref_id]) ? "Hunt: " . $vossen_names[$ref_id] : "Hunt " . $ref_id;
+                $t_name = isset($fox_names[$ref_id]) ? "Hunt: " . $fox_names[$ref_id] : "Hunt " . $ref_id;
             }
 
             echo json_encode(["status" => "conflict", "conflict_name" => $c_name, "target_name" => $t_name]);
@@ -347,6 +275,8 @@ if (isset($_POST['toggle_toewijzing'])) {
     $stmt_ins->execute();
     $stmt_ins->close();
     
+    send_push_notification($user_id, "Taak gewijzigd", "Je bent aan een taak toegewezen.", "/whiteboard", "functies/toewijzing", null, "assignment_changes");
+    
     $users = $get_users($conn, $type, $ref_id);
     
     echo json_encode([
@@ -361,7 +291,7 @@ if (isset($_POST['toggle_toewijzing'])) {
     exit();
 }
   
-// elke x seconden gps locatie ophalen
+// Periodic GPS location update
 if (isset($_GET['lat']) && isset($_GET['lon'])) {
     $time = date("Y-m-d H:i:s");
   
@@ -408,6 +338,17 @@ if (isset($_GET['hunthintgedaan'])){
   
     if ($stmt->execute()) {
         $stmt->close();
+        
+        $stmt_info = $conn->prepare("SELECT type, code FROM Voslocaties WHERE id = ?");
+        $stmt_info->bind_param("i", $hunt_id);
+        $stmt_info->execute();
+        $res_info = $stmt_info->get_result();
+        if ($res_info->num_rows > 0) {
+            $row_info = $res_info->fetch_assoc();
+            send_push_notification('ALL', 'Voslocatie Ingeleverd', "{$row_info['type']} {$row_info['code']} is succesvol ingeleverd bij de Jotihunt.", '/voslocaties', 'functies/ingeleverd', null, 'locatiestatus');
+        }
+        $stmt_info->close();
+        
         header("Location: home");
         die();
     } else {
@@ -416,7 +357,7 @@ if (isset($_GET['hunthintgedaan'])){
     }
 }
 
-// Invulgegevens voor homebase (tabel tonen)
+// Submission data table for homebase
 if (isset($_GET['invulgegevens'])){
     if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
         exit();
@@ -449,7 +390,7 @@ if (isset($_GET['invulgegevens'])){
     $stmt->close();
 }
 
-// autosonderweg ophalen
+// Fetch active hunt cars
 if (isset($_GET['autos'])){
     // rb
     $locatie["lat"] = 51.98761;
@@ -508,11 +449,11 @@ if (isset($_GET['autos'])){
 }
 
 
-// gebeurtenissen ophalen
+// Fetch event log
 if (isset($_GET['gebeurtenissen'])){
     $data = [];
     
-    // Opdrachten ophalen
+    // Fetch assignments
     $stmt_opdr = $conn->prepare("SELECT * FROM Opdrachten");
     $stmt_opdr->execute();
     $result = $stmt_opdr->get_result();
@@ -523,7 +464,7 @@ if (isset($_GET['gebeurtenissen'])){
     }
     $stmt_opdr->close();
   
-    // Hints ophalen
+    // Fetch hints
     $stmt_hints = $conn->prepare("SELECT * FROM Hints");
     $stmt_hints->execute();
     $result = $stmt_hints->get_result();
@@ -534,7 +475,7 @@ if (isset($_GET['gebeurtenissen'])){
     }
     $stmt_hints->close();
   
-    // Nieuws ophalen
+    // Fetch news
     $stmt_nieuws = $conn->prepare("SELECT * FROM Nieuws");
     $stmt_nieuws->execute();
     $result = $stmt_nieuws->get_result();
@@ -545,7 +486,7 @@ if (isset($_GET['gebeurtenissen'])){
     }
     $stmt_nieuws->close();
   
-    // Voslocaties ophalen
+    // Fetch fox locations
     $stmt_vos = $conn->prepare("SELECT * FROM Voslocaties");
     $stmt_vos->execute();
     $result = $stmt_vos->get_result();
@@ -566,7 +507,7 @@ if (isset($_GET['gebeurtenissen'])){
     
     echo '<table class="w-full text-sm text-left theme-text" id="gebeurtenissentabel"><tbody>';
     
-    // In tabel zetten
+    // Render table rows
     foreach($data as $element){
         switch ($element["type"]) {
             case "Opdracht": 
@@ -596,4 +537,5 @@ if (isset($_GET['gebeurtenissen'])){
     echo "</tbody></table>";
     echo "<div class='mt-4 flex justify-center'><button id='meerknop' class='px-4 py-2 theme-bg-primary text-white text-sm font-semibold rounded hover:opacity-90 transition' onclick='gebeurtenissen(". ($num+5) .")'>Meer resultaten</button></div>";
 }
+
 ?>

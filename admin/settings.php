@@ -1,60 +1,16 @@
 <?php
+// Superadmin interface for viewing, updating, adding, and deleting global site configuration key-value settings.
 define("PAGE_NAME", "sa_settings");
-session_start();
-
-if (!isset($_SESSION['id'])) {
-    header("Location: ../index");
-    exit();
-}
-
-require("../dblogin.php");
-require_once("../functies.php");
-
-
-// Get userdata
-$stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    $vn = $row['voornaam'];
-    $priv = $row['priv'];
-} else {
-    // Failsafe als de gebruiker niet (meer) bestaat
-    session_destroy();
-    header("Location: ../index");
-    exit();
-}
-$stmt->close();
-
-if ($priv < 3) {
+require_once(__DIR__ . '/../includes/auth.php');
+if ($privilege < 3) {
     header("Location: ../home");
     exit();
 }
 
-// Get global site settings (voor het inladen van eventuele basis-variabelen)
-$stmt_settings = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen");
-$stmt_settings->execute();
-$result_settings = $stmt_settings->get_result();
-$siteSettings = array();
+$succes_message = $_GET['msg'] ?? '';
+$error_message = $_GET['error'] ?? '';
 
-if ($result_settings->num_rows > 0) {
-    while($row = $result_settings->fetch_assoc()) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-} else {
-    echo "0 results";
-    $stmt_settings->close();
-    exit();
-}
-$stmt_settings->close();
-
-$succes_message = '';
-$error_message = '';
-
-// Verwerken van formulier om instellingen te UPDATEN
+// Process form to UPDATE site settings
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['action'] === 'update_settings') {
     $all_updates_successful = true;
     
@@ -88,14 +44,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['
     }
 }
 
-// Verwerken van formulier om nieuwe instelling TOE TE VOEGEN
+// Process form to ADD a new setting
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['action'] === 'add_setting') {
     $newName = trim($_POST['add_setting_name'] ?? '');
     $newValue = trim($_POST['add_setting_value'] ?? '');
     $newDescription = trim($_POST['add_setting_description'] ?? '');
 
     if (!empty($newName)) {
-        // Controleer of de instelling al bestaat
+        // Check if setting already exists
         $check_stmt = $conn->prepare("SELECT COUNT(*) as cnt FROM Site_Instellingen WHERE Instelling = ?");
         $check_stmt->bind_param("s", $newName);
         $check_stmt->execute();
@@ -125,7 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['
     }
 }
 
-// Verwerken van VERWIJDEREN van een instelling
+// Process DELETION of a setting
 if (isset($_GET['delete_setting'])) {
     $setting_to_delete = trim($_GET['delete_setting']);
     
@@ -194,7 +150,6 @@ $stmt_groups->close();
   <?php include_once('../includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
     <div class="space-y-6 mb-24 max-w-5xl">
       <?php if (!empty($succes_message)): ?>
@@ -349,55 +304,12 @@ $stmt_groups->close();
     </div>
   </div>
 
-  <!-- Footer -->
   <?php require_once('../includes/footer.php') ?>
 </div>
 
-<script>
-if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
-  setInterval(function() {
-    GPSrefresh();
-  }, 5555);
-}
+<script src="../js/admin_settings.js"></script>
 
-function GPSrefresh() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    } else {
-        console.log("Geolocation is not supported by this browser.");
-    }
-    
-    function showPosition(position) {
-        console.log("Latitude: " + position.coords.latitude + "\nLongitude: " + position.coords.longitude);
-        
-        var xmlhttp;
-        if (window.XMLHttpRequest) {
-            xmlhttp = new XMLHttpRequest();
-        } else {
-            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-        xmlhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-            }
-        };
-        xmlhttp.open("GET", "../functies.php?lat=" + position.coords.latitude + "&lon=" + position.coords.longitude, true);
-        xmlhttp.send();
-    }
-}
-
-// Show modal for deleting a setting
-function confirmDelete(settingName) {
-    // Set the dynamic text in the modal
-    document.getElementById('deleteModalText').innerHTML = "Weet je zeker dat je de instelling '<strong>" + settingName + "</strong>' wilt verwijderen?";
-    
-    // Set the href for the final delete button
-    var deleteUrl = "settings?delete_setting=" + encodeURIComponent(settingName);
-    document.getElementById('confirmDeleteButton').href = deleteUrl;
-
-    // Show the modal
-    document.getElementById('deleteModal').classList.remove('hidden');
-}
-</script>
-
+<script src="../js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 </body>
 </html>

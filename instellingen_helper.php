@@ -1,11 +1,6 @@
 <?php
-session_start();
-if (!isset($_SESSION['id'])) {
-    header("Location: index");
-    die();
-}
-require("dblogin.php");
-
+// AJAX handler for user profile updates, password changes, API token regeneration, avatar uploads, and notification preferences.
+require_once('includes/auth.php');
 if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['lastname']) && !empty($_POST['email'])) {
     
     // Profielgegevens updaten
@@ -24,7 +19,7 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
 
 } elseif (!empty($_POST['pswd0']) && !empty($_POST['pswd1'])) {
     
-    // Wachtwoord updaten
+    // Update password
     if ($_POST['pswd0'] === $_POST['pswd1']) {
         $hashed_password = password_hash($_POST['pswd1'], PASSWORD_DEFAULT);
         
@@ -90,6 +85,10 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
         }
         
         $hash = bin2hex(random_bytes(8));
+        $profile_dir = __DIR__ . '/media/profiles';
+        if (!is_dir($profile_dir)) {
+            @mkdir($profile_dir, 0775, true);
+        }
         
         if ($fileType == 'image/jpeg') $src = imagecreatefromjpeg($fileTmpPath);
         elseif ($fileType == 'image/png') $src = imagecreatefrompng($fileTmpPath);
@@ -133,6 +132,47 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
         $e = "Ongeldig bestandstype. Alleen JPG, PNG en WebP zijn toegestaan.";
     }
     header("Location: instellingen.php?e=" . urlencode($e) . "&t=profielfoto#profielfoto");
+    die();
+} elseif (isset($_POST['save_notif_prefs'])) {
+    
+    $prefs = [
+        'welkomsberichten' => isset($_POST['notif_welkomsberichten']),
+        'assignment_changes' => isset($_POST['notif_assignment_changes']),
+        'vosstatus' => isset($_POST['notif_vosstatus']),
+        'locatiestatus' => isset($_POST['notif_locatiestatus']),
+        'hints' => isset($_POST['notif_hints']),
+        'opdrachten' => isset($_POST['notif_opdrachten']),
+        'nieuws' => isset($_POST['notif_nieuws'])
+    ];
+    
+    $json_prefs = json_encode($prefs);
+    
+    $stmt = $conn->prepare("UPDATE Gebruikers SET notification_prefs=? WHERE id=?");
+    $stmt->bind_param("si", $json_prefs, $_SESSION['id']);
+    
+    if ($stmt->execute()) {
+        $e = "Notificatie voorkeuren opgeslagen!";
+    } else {
+        $e = "Database fout: " . $stmt->error;
+    }
+    $stmt->close();
+    header("Location: instellingen.php?e=" . urlencode($e) . "&t=notificaties");
+    die();
+} elseif (isset($_POST['rename_device_id']) && isset($_POST['new_device_name'])) {
+    
+    $device_id = (int)$_POST['rename_device_id'];
+    $new_name = substr(trim($_POST['new_device_name']), 0, 255);
+    
+    $stmt = $conn->prepare("UPDATE Notification_Subscriptions SET device_name=? WHERE id=? AND user_id=?");
+    $stmt->bind_param("sii", $new_name, $device_id, $_SESSION['id']);
+    
+    if ($stmt->execute()) {
+        $e = "Apparaat succesvol hernoemd!";
+    } else {
+        $e = "Database fout: " . $stmt->error;
+    }
+    $stmt->close();
+    header("Location: instellingen.php?e=" . urlencode($e) . "&t=notificaties");
     die();
 }
 ?>

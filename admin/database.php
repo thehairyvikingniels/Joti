@@ -1,54 +1,11 @@
 <?php
+// Sortable list of all submitted fox locations (hints, hunts, spots, predictions) with view, edit, and delete controls.
 define("PAGE_NAME", "a_database");
-session_start();
-
-if (!isset($_SESSION['id'])) {
-    header("Location: ../index");
-    exit();
-}
-
-require("../dblogin.php");
-require_once("../functies.php");
-
-// Get userdata
-$stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-        $vn = $row['voornaam'];
-        $priv = $row['priv'];
-    }
-} else {
-    session_destroy();
-    header("Location: ../index");
-    exit();
-}
-$stmt->close();
-
-if ($priv < 2) {
+require_once(__DIR__ . '/../includes/auth.php');
+if ($privilege < 2) {
     header("Location: ../home");
     exit();
 }
-
-// Get global site settings
-$stmt_settings = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen");
-$stmt_settings->execute();
-$result_settings = $stmt_settings->get_result();
-$siteSettings = array();
-
-if ($result_settings->num_rows > 0) {
-    while ($row_settings = $result_settings->fetch_assoc()) {
-        $siteSettings[$row_settings['Instelling']] = $row_settings['Waarde'];
-    }
-} else {
-    echo "0 results for settings";
-    $stmt_settings->close();
-    exit();
-}
-$stmt_settings->close();
 
 // Fetch Voslocaties
 $stmt_vos = $conn->prepare("SELECT * FROM Voslocaties ORDER BY ingestuurd_op DESC");
@@ -86,7 +43,6 @@ $result_voslocaties = $stmt_vos->get_result();
   <?php include_once('../includes/topbar.php') ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
-
 
     <div class="space-y-6 mb-24">
       <div class="theme-card rounded border shadow-sm overflow-hidden w-full">
@@ -166,7 +122,7 @@ $result_voslocaties = $stmt_vos->get_result();
                     <label class="block text-sm font-bold opacity-70 mb-1">Deelgebied</label>
                     <select class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" id="edit_deelgebied" name="deelgebied" required>
                         <?php
-                        foreach ($vossen_names as $fox) {
+                        foreach ($fox_names as $fox) {
                             echo "<option value=\"" . htmlspecialchars($fox) . "\">" . htmlspecialchars($fox) . "</option>\n";
                         }
                         ?>
@@ -223,101 +179,12 @@ $result_voslocaties = $stmt_vos->get_result();
     </div>
   </div>
 
-  <!-- Footer -->
   <?php require_once('../includes/footer.php') ?>
 </div>
 
-<script>
-    let sortDirections = {}; // Object to track sorting direction for each column
-
-    function sortTable(columnIndex) {
-        const table = document.getElementById("voslocatiesTable");
-        const tbody = table.tBodies[0];
-        const rows = Array.from(tbody.rows);
-        const header = table.tHead.rows[0].cells[columnIndex];
-        const dir = sortDirections[columnIndex] === 'asc' ? 'desc' : 'asc';
-        sortDirections = {}; // Reset all directions
-        sortDirections[columnIndex] = dir;
-
-        // Reset all sort icons
-        document.querySelectorAll('#voslocatiesTable th .fas').forEach((icon, index) => {
-            icon.classList.remove('fa-sort-up', 'fa-sort-down', 'active');
-            if (index !== columnIndex) {
-                icon.classList.add('fa-sort');
-            }
-        });
-        
-        const sortIcon = header.querySelector('.fas');
-        sortIcon.classList.remove('fa-sort', 'fa-sort-up', 'fa-sort-down');
-        sortIcon.classList.add(dir === 'asc' ? 'fa-sort-up' : 'fa-sort-down', 'active');
-        
-        rows.sort((a, b) => {
-            const aText = a.cells[columnIndex].textContent.trim();
-            const bText = b.cells[columnIndex].textContent.trim();
-
-            // For date sorting (column 2), convert to timestamp
-            if (columnIndex === 2) {
-                return dir === 'asc' ? new Date(aText) - new Date(bText) : new Date(bText) - new Date(aText);
-            }
-
-            return dir === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
-        });
-
-        rows.forEach(row => tbody.appendChild(row));
-    }
-
-    // JavaScript voor het openen en vullen van de modals
-    function openEditModal(data) {
-        document.getElementById('edit_id').value = data.id;
-        document.getElementById('edit_type').value = data.type;
-        document.getElementById('edit_deelgebied').value = data.deelgebied;
-        
-        // Format date for datetime-local input
-        const date = new Date(data.ingestuurd_op.replace(' ', 'T'));
-        const localIsoString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-        document.getElementById('edit_ingestuurd_op').value = localIsoString;
-        
-        document.getElementById('edit_coord_x').value = data.coordinaat_x;
-        document.getElementById('edit_coord_y').value = data.coordinaat_y;
-        document.getElementById('edit_code').value = data.code;
-        document.getElementById('edit_opmerking').value = data.opmerking;
-        document.getElementById('editModal').classList.remove('hidden');
-    }
-
-    function openDeleteModal(id) {
-        document.getElementById('deleteLink').href = '../functies.php?verwijder_voslocatie=' + id;
-        document.getElementById('deleteModal').classList.remove('hidden');
-    }
-
-    // GPS refresh functie
-    if ("<?php echo $_SESSION['gps'] ?? 'false'; ?>" == "true") {
-        setInterval(function() {
-            GPSrefresh();
-        }, 5555);
-    }
-
-    function GPSrefresh() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(showPosition);
-        } else {
-            console.log("Geolocation is not supported by this browser.");
-        }
-
-        function showPosition(position) {
-            console.log("Latitude: " + position.coords.latitude + "\nLongitude: " + position.coords.longitude);
-            if (window.XMLHttpRequest) {
-                xmlhttp = new XMLHttpRequest();
-            } else {
-                xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-            }
-            xmlhttp.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {}
-            };
-            xmlhttp.open("GET", "../functies.php?lat=" + position.coords.latitude + "&lon=" + position.coords.longitude, true);
-            xmlhttp.send();
-        }
-    }
-</script>
+<script src="../js/admin_database.js"></script>
+<script src="../js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 
 </body>
 </html>

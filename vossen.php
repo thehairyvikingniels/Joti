@@ -1,47 +1,8 @@
 <?php
+// Visual status timelines, duration breakdowns, and hunt counts for each fox team across both event halves.
 define("PAGE_NAME", "vossen");
 
-session_start();
-
-if (!isset($_SESSION['id'])) {
-    header("Location: index");
-    exit();
-}
-
-require("dblogin.php");
-require_once("functies.php");
-
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-        $vn = $row['voornaam'];
-        $priv = $row['priv'];
-    }
-}
-$stmt->close();
-
-if (!isset($priv) || $priv < 1) {
-    header("Location: home");
-    exit();
-}
-
-// Get global site settings
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-$siteSettings = array();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-}
-$stmt->close();
+require_once('includes/auth.php');
 
 // Fetch game and fox exchange times from settings
 $stmt = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen WHERE Instelling IN ('GAME_STARTDATE', 'GAME_ENDDATE', 'FOXEXCHANGE_STARTDATE', 'FOXEXCHANGE_ENDDATE')");
@@ -62,7 +23,6 @@ $game_end_str = $settings['GAME_ENDDATE'] ?? '2025-10-12 12:00:00';
 $fox_exchange_start_str = $settings['FOXEXCHANGE_STARTDATE'] ?? '2025-10-11 22:45:00';
 $fox_exchange_end_str = $settings['FOXEXCHANGE_ENDDATE'] ?? '2025-10-11 23:15:00';
 
-
 $game_start_time = new DateTime($game_start_str);
 $game_end_time = new DateTime($game_end_str);
 $fox_exchange_start_time = new DateTime($fox_exchange_start_str);
@@ -74,7 +34,6 @@ $total_duration_seconds = $game_end_time->getTimestamp() - $game_start_time->get
 if ($total_duration_seconds <= 0) {
     $total_duration_seconds = 1; // Prevent division by zero
 }
-
 
 // Fetch all voslog data
 $stmt = $conn->prepare("SELECT * FROM Voslog WHERE datumtijd >= ? AND datumtijd <= ? ORDER BY datumtijd ASC");
@@ -122,7 +81,7 @@ if ($result_hunts->num_rows > 0) {
 $stmt_hunts->close();
 // ------------------------
 
-$fox_teams = $vossen_names;
+$fox_teams = $fox_names;
 $status_colors = [
     0 => 'w3-red',    // Red
     1 => 'w3-orange', // Orange
@@ -133,13 +92,6 @@ $future_color = 'w3-light-grey'; // Grey for future
 // --- STATS CALCULATION ---
 $stats = [];
 
-// Helper function to format seconds into HH:MM:SS
-function format_seconds($seconds) {
-    $h = floor($seconds / 3600);
-    $m = floor(($seconds % 3600) / 60);
-    $s = $seconds % 60;
-    return sprintf('%02d:%02d:%02d', $h, $m, $s);
-}
 
 foreach ($fox_teams as $team) {
     // Array uitgebreid met 'hunts' teller
@@ -192,7 +144,7 @@ foreach ($fox_teams as $team) {
         $last_status = $log[$team] ?? $last_status; 
     }
 
-    // --- NIEUW: Tellen van de hunts per spelhelft ---
+    // Count recorded hunts per game half
     $team_lower = strtolower($team);
     if (isset($hunts_data[$team_lower])) {
         foreach ($hunts_data[$team_lower] as $hunt_time_str) {
@@ -208,7 +160,6 @@ foreach ($fox_teams as $team) {
         }
     }
 }
-
 
 ?>
 <!DOCTYPE html>
@@ -385,7 +336,6 @@ foreach ($fox_teams as $team) {
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
-
     <div class="space-y-6">
       
       <!-- Timeline Card -->
@@ -558,40 +508,10 @@ foreach ($fox_teams as $team) {
     </div>
   </main>
 
-  <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
 </div>
 
-<script>
-if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
-  setInterval(function() {
-    GPSrefresh();
-  }, 5555);
-}
- 
-function GPSrefresh() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    } else {
-        console.log("Geolocation is not supported by this browser.");
-    }
-    function showPosition(position) {
-      console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
-      
-      var xmlhttp;
-      if (window.XMLHttpRequest) {
-            xmlhttp = new XMLHttpRequest();
-      } else {
-            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-      }
-      xmlhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-            }
-      };
-      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-      xmlhttp.send();
-    }
-} 
-</script>
+<script src="js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 </body>
 </html>

@@ -1,48 +1,7 @@
 <?php
+// Score breakdowns and ranking information for the user's team alongside the full Jotihunt leaderboard.
 define("PAGE_NAME", "punten");
-session_start();
-
-if (!isset($_SESSION['id'])){
-  header("Location: index");
-}
-
-require("dblogin.php");
-
-
-// Get userdata
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $vn = $row['voornaam'];
-      $priv = $row['priv'];
-    }
-}
-$stmt->close();
-
-if (!isset($priv) || $priv < 1) {
-    header("Location: home");
-    exit();
-}
-
-
-// Get global site settings
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-$siteSettings = array();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-}
-$stmt->close();
-
+require_once('includes/auth.php');
 
 // Get scout group count
 $stmt = $conn->prepare("SELECT id, count(*) as NUM FROM Groepen");
@@ -51,13 +10,12 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {
-    $groepaantal = $row['NUM'];
+    $group_count = $row['NUM'];
   }
 } else {
-  $groepaantal = "E?";
+  $group_count = "E?";
 }
 $stmt->close();
-
 
 // Get score from points table for 'Geuzen'
 $stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')");
@@ -66,7 +24,7 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {
-      $plaats = $row['plaats'] ?? '?';
+      $rank = $row['plaats'] ?? '?';
       $hunts = $row['hunts'] ?? 0;
       $tegenhunts = $row['tegenhunts'] ?? 0;
       $opdrachten = $row['opdrachten'] ?? 0;
@@ -74,10 +32,10 @@ if ($result->num_rows > 0) {
       $hints = $row['hints'] ?? 0;
       $bonus = $row['bonus'] ?? 0;
       $penalties = $row['strafpunten'] ?? 0;
-      $puntentotaal = $hunts + $tegenhunts + $opdrachten + $fotoopdrachten + $hints + $bonus - $penalties;
+      $total_points = $hunts + $tegenhunts + $opdrachten + $fotoopdrachten + $hints + $bonus - $penalties;
   }
 } else {
-  $plaats = 0;
+  $rank = 0;
   $hunts = 0;
   $tegenhunts = 0;
   $opdrachten = 0;
@@ -85,7 +43,7 @@ if ($result->num_rows > 0) {
   $hints = 0;
   $bonus = 0;
   $penalties = 0;
-  $puntentotaal = 0;
+  $total_points = 0;
 }
 $stmt->close();
 
@@ -116,13 +74,12 @@ $stmt->close();
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
-
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
       <!-- Your Team Score Card -->
       <div class="theme-card rounded border shadow-sm overflow-hidden lg:col-span-1 h-fit">
         <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold flex items-center">
-              <span class="text-2xl mr-2 font-black"><?php echo $plaats;?>e</span> Plaats
+              <span class="text-2xl mr-2 font-black"><?php echo $rank;?>e</span> Plaats
             </h5>
         </div>
         <div class="p-0">
@@ -158,7 +115,7 @@ $stmt->close();
                 </tr>
                 <tr class="hover:bg-black/5 transition" style="background-color: var(--theme-card-header);">
                   <td class="px-6 py-4 font-bold text-base uppercase">Totaal</td>
-                  <td class="px-6 py-4 text-right font-bold text-base"><?php echo $puntentotaal;?></td>
+                  <td class="px-6 py-4 text-right font-bold text-base"><?php echo $total_points;?></td>
                 </tr>
               </tbody>
             </table>
@@ -239,41 +196,11 @@ $stmt->close();
     </div>
   </main>
 
-  <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
 </div>
 
-<script>
-if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
-  setInterval(function() {
-    GPSrefresh();
-  }, 5555);
-}
-
-function GPSrefresh() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    } else {
-        console.log("Geolocation is not supported by this browser.");
-    }
-    function showPosition(position) {
-      console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
-      
-      var xmlhttp;
-      if (window.XMLHttpRequest) {
-            xmlhttp = new XMLHttpRequest();
-      } else {
-            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-      }
-      xmlhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-            }
-      };
-      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-      xmlhttp.send();
-    }
-} 
-</script>
+<script src="js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 
 </body>
 </html>

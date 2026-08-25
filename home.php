@@ -1,50 +1,7 @@
 <?php
+// Primary dashboard displaying game score, leaderboard standing, hunt/hint metrics, vehicle statuses, and recent event feeds.
 define("PAGE_NAME", "home");
-session_start();
-
-if (!isset($_SESSION['id'])){
-
-  header("Location: index");
-
-}
-
-require("dblogin.php");
-require_once("functies.php");
-
-
-if (isset($_GET['refresh'])){
-
-  header("Refresh: 30; URL=home?refresh");
-
-}
-
-
-// Get userdata
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $vn = $row['voornaam'];
-    $priv = $row['priv'];
-  }
-}
-$stmt->close();
-
-// Get global site settings
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $siteSettings[$row['Instelling']] = $row['Waarde'];
-  }
-}
-$stmt->close();
-
+require_once('includes/auth.php');
 
 // Get hints
 $stmt = $conn->prepare("SELECT id, count(*) as NUM FROM Voslocaties WHERE type='Hint' GROUP BY ingestuurd_op");
@@ -53,13 +10,12 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {
-    $hintaantal = $row['NUM'];
+    $hint_count = $row['NUM'];
   }
 } else {
-  $hintaantal = "0";
+  $hint_count = "0";
 }
 $stmt->close();
-
 
 // Get hunts
 $stmt = $conn->prepare("SELECT id, count(*) as NUM FROM Voslocaties WHERE type='Hunt'");
@@ -68,13 +24,12 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {
-    $huntaantal = $row['NUM'];
+    $hunt_count = $row['NUM'];
   }
 } else {
-  $huntaantal = "0";
+  $hunt_count = "0";
 }
 $stmt->close();
-
 
 // Get points for Geuzen
 $stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')");
@@ -83,8 +38,8 @@ $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
   while($row = $result->fetch_assoc()) {
-    $puntentotaal = ($row['hunts'] ?? 0) + ($row['tegenhunts'] ?? 0) + ($row['opdrachten'] ?? 0) + ($row['foto_opdrachten'] ?? 0) + ($row['hints'] ?? 0) - ($row['strafpunten'] ?? 0);
-    $plaats = $row['plaats'] ?? "?";
+    $total_points = ($row['hunts'] ?? 0) + ($row['tegenhunts'] ?? 0) + ($row['opdrachten'] ?? 0) + ($row['foto_opdrachten'] ?? 0) + ($row['hints'] ?? 0) - ($row['strafpunten'] ?? 0);
+    $rank = $row['plaats'] ?? "?";
   }
 }
 $stmt->close();
@@ -121,8 +76,8 @@ $stmt->close();
   <!-- Mobile Fox Status -->
   <div class="md:hidden p-4 grid grid-cols-3 sm:grid-cols-4 gap-2">
     <?php
-      if (isset($vossen_names)) {
-          foreach ($vossen_names as $n) {
+      if (isset($fox_names)) {
+          foreach ($fox_names as $n) {
             $tw_color = 'bg-gray-200 text-gray-700';
             if ($vos[$n]['Kleur'] == 'red') $tw_color = 'bg-red-500 text-white';
             elseif ($vos[$n]['Kleur'] == 'orange') $tw_color = 'bg-orange-500 text-white';
@@ -156,32 +111,30 @@ $stmt->close();
             <p class="text-xs font-semibold uppercase tracking-wider opacity-60">Punten Totaal</p>
             <i class="fas fa-trophy opacity-40"></i>
           </div>
-          <h3 class="text-3xl font-bold"><?php echo isset($puntentotaal) ? $puntentotaal : 0; ?></h3>
+          <h3 class="text-3xl font-bold"><?php echo isset($total_points) ? $total_points : 0; ?></h3>
         </div>
         <div class="theme-card rounded p-5 border shadow-sm flex flex-col justify-between">
           <div class="flex justify-between items-center mb-2">
             <p class="text-xs font-semibold uppercase tracking-wider opacity-60">Huidige Plaats</p>
             <i class="fas fa-star opacity-40"></i>
           </div>
-          <h3 class="text-3xl font-bold"><?php echo isset($plaats) ? $plaats : 0; ?><span class="text-xl opacity-60">e</span></h3>
+          <h3 class="text-3xl font-bold"><?php echo isset($rank) ? $rank : 0; ?><span class="text-xl opacity-60">e</span></h3>
         </div>
         <div class="theme-card rounded p-5 border shadow-sm flex flex-col justify-between">
           <div class="flex justify-between items-center mb-2">
             <p class="text-xs font-semibold uppercase tracking-wider opacity-60">Aantal Hunts</p>
             <i class="fas fa-bullseye opacity-40"></i>
           </div>
-          <h3 class="text-3xl font-bold"><?php echo $huntaantal; ?></h3>
+          <h3 class="text-3xl font-bold"><?php echo $hunt_count; ?></h3>
         </div>
         <div class="theme-card rounded p-5 border shadow-sm flex flex-col justify-between">
           <div class="flex justify-between items-center mb-2">
             <p class="text-xs font-semibold uppercase tracking-wider opacity-60">Hints Opgestuurd</p>
             <i class="fas fa-question-circle opacity-40"></i>
           </div>
-          <h3 class="text-3xl font-bold"><?php echo $hintaantal; ?></h3>
+          <h3 class="text-3xl font-bold"><?php echo $hint_count; ?></h3>
         </div>
       </div>
-
-
 
       <!-- Panels -->
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
@@ -216,7 +169,6 @@ $stmt->close();
       </div>
   </main>
   
-  <!-- Footer -->
   <?php require_once('includes/footer.php') ?>
 </div> <!-- End Main Content / flex-1 -->
 
@@ -250,7 +202,7 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
       </header>
       <div class="p-6 space-y-4 text-sm">
         <p>
-          Hoi <strong><?php echo ucfirst($vn); ?></strong>, als nieuwe gebruiker van dit platform willen we je graag welkom heten!
+          Hoi <strong><?php echo ucfirst($first_name); ?></strong>, als nieuwe gebruiker van dit platform willen we je graag welkom heten!
         </p>
         <p>
           Dit platform is speciaal ontwikkeld voor de Jotihunt en biedt verschillende functies om je ervaring te verbeteren. Hier zijn enkele belangrijke punten:
@@ -295,63 +247,7 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
     </div>
   </div>
 
-  <script>
-    // auto-open welcome modal on page load and force 7s read-delay with countdown
-    (function() {
-      window.addEventListener('load', function() {
-        var modal = document.getElementById('welcomeModal');
-        var modalContent = document.getElementById('welcomeModalContent');
-        if (!modal) return;
-        
-        modal.classList.remove('hidden');
-        // trigger animation
-        setTimeout(() => {
-          modal.classList.remove('opacity-0');
-          modalContent.classList.remove('-translate-y-4');
-        }, 10);
-
-        var closeBtn = document.getElementById('welcomeClose');
-        var progress = document.getElementById('welcomeProgress');
-        var countdownEl = document.getElementById('closeCountdown');
-        var duration = 7000; // milliseconds
-        var start = Date.now();
-
-        var raf;
-        function tick() {
-          var elapsed = Date.now() - start;
-          var pct = Math.min(100, (elapsed / duration) * 100);
-          progress.style.width = pct + '%';
-
-          var remaining = Math.max(0, Math.ceil((duration - elapsed) / 1000));
-          if (remaining > 0) {
-            countdownEl.textContent = '(' + remaining + 's)';
-          } else {
-            countdownEl.style.display = 'none';
-          }
-
-          if (elapsed < duration) {
-            raf = requestAnimationFrame(tick);
-          } else {
-            // enable button after duration
-            closeBtn.disabled = false;
-            closeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            closeBtn.classList.add('hover:bg-green-600');
-            progress.style.display = 'none';
-            cancelAnimationFrame(raf);
-          }
-        }
-        tick();
-
-        closeBtn.addEventListener('click', function() {
-          if (!closeBtn.disabled) {
-            modal.classList.add('opacity-0');
-            modalContent.classList.add('-translate-y-4');
-            setTimeout(() => { modal.style.display = 'none'; }, 300);
-          }
-        });
-      });
-    })();
-  </script>
+  <script>initWelcomeModal();</script>
   <?php
 }
 ?>
@@ -362,20 +258,16 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
 
 <script src="https://www.gstatic.com/firebasejs/7.0.0/firebase-app.js"></script>
 
-
-
 <!-- TODO: Add SDKs for Firebase products that you want to use
 
      https://firebase.google.com/docs/web/setup#available-libraries -->
 
 <script src="https://www.gstatic.com/firebasejs/7.0.0/firebase-analytics.js"></script>
 
-
-
 <script>
   // Your web app's Firebase configuration
-  var firebaseConfig = {
-    apiKey: "<?php echo addslashes($siteSettings['API_KEY_FIREBASE'] ?? ''); ?>",
+  const firebaseConfig = {
+    apiKey: "<?php echo addslashes($site_settings['API_KEY_FIREBASE'] ?? ''); ?>",
     authDomain: "jotihunt-1539122761269.firebaseapp.com",
     databaseURL: "https://jotihunt-1539122761269.firebaseio.com",
     projectId: "jotihunt-1539122761269",
@@ -389,235 +281,12 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
   firebase.analytics();
 </script>
 
-    </body>
-
-</html>
-
+<script src="js/home.js"></script>
 <script>
-
-setInterval(function() {
-
-  invulgegevens();
-
-  gebeurtenissen();
-
-  autosonderweg();
-
-}, 11111);
-
-  
-
-  
-
-// Overzicht - Gebeurtenissen ophalen
-
-window.onload = gebeurtenissen();
-
-function gebeurtenissen(str = "6") {
-
-  var icon = document.getElementById("gebeurtenissen_icon");
-
-  icon.classList.add("w3-spin");
-
-  var xhttp;
-
-  xhttp = new XMLHttpRequest();
-
-  xhttp.onreadystatechange = function() {
-
-    if (this.readyState == 4 && this.status == 200) {
-
-      document.getElementById("gebeurtenissen").innerHTML = this.responseText;
-
-      setTimeout(function() {
-
-        
-
-      icon.classList.remove("w3-spin");
-
-      }, 1000);
-
-      
-
-    }
-
-  };
-
-  xhttp.open("GET", "functies.php?gebeurtenissen="+str, true);
-
-  xhttp.send();
-
-}
-
- 
-
-  
-
-// Overzicht - Auto's ophalen
-
-window.onload = autosonderweg();
-
-function autosonderweg(str = "6") {
-
-  var icon = document.getElementById("autosonderweg_icon");
-
-  icon.classList.add("w3-spin");
-
-  var xhttp;
-
-  xhttp = new XMLHttpRequest();
-
-  xhttp.onreadystatechange = function() {
-
-    if (this.readyState == 4 && this.status == 200) {
-
-      document.getElementById("autosonderweg").innerHTML = this.responseText;
-
-      setTimeout(function() {
-
-        
-
-      icon.classList.remove("w3-spin");
-
-      }, 1000);
-
-      
-
-    }
-
-  };
-
-  xhttp.open("GET", "functies.php?autos="+str, true);
-
-  xhttp.send();
-
-}
-
-  
-
-<?php if ($priv > 0){ echo '
-
-// Overzicht -Invulgegevens ophalen
-
-window.onload = invulgegevens();
-
-function invulgegevens(str = "6") {
-
-  var icon = document.getElementById("invulgegevens_icon");
-
-  icon.classList.add("w3-spin");
-
-  var xhttp;
-
-  xhttp = new XMLHttpRequest();
-
-  xhttp.onreadystatechange = function() {
-
-    if (this.readyState == 4 && this.status == 200) {
-
-      document.getElementById("invulgegevens").innerHTML = this.responseText;
-
-      setTimeout(function() {
-
-        
-
-      icon.classList.remove("w3-spin");
-
-      }, 1000);
-
-    }
-
-  };
-
-  xhttp.open("GET", "functies.php?invulgegevens="+str, true);
-
-  xhttp.send();
-
-}
-
-';}?>  
-  </script>
-
-  <script>
-
-
-
-if ("<?php echo $_SESSION['gps']?>" == "true"){
-
-  GPSrefresh();
-
-  setInterval(function() {
-
-    GPSrefresh();
-
-  }, 5555);
-
-}
-
-  
-
- 
-
- function GPSrefresh() {
-
-    if (navigator.geolocation) {
-
-        navigator.geolocation.getCurrentPosition(showPosition);
-
-    } else {
-
-        console.log("Geolocation is not supported by this browser.");
-
-    }
-
-    function showPosition(position) {
-
-     console.log("Latitude: " + position.coords.latitude + 
-
-      "<br>Longitude: " + position.coords.longitude);
-
-      
-
-      
-
-      if (window.XMLHttpRequest) {
-
-            // code for IE7+, Firefox, Chrome, Opera, Safari
-
-            xmlhttp = new XMLHttpRequest();
-
-        } else {
-
-            // code for IE6, IE5
-
-            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-
-        }
-
-        xmlhttp.onreadystatechange = function() {
-
-            if (this.readyState == 4 && this.status == 200) {
-
-            }
-
-        };
-
-        xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-
-        xmlhttp.send();
-
-    }
-
-   
-
-   
-
-
-
- } 
-
-  
-
-  
-
+initHome(<?= ($privilege > 0) ? "true" : "false" ?>);
 </script>
+
+<script src="js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
+</body>
+</html>

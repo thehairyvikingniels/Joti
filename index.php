@@ -6,7 +6,7 @@ if (isset($_SESSION['id']) && !empty($_SESSION['id'])) {
     exit();
 }
 
-require_once("dblogin.php");
+require_once('dblogin.php');
 
 $groupName = 'Jotify';
 $stmt = $conn->prepare("SELECT Waarde FROM Site_Instellingen WHERE Instelling = 'GROUP_ID'");

@@ -1,56 +1,12 @@
 <?php
+// Displays cron job statuses, schedules, and recent execution history with controls to toggle jobs on or off.
 define("PAGE_NAME", "a_cronjobs");
 
-session_start();
-if (!isset($_SESSION['id'])){
-  header("Location: ../index");
-  exit();
-}
-if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
+require_once(__DIR__ . '/../includes/auth.php');
+if ($privilege < 2){
   header("Location: ../home");
   exit();
 }
-require("../dblogin.php");
-
-$stmt = $conn->prepare("SELECT voornaam, priv FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
-      $vn = $row['voornaam'];
-      $priv = $row['priv'];
-    }
-} else {
-    session_destroy();
-    header("Location: ../index");
-    exit();
-}
-$stmt->close();
-
-if ($priv < 2){
-  header("Location: ../home");
-  exit();
-}
-
-// Get global site settings
-$stmt_settings = $conn->prepare("SELECT Instelling, Waarde FROM Site_Instellingen");
-$stmt_settings->execute();
-$result_settings = $stmt_settings->get_result();
-
-$siteSettings = array();
-
-if ($result_settings->num_rows > 0) {
-    while($row = $result_settings->fetch_assoc()) {
-      $siteSettings[$row['Instelling']] = $row['Waarde'];
-    }
-} else {
-    echo "0 results";
-    $stmt_settings->close();
-    exit();
-}
-$stmt_settings->close();
 
 // Dit lijkt een overblijfsel van a_users.php, maar is voor de veiligheid toch omgezet naar een prepared statement.
 if (isset($_POST["user"]) && isset($_POST['priv'])){
@@ -89,7 +45,6 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
-
     <div class="space-y-6 mb-24">
       <div class="theme-card rounded border shadow-sm overflow-hidden w-full max-w-5xl">
         <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
@@ -122,7 +77,19 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
               $exec_length = $row['exec_length'] ? number_format($row['exec_length'] / 1000, 2, ',')." sec" : "0,00 sec";
               $exec_status = $row['exec_stat'];
               
-              $exec_next = $row['exec_time'] ? ($row['interval'] + strtotime($row['exec_time']) - time())." sec" : "Onbekend";
+              $exec_next_val = $row['exec_time'] ? ($row['interval'] + strtotime($row['exec_time']) - time()) : 0;
+              if ($row['enabled'] == 1) {
+                  if ($exec_next_val <= 0) {
+                      $exec_next = "executing...";
+                      $next_class = "font-bold text-orange-500 animate-pulse";
+                  } else {
+                      $exec_next = $exec_next_val . " sec";
+                      $next_class = "text-blue-600 dark:text-blue-400";
+                  }
+              } else {
+                  $exec_next = " - disabled - ";
+                  $next_class = "opacity-50";
+              }
 
               if ($row['enabled'] == 1) {
                 $enabled = '<i class="fas fa-toggle-on fa-fw text-green-500 text-xl align-middle"></i>';
@@ -161,7 +128,7 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
                         </div>
                         <div class='bg-black/5 p-2 rounded'>
                           <div class='opacity-70 mb-1'><i class='far fa-clock mr-1'></i> <b>Next exec.</b></div>
-                          <div id='cron_exec_next_".$i."' class='font-medium text-blue-600 dark:text-blue-400'>".$exec_next."</div>
+                          <div id='cron_exec_next_".$i."' data-seconds='".$exec_next_val."' data-enabled='".$row['enabled']."' class='font-medium ".$next_class."'>".$exec_next."</div>
                         </div>
                         <div class='bg-black/5 p-2 rounded'>
                           <div class='opacity-70 mb-1'><i class='fas fa-history mr-1'></i> <b>Last exec.</b></div>
@@ -186,139 +153,11 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
 
   </main>
 
-  <!-- Footer -->
   <?php require_once('../includes/footer.php') ?>
 </div>
 
-<script>
-if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
-  setInterval(function() {
-    GPSrefresh();
-  }, 5555);
-}
-
-setInterval(function() {
-  TimerRefresh();
-}, 1000);
-
-var countAmont = document.getElementsByClassName('cronTimer').length;
-
-setInterval(function() {
-  CronRefresh();
-}, 6000);
-
-function toggleCron(name) {
-  var xmlhttp;
-  if (window.XMLHttpRequest) {
-        xmlhttp = new XMLHttpRequest();
-  } else {
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-  }
-  xmlhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          CronRefresh();
-        }
-  };
-  xmlhttp.open("GET","cronjobs_helper.php?toggleCron="+encodeURIComponent(name),true);
-  xmlhttp.send();
-}
-
-function TimerRefresh() {
-  for (let i = 0; i < countAmont; i++) {
-    var timer = document.getElementById("cron_exec_next_" + i);
-    var cron_enabled = document.getElementById("cron_enabled_" + i);
-
-    if (cron_enabled.innerHTML.includes("off")) {
-      timer.innerHTML = " - disabled - ";
-      timer.className = "font-medium opacity-50";
-    } else {
-      timer.className = "font-medium text-blue-600 dark:text-blue-400";
-      if (timer.innerHTML !== "executing..." && timer.innerHTML !== "Onbekend" && timer.innerHTML !== " - disabled - ") {
-        let currentSecs = parseInt(timer.innerHTML);
-        if(!isNaN(currentSecs)) {
-            currentSecs--;
-            if (currentSecs <= 0) {
-              timer.innerHTML = "executing...";
-              timer.className = "font-bold text-orange-500 animate-pulse";
-            } else {
-              timer.innerHTML = currentSecs + " sec";
-            }        
-        }
-      }
-    }
-  }
-}
-
-function CronRefresh() {
-  var xmlhttp;
-  if (window.XMLHttpRequest) {
-      xmlhttp = new XMLHttpRequest();
-  } else {
-      xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-  }
-  xmlhttp.onreadystatechange = function() {
-      if (this.readyState == 4 && this.status == 200) {
-        try {
-            var json = JSON.parse(this.responseText);
-            countAmont = json.length;
-            
-            for(var i = 0; i < json.length; i++){
-              var cron_enabled = document.getElementById("cron_enabled_" + i);
-              var cron_status = document.getElementById("cron_status_" + i);
-              var cron_name = document.getElementById("cron_name_" + i);
-              var cron_interval = document.getElementById("cron_interval_" + i);
-              var cron_exec_time = document.getElementById("cron_exec_time_" + i);
-              var cron_exec_length = document.getElementById("cron_exec_length_" + i);
-              var cron_exec_next = document.getElementById("cron_exec_next_" + i);
-
-              if (json[i]['enabled'].includes('toggle-on')) {
-                  cron_enabled.innerHTML = '<i class="fas fa-toggle-on fa-fw text-green-500 text-xl align-middle"></i>';
-              } else {
-                  cron_enabled.innerHTML = '<i class="fas fa-toggle-off fa-fw text-gray-400 text-xl align-middle"></i>';
-              }
-              
-              cron_status.className = json[i]['stat_color'].replace('w3-text-green', 'text-green-500').replace('w3-text-yellow', 'text-yellow-500').replace('w3-text-red', 'text-red-500').replace('w3-text-grey', 'text-gray-400') + ' text-sm';
-              cron_status.title = "HTML " + json[i]['exec_status'] + " code.";
-              cron_name.innerHTML = json[i]['name'];
-              cron_name.title = json[i]['description'];
-              cron_interval.innerHTML = json[i]['interval'];
-              cron_exec_time.innerHTML = json[i]['exec_time'];
-              cron_exec_length.innerHTML = json[i]['exec_length'];
-              cron_exec_next.innerHTML = json[i]['exec_next'];
-            }
-        } catch (e) {
-            console.error("Ongeldige JSON ontvangen van cronjobs_helper.php");
-        }
-      }
-  };
-  xmlhttp.open("GET","cronjobs_helper.php?cronjobs",true);
-  xmlhttp.send();
-}
-
-function GPSrefresh() {
-  if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(showPosition);
-  } else {
-      console.log("Geolocation is not supported by this browser.");
-  }
-  
-  function showPosition(position) {
-    var xmlhttp;
-    if (window.XMLHttpRequest) {
-        xmlhttp = new XMLHttpRequest();
-    } else {
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-    }
-    xmlhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-            // Gelukt
-        }
-    };
-    xmlhttp.open("GET","../functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-    xmlhttp.send();
-  }
-} 
-</script>
-
+<script src="../js/admin_cronjobs.js"></script>
+<script src="../js/gps.js"></script>
+<script>initGpsTracking('<?php echo $_SESSION['gps'] ?? 'false'; ?>');</script>
 </body>
 </html>

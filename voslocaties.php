@@ -1,54 +1,21 @@
 <?php
+// Form and interface for submitting new fox sightings using GPS coordinates, Dutch RD coordinates, or scout group presets.
 define("PAGE_NAME", "voslocaties");
 
-session_start();
-
-if (!isset($_SESSION['id'])) {
-    header("Location: index");
-    exit();
-}
-
-require("dblogin.php");
-require_once("functies.php");
+require_once('includes/auth.php');
 
 $message = '';
 
-/**
- * Converts RD (Rijksdriehoekstelsel) coordinates to WGS84 (Latitude/Longitude).
- * Provides an approximation based on the formulas from the Dutch Kadaster.
- *
- * @param float $rd_x The RD X-coordinate.
- * @param float $rd_y The RD Y-coordinate.
- * @return array An associative array containing 'lat' and 'lon'.
- */
-function convertRDtoLatLon($rd_x, $rd_y) {
-    $X0 = 155000;
-    $Y0 = 463000;
-    $phi0 = 52.15517440;
-    $lambda0 = 5.38720621;
 
-    $dx = ($rd_x - $X0) * 1E-5;
-    $dy = ($rd_y - $Y0) * 1E-5;
-
-    $sum_lat = (3235.65389 * $dy) + (-32.58297 * pow($dx, 2)) + (-0.2475 * pow($dy, 2)) + (-0.84978 * pow($dx, 2) * $dy) + (-0.0655 * pow($dy, 3)) + (-0.01709 * pow($dx, 2) * pow($dy, 2)) + (-0.00738 * $dx) + (0.0053 * pow($dx, 4)) + (-0.00039 * pow($dx, 2) * pow($dy, 3)) + (0.00033 * pow($dx, 4) * $dy) + (-0.00012 * $dx * $dy);
-
-    $sum_lon = (5260.52916 * $dx) + (105.94684 * $dx * $dy) + (2.45656 * $dx * pow($dy, 2)) + (-0.81885 * pow($dx, 3)) + (0.05594 * $dx * pow($dy, 3)) + (-0.05607 * pow($dx, 3) * $dy) + (0.01199 * $dy) + (-0.00256 * pow($dx, 3) * pow($dy, 2)) + (0.00128 * $dx * pow($dy, 4)) + (0.00022 * pow($dy, 2)) + (-0.00022 * pow($dx, 2)) + (0.00026 * pow($dx, 5));
-
-    $lat = $phi0 + $sum_lat / 3600;
-    $lon = $lambda0 + $sum_lon / 3600;
-
-    return ['lat' => $lat, 'lon' => $lon];
-}
-
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_fox_location'])) {
     // Sanitize and retrieve form data
     $coord_type = $_POST['coord_type'] ?? '';
     $type = $_POST['type'] ?? '';
-    $deelgebied = $_POST['deelgebied'] ?? '';
-    $datumtijd_str = $_POST['datumtijd'] ?? '';
+    $fox_team = $_POST['fox_team'] ?? '';
+    $datetime_str = $_POST['datetime'] ?? '';
     $code = $_POST['code'] ?? null;
-    $opmerking = $_POST['opmerking'] ?? null;
-    $ingeleverd_door = $_SESSION['id'];
+    $remarks = $_POST['remarks'] ?? null;
+    $submitted_by = $_SESSION['id'];
 
     $lat = 0.0;
     $lon = 0.0;
@@ -60,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) 
         $rd_x = filter_input(INPUT_POST, 'rd_x', FILTER_VALIDATE_FLOAT);
         $rd_y = filter_input(INPUT_POST, 'rd_y', FILTER_VALIDATE_FLOAT);
         if ($rd_x && $rd_y) {
-            $converted_coords = convertRDtoLatLon($rd_x, $rd_y);
+            $converted_coords = convertRdToWgs($rd_x, $rd_y);
             $lat = $converted_coords['lat'];
             $lon = $converted_coords['lon'];
         }
@@ -79,13 +46,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) 
         }
     }
 
-    $ingestuurd_op = str_replace('T', ' ', $datumtijd_str) . ':00';
+    $submitted_at = str_replace('T', ' ', $datetime_str) . ':00';
 
     if ($lat && $lon) {
         $stmt = $conn->prepare("INSERT INTO Voslocaties (type, deelgebied, ingestuurd_op, coordinaat_x, coordinaat_y, code, opmerking, ingeleverd_door, ingeleverd) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)");
-        $stmt->bind_param("sssddssi", $type, $deelgebied, $ingestuurd_op, $lat, $lon, $code, $opmerking, $ingeleverd_door);
+        $stmt->bind_param("sssddssi", $type, $fox_team, $submitted_at, $lat, $lon, $code, $remarks, $submitted_by);
         
         if ($stmt->execute()) {
+            send_push_notification('ALL', 'Nieuwe Voslocatie', "Nieuwe {$type} toegevoegd voor {$fox_team}.", '/voslocaties', 'voslocaties', null, 'locatiestatus');
             $message = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6 shadow-sm">
                             <span onclick="this.parentElement.style.display=\'none\'" class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer">
                                 <i class="fas fa-times opacity-70 hover:opacity-100 transition"></i>
@@ -114,34 +82,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_voslocatie'])) 
     }
 }
 
-$stmt = $conn->prepare("SELECT * FROM Gebruikers WHERE id=?");
-$stmt->bind_param("i", $_SESSION['id']);
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $vn = $row['voornaam'];
-    $priv = $row['priv'];
-  }
-}
-$stmt->close();
-
-if (!isset($priv) || $priv < 1) {
+if ($privilege < 1) {
     header("Location: home");
     exit();
 }
-
-$stmt = $conn->prepare("SELECT * FROM Site_Instellingen");
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $siteSettings[$row['Instelling']] = $row['Waarde'];
-  }
-}
-$stmt->close();
 
 $groups = [];
 $stmt_groups = $conn->prepare("SELECT id, naam, deelgebied FROM Groepen ORDER BY deelgebied, naam");
@@ -155,9 +99,9 @@ $stmt_groups->close();
 $group_lat = 52.15517440;
 $group_lon = 5.38720621;
 
-if (isset($siteSettings['GROUP_ID'])) {
+if (isset($site_settings['GROUP_ID'])) {
     $stmt = $conn->prepare("SELECT lat, lon FROM Groepen WHERE id = ?");
-    $stmt->bind_param("i", $siteSettings['GROUP_ID']);
+    $stmt->bind_param("i", $site_settings['GROUP_ID']);
     $stmt->execute();
     $groupResult = $stmt->get_result();
     if ($groupRow = $groupResult->fetch_assoc()) {
@@ -276,17 +220,17 @@ if (isset($siteSettings['GROUP_ID'])) {
             
             <div>
               <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Datum & Tijd</label>
-              <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="datetime-local" name="datumtijd" value="<?php echo date('Y-m-d\TH:i'); ?>" required>
+              <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="datetime-local" name="datetime" value="<?php echo date('Y-m-d\TH:i'); ?>" required>
             </div>
           </div>
 
           <div class="space-y-6">
             <div>
               <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Vossenteam (Deelgebied)</label>
-              <select class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white" name="deelgebied" required>
+              <select class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white" name="fox_team" required>
                 <option value="" disabled selected>Kies een team</option>
                 <?php
-                foreach ($vossen_names as $fox) {
+                foreach ($fox_names as $fox) {
                     echo "<option value=\"" . htmlspecialchars($fox) . "\">" . htmlspecialchars($fox) . "</option>\n";
                 }
                 ?>
@@ -304,19 +248,19 @@ if (isset($siteSettings['GROUP_ID'])) {
             </div>
             
             <div>
-              <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Code</label>
+              <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Code (optioneel)</label>
               <input class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-gray-100 disabled:opacity-60 disabled:cursor-not-allowed" type="text" name="code" id="code_input" maxlength="32" disabled>
             </div>
             
             <div>
               <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Opmerking (optioneel)</label>
-              <textarea class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm resize-y" name="opmerking" rows="3" maxlength="128"></textarea>
+              <textarea class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm resize-y" name="remarks" rows="3" maxlength="128"></textarea>
             </div>
           </div>
         </div>
         
         <div class="mt-8 border-t pt-6" style="border-color: var(--theme-card-border);">
-          <button type="submit" name="submit_voslocatie" class="theme-bg-primary text-white font-bold py-3 px-8 rounded shadow-sm hover:opacity-90 transition"><i class="fas fa-plus mr-2"></i>Locatie Toevoegen</button>
+          <button type="submit" name="submit_fox_location" class="theme-bg-primary text-white font-bold py-3 px-8 rounded shadow-sm hover:opacity-90 transition"><i class="fas fa-plus mr-2"></i>Locatie Toevoegen</button>
         </div>
       </form>
     </div>
@@ -343,233 +287,14 @@ if (isset($siteSettings['GROUP_ID'])) {
   <?php require_once('includes/footer.php') ?>
 </div>
   
+<script src="js/gps.js"></script>
+<script>initGpsTracking('<?= $_SESSION['gps'] ?? 'false' ?>');</script>
+<script src="js/voslocaties.js"></script>
 <script>
-if ("<?php echo $_SESSION['gps'] ?? 'false' ?>" == "true"){
-  setInterval(function() {
-    GPSrefresh();
-  }, 5555);
-}
- 
-function GPSrefresh() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(showPosition);
-    } else {
-        console.log("Geolocation is not supported by this browser.");
-    }
-    function showPosition(position) {
-      console.log("Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude);
-      
-      var xmlhttp;
-      if (window.XMLHttpRequest) {
-            xmlhttp = new XMLHttpRequest();
-      } else {
-            xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
-      }
-      xmlhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-            }
-      };
-      xmlhttp.open("GET","functies.php?lat="+position.coords.latitude+"&lon="+position.coords.longitude,true);
-      xmlhttp.send();
-    }
-}
-
-/**
- * Toggles the visibility of coordinate input fields based on user selection.
- * Also handles the 'required' attribute to ensure HTML validation works properly.
- */
-function showCoords(type) {
-    const latInput = document.querySelector('input[name="lat"]');
-    const lonInput = document.querySelector('input[name="lon"]');
-    const rdXInput = document.querySelector('input[name="rd_x"]');
-    const rdYInput = document.querySelector('input[name="rd_y"]');
-    const gpsStatus = document.getElementById('gps-status');
-
-    gpsStatus.textContent = '';
-    rdXInput.value = '';
-    rdYInput.value = '';
-
-    document.getElementById('latlon_coords').style.display = 'none';
-    document.getElementById('rd_coords').style.display = 'none';
-    document.getElementById('group_coords').style.display = 'none';
-
-    latInput.required = false;
-    lonInput.required = false;
-    rdXInput.required = false;
-    rdYInput.required = false;
-
-    if (type === 'latlon') {
-        document.getElementById('latlon_coords').style.display = 'block';
-        latInput.required = true;
-        lonInput.required = true;
-    } else if (type === 'rd') {
-        document.getElementById('rd_coords').style.display = 'block';
-        rdXInput.required = true;
-        rdYInput.required = true;
-    } else if (type === 'group') {
-        document.getElementById('group_coords').style.display = 'block';
-    }
-}
-
-/**
- * Retrieves the current GPS location and populates the lat/lon input fields.
- */
-function getGPSLocation() {
-    const gpsStatus = document.getElementById('gps-status');
-    const latInput = document.querySelector('input[name="lat"]');
-    const lonInput = document.querySelector('input[name="lon"]');
-
-    if (navigator.geolocation) {
-        gpsStatus.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Locatie ophalen...';
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                latInput.value = position.coords.latitude.toFixed(6);
-                lonInput.value = position.coords.longitude.toFixed(6);
-                gpsStatus.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i>Locatie succesvol opgehaald.';
-            },
-            function(error) {
-                let errorMessage;
-                switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        errorMessage = "Toegang tot locatie geweigerd.";
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        errorMessage = "Locatie informatie niet beschikbaar.";
-                        break;
-                    case error.TIMEOUT:
-                        errorMessage = "Timeout bij het ophalen van locatie.";
-                        break;
-                    case error.UNKNOWN_ERROR:
-                        errorMessage = "Een onbekende fout is opgetreden.";
-                        break;
-                }
-                gpsStatus.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-1"></i>' + errorMessage;
-            }
-        );
-    } else {
-        gpsStatus.textContent = "Geolocation wordt niet ondersteund door deze browser.";
-    }
-}
-
-/**
- * Sets the code input field state depending on the selected location type.
- */
-function toggleCodeInput() {
-    const typeSelect = document.getElementById('type_select');
-    const codeInput = document.getElementById('code_input');
-
-    if (typeSelect.value === 'Hunt') {
-        codeInput.disabled = false;
-        codeInput.required = true;
-        codeInput.classList.remove('bg-gray-100');
-        codeInput.classList.add('bg-white');
-    } else {
-        codeInput.disabled = true;
-        codeInput.required = false;
-        codeInput.value = '';
-        codeInput.classList.add('bg-gray-100');
-        codeInput.classList.remove('bg-white');
-    }
-}
-
-/**
- * Marks a scout group as selected and populates the hidden input field.
- */
-function selectGroup(id, rowElement) {
-    document.getElementById('selected_group_id').value = id;
-    const rows = document.querySelectorAll('#group_list .group-row');
-    rows.forEach(row => row.classList.remove('bg-blue-100'));
-    rowElement.classList.add('bg-blue-100');
-}
-
-/**
- * Filters the list of scout groups based on user search input.
- */
-function filterGroups() {
-    const filter = document.getElementById('group_search').value.toLowerCase();
-    const rows = document.querySelectorAll('#group_list .group-row');
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(filter) ? '' : 'none';
-    });
-}
-
-let mapModal;
-let modalMarker;
-let mapInitialized = false;
-
-mapboxgl.accessToken = '<?php echo $siteSettings["API_KEY_MAPBOX"] ?? ""; ?>';
-
-/**
- * Initializes and displays the Mapbox modal.
- */
-function openMapModal() {
-    document.getElementById('map-modal').classList.remove('hidden');
-    
-    if (!mapInitialized) {
-        mapModal = new mapboxgl.Map({
-            container: 'modal-map',
-            style: 'mapbox://styles/mapbox/streets-v12',
-            center: [<?php echo $group_lon; ?>, <?php echo $group_lat; ?>],
-            zoom: 11
-        });
-        
-        mapModal.on('click', function(e) {
-            if (modalMarker) {
-                modalMarker.remove();
-            }
-            modalMarker = new mapboxgl.Marker()
-                .setLngLat(e.lngLat)
-                .addTo(mapModal);
-        });
-        
-        mapInitialized = true;
-    }
-    
-    setTimeout(() => {
-        mapModal.resize();
-        
-        const currentLat = parseFloat(document.querySelector('input[name="lat"]').value);
-        const currentLon = parseFloat(document.querySelector('input[name="lon"]').value);
-        
-        if (!isNaN(currentLat) && !isNaN(currentLon)) {
-            if (modalMarker) modalMarker.remove();
-            modalMarker = new mapboxgl.Marker()
-                .setLngLat([currentLon, currentLat])
-                .addTo(mapModal);
-                
-            mapModal.setCenter([currentLon, currentLat]);
-            mapModal.setZoom(14);
-        }
-    }, 200);
-}
-
-/**
- * Hides the Mapbox modal without saving.
- */
-function closeMapModal() {
-    document.getElementById('map-modal').classList.add('hidden');
-}
-
-/**
- * Extracts coordinates from the placed Mapbox marker and inserts them into the form.
- */
-function confirmMapLocation() {
-    if (modalMarker) {
-        const lngLat = modalMarker.getLngLat();
-        document.querySelector('input[name="lat"]').value = lngLat.lat.toFixed(6);
-        document.querySelector('input[name="lon"]').value = lngLat.lng.toFixed(6);
-        
-        const gpsStatus = document.getElementById('gps-status');
-        gpsStatus.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i>Locatie succesvol gekozen via kaart.';
-        
-        closeMapModal();
-    } else {
-        alert("Klik eerst ergens op de kaart om een locatie te selecteren.");
-    }
-}
-
-toggleCodeInput();
+initVoslocaties({
+    mapboxKey: '<?= htmlspecialchars($site_settings["API_KEY_MAPBOX"] ?? "") ?>',
+    center: [<?= (float)$group_lon ?>, <?= (float)$group_lat ?>]
+});
 </script>
 </body>
 </html>

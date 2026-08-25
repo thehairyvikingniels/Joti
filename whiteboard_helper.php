@@ -1,11 +1,12 @@
 <?php
-session_start();
-if (!isset($_SESSION['id']) || !isset($_SESSION['priv']) || $_SESSION['priv'] < 1) {
-    echo json_encode(["status" => "error", "message" => "Geen rechten"]);
+// AJAX handler for whiteboard assignments: moves users and vehicles between tasks and manages custom categories.
+require_once('includes/auth.php');
+
+if ($privilege < 1 && (!$is_kiosk || ($_SESSION['kiosk_priv'] ?? 0) < 1)) {
+    http_response_code(403);
+    echo json_encode(["status" => "error", "message" => "Geen rechten voor bewerken (403 Forbidden)"]);
     exit();
 }
-
-require_once("dblogin.php");
 
 header('Content-Type: application/json');
 
@@ -49,6 +50,7 @@ if ($action === 'move_user') {
         $stmt->bind_param("sii", $target_ref, $user_id, $is_bestuurder);
         $stmt->execute();
         $stmt->close();
+        send_push_notification($user_id, "Taak gewijzigd", "Je bent toegewezen aan auto " . $target_ref . ".", "/whiteboard", "whiteboard", null, "assignment_changes");
         
     } elseif ($target_type === 'hint' || $target_type === 'opdracht' || $target_type === 'custom' || $target_type === 'hunt') {
         $ref_int = intval($target_ref);
@@ -56,6 +58,9 @@ if ($action === 'move_user') {
         $stmt->bind_param("isi", $user_id, $target_type, $ref_int);
         $stmt->execute();
         $stmt->close();
+        send_push_notification($user_id, "Taak gewijzigd", "Je bent toegewezen aan een nieuwe taak op het whiteboard.", "/whiteboard", "whiteboard", null, "assignment_changes");
+    } else {
+        send_push_notification($user_id, "Taak verwijderd", "Je bent verwijderd van een taak op het whiteboard.", "/whiteboard", "whiteboard", null, "assignment_changes");
     }
     
     echo json_encode(["status" => "success"]);
@@ -78,18 +83,35 @@ if ($action === 'move_car') {
     $stmt->execute();
     $stmt->close();
     
+    // Fetch users in the car
+    $stmt_car_users = $conn->prepare("SELECT gebruiker_id FROM Auto_Bijrijders WHERE auto = ?");
+    $stmt_car_users->bind_param("s", $auto_kenteken);
+    $stmt_car_users->execute();
+    $res = $stmt_car_users->get_result();
+    $car_users = [];
+    while ($r = $res->fetch_assoc()) {
+        $car_users[] = $r['gebruiker_id'];
+    }
+    $stmt_car_users->close();
+    
     if ($target_type === 'hint' || $target_type === 'opdracht' || $target_type === 'custom' || $target_type === 'hunt') {
         $ref_int = intval($target_ref);
         $stmt = $conn->prepare("INSERT INTO Auto_Toewijzingen (auto, type, referentie_id) VALUES (?, ?, ?)");
         $stmt->bind_param("ssi", $auto_kenteken, $target_type, $ref_int);
         $stmt->execute();
         $stmt->close();
+        if (!empty($car_users)) {
+            send_push_notification($car_users, "Taak gewijzigd", "Jouw auto is toegewezen aan een nieuwe taak.", "/whiteboard", "whiteboard", null, "assignment_changes");
+        }
     } elseif ($target_type === 'unassigned') {
         // Remove all people from the car when unassigning
         $stmt = $conn->prepare("DELETE FROM Auto_Bijrijders WHERE auto = ?");
         $stmt->bind_param("s", $auto_kenteken);
         $stmt->execute();
         $stmt->close();
+        if (!empty($car_users)) {
+            send_push_notification($car_users, "Taak verwijderd", "De toewijzingen van jouw auto zijn verwijderd.", "/whiteboard", "whiteboard", null, "assignment_changes");
+        }
     }
     
     echo json_encode(["status" => "success"]);

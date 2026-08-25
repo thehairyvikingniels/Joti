@@ -1,6 +1,7 @@
 <?php
+// Handles user authentication and registration, validates credentials, upgrades password hashes, and initializes sessions.
 session_start();
-require('dblogin.php');
+require_once('dblogin.php');
 
 if (isset($_POST['pswd1'])){
   if ((empty($_POST['voornaam'])) OR (empty($_POST['achternaam'])) OR (empty($_POST['email'])) OR (empty($_POST['gebruikersnaam'])) OR (empty($_POST['pswd0'])) OR (empty($_POST['pswd1']))){
@@ -13,15 +14,15 @@ if (isset($_POST['pswd1'])){
     die();
   }
   
-  $vn = $_POST['voornaam'];
-  $an = $_POST['achternaam'];
+  $first_name = $_POST['voornaam'];
+  $last_name = $_POST['achternaam'];
   $email = $_POST['email'];
-  $gebr = $_POST['gebruikersnaam'];
+  $reg_username = $_POST['gebruikersnaam'];
   $telnum = $_POST['telefoon'];
   $pswd0 = $_POST['pswd0'];
   
   $stmt = $conn->prepare("SELECT id FROM Gebruikers WHERE gebruikersnaam=?");
-  $stmt->bind_param("s", $gebr);
+  $stmt->bind_param("s", $reg_username);
   $stmt->execute();
   $result = $stmt->get_result();
   
@@ -38,7 +39,7 @@ if (isset($_POST['pswd1'])){
       $hashed_password = password_hash($pswd0, PASSWORD_DEFAULT);
       
       $stmt_insert = $conn->prepare("INSERT INTO Gebruikers (gebruikersnaam, wachtwoord, api, voornaam, achternaam, email, priv, telefoon) VALUES (?, ?, ?, ?, ?, ?, 0, ?)");
-      $stmt_insert->bind_param("sssssss", $gebr, $hashed_password, $api, $vn, $an, $email, $telnum);
+      $stmt_insert->bind_param("sssssss", $reg_username, $hashed_password, $api, $first_name, $last_name, $email, $telnum);
       
       if ($stmt_insert->execute()) {
         $stmt_insert->close();
