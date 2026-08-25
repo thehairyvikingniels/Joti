@@ -71,13 +71,15 @@ if ($userPriv >= 2) {
       </div>
 
       <!-- LIVE SEARCHERS SIDEBAR -->
-      <div class="w-full lg:w-72 rounded-xl p-4 flex flex-col shadow theme-card border" style="border-color: var(--theme-card-border); background-color: var(--theme-card-bg);">
-        <h3 class="font-bold text-sm flex items-center justify-between border-b pb-2 mb-3" style="border-color: var(--theme-card-border);">
-          <span class="flex items-center gap-1.5"><i class="fas fa-walking theme-primary"></i> Zoekers Buiten</span>
-          <span id="searcher-count" class="theme-bg-primary text-white text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">0</span>
-        </h3>
-        <div id="searcher-list" class="flex-1 overflow-y-auto space-y-2 text-xs max-h-48 lg:max-h-none">
-          <div class="text-center opacity-50 py-4">Zoekers laden...</div>
+      <div class="w-full lg:w-72 rounded-xl flex flex-col shadow-md theme-card border overflow-hidden" style="border-color: var(--theme-card-border); background-color: var(--theme-card-bg);">
+        <div class="theme-card-header px-5 py-3.5 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <span class="font-bold text-sm flex items-center gap-2"><i class="fas fa-walking"></i> Zoekers Buiten</span>
+          <span id="searcher-count" class="bg-white/20 text-white text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">0</span>
+        </div>
+        <div class="p-4 flex-1 flex flex-col">
+          <div id="searcher-list" class="flex-1 overflow-y-auto space-y-2 text-xs max-h-48 lg:max-h-none">
+            <div class="text-center opacity-50 py-4">Zoekers laden...</div>
+          </div>
         </div>
       </div>
 
@@ -85,14 +87,14 @@ if ($userPriv >= 2) {
 
     <?php else: ?>
     <!-- ADMIN LAUNCHPAD (WHEN INACTIVE) -->
-    <div class="max-w-3xl mx-auto w-full my-auto theme-card p-6 rounded-2xl shadow-xl border border-black/10">
-      <div class="text-center mb-6">
-        <div class="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">
-          <i class="fas fa-bullseye"></i>
-        </div>
-        <h1 class="text-2xl font-black">Tegenhunt Starten</h1>
-        <p class="text-sm opacity-70 mt-1">Selecteer de gemelde windrichting uit het Telegram-bericht om direct de 90&deg; zoekradar en push-notificaties te activeren.</p>
+    <div class="max-w-3xl mx-auto w-full my-auto theme-card rounded-xl shadow-xl border overflow-hidden" style="border-color: var(--theme-card-border);">
+      <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+        <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-bullseye"></i> <span>Tegenhunt Starten</span></h3>
       </div>
+      <div class="p-6">
+        <div class="text-center mb-6">
+          <p class="text-sm opacity-70">Selecteer de gemelde windrichting uit het Telegram-bericht om direct de 90&deg; zoekradar en push-notificaties te activeren.</p>
+        </div>
 
       <form id="form-start-tegenhunt" onsubmit="event.preventDefault(); startTegenhunt();" class="space-y-6">
         
@@ -166,7 +168,7 @@ if ($userPriv >= 2) {
         </div>
       </div>
       <?php endif; ?>
-
+      </div>
     </div>
     <?php endif; ?>
 

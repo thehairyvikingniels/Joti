@@ -64,8 +64,8 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
             <button onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
           </div>
         <?php endif; ?>
-        <form method="POST" action="instellingen_helper.php">
-          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center -mx-5 -mt-5 mb-5" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);"><h3 class="text-xl font-bold"><i class="fas fa-user-edit mr-2"></i> Gegevens wijzigen</h3></div>
+        <form method="POST" action="instellingen_helper.php" class="p-6">
+          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);"><h3 class="text-xl font-bold"><i class="fas fa-user-edit mr-2"></i> Gegevens wijzigen</h3></div>
           
           <div class="space-y-3">
             <div>
@@ -100,8 +100,8 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
             <button onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
           </div>
         <?php endif; ?>
-        <form method="POST" action="instellingen_helper.php">
-          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center -mx-5 -mt-5 mb-5" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);"><h3 class="text-xl font-bold"><i class="fas fa-key mr-2"></i> Wachtwoord wijzigen</h3></div>
+        <form method="POST" action="instellingen_helper.php" class="p-6">
+          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);"><h3 class="text-xl font-bold"><i class="fas fa-key mr-2"></i> Wachtwoord wijzigen</h3></div>
           
           <div class="space-y-3">
             <div>
@@ -128,8 +128,8 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
             <button onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
           </div>
         <?php endif; ?>
-        <form method="POST" action="instellingen_helper.php" enctype="multipart/form-data">
-          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center -mx-5 -mt-5 mb-5" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);"><h3 class="text-xl font-bold"><i class="fas fa-camera mr-2"></i> Profielfoto</h3></div>
+        <form method="POST" action="instellingen_helper.php" enctype="multipart/form-data" class="p-6">
+          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);"><h3 class="text-xl font-bold"><i class="fas fa-camera mr-2"></i> Profielfoto</h3></div>
           
           <div class="flex flex-col items-center mb-4">
             <?php if ($profile_picture): ?>
@@ -220,7 +220,7 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
           <!-- Voorkeuren -->
           <div>
             <h4 class="font-semibold mb-3 border-b pb-2">Melding Voorkeuren</h4>
-            <form method="POST" action="instellingen_helper.php">
+            <form method="POST" action="instellingen_helper.php" class="p-6">
               <div class="space-y-3 mb-4">
                 <?php
                 $channels = [

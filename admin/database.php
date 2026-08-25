@@ -45,7 +45,7 @@ $result_voslocaties = $stmt_vos->get_result();
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
     <div class="space-y-6 mb-24">
-      <div class="theme-card rounded border shadow-sm overflow-hidden w-full">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden w-full mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
           <h3 class="text-xl font-bold">Ingestuurde Locaties (Hints, Hunts, etc.)</h3>
         </div>
@@ -100,7 +100,7 @@ $result_voslocaties = $stmt_vos->get_result();
   <!-- Edit Modal -->
   <div id="editModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-center justify-center min-h-screen px-4 text-center">
-      <div class="relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+      <div class="relative inline-block theme-card border rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
         <header class="theme-bg-primary px-4 py-3 sm:px-6 flex justify-between items-center text-white">
             <h4 class="text-lg font-bold"><i class="fas fa-pencil-alt mr-2"></i>Bewerk Locatie</h4>
             <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')" class="hover:text-gray-200 transition"><i class="fas fa-times text-xl"></i></button>

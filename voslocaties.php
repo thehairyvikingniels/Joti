@@ -154,7 +154,7 @@ if (isset($site_settings['GROUP_ID'])) {
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
-    <div class="theme-card rounded border shadow-sm overflow-hidden mb-12 max-w-4xl">
+    <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6 max-w-4xl">
       <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
         <h3 class="text-xl font-bold">Nieuwe voslocatie toevoegen</h3>
       </div>
@@ -289,7 +289,7 @@ if (isset($site_settings['GROUP_ID'])) {
   </main>
 
   <div id="map-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-60 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl overflow-hidden flex flex-col h-[80vh] md:h-[600px]">
+    <div class="theme-card border rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-[80vh] md:h-[600px]">
         <div class="px-6 py-4 border-b flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h3 class="text-xl font-bold text-white"><i class="fas fa-map-marked-alt mr-2"></i>Kies een locatie op de kaart</h3>
             <button type="button" onclick="closeMapModal()" class="text-white hover:text-gray-300 focus:outline-none transition">

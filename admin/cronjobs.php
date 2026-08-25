@@ -46,7 +46,7 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
     <div class="space-y-6 mb-24">
-      <div class="theme-card rounded border shadow-sm overflow-hidden w-full max-w-5xl">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden w-full mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
           <h3 class="text-xl font-bold">Cronjobs</h3>
         </div>
