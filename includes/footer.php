@@ -3,7 +3,7 @@
 require_once(__DIR__ . '/helpers.php');
 ?>
 <div id="site-footer-wrapper" class="mt-auto w-full flex-shrink-0">
-  <footer class="p-6 bg-white border-t border-gray-200 mt-8 mb-4 theme-card text-center text-sm text-gray-500 theme-text opacity-80 pb-16 sm:pb-6">
+  <footer class="py-4 px-6 bg-white border-t border-gray-200 theme-card text-center text-sm text-gray-500 theme-text opacity-80">
     <p>
       <a href="https://nielsmaarleveld.nl" class="font-medium hover:underline theme-primary">Niels Maarleveld</a> - &copy; <?php echo date("Y");?> 
       <?php
