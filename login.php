@@ -1,7 +1,18 @@
 <?php
 // Handles user authentication and registration, validates credentials, upgrades password hashes, and initializes sessions.
-session_start();
+ini_set('session.cookie_httponly', '1');
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+if ($isHttps) {
+    ini_set('session.cookie_secure', '1');
+}
+ini_set('session.cookie_samesite', 'Lax');
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once('dblogin.php');
+require_once('includes/remember_me.php');
+require_once('includes/db.php');
 
 if (isset($_POST['pswd1'])){
   if ((empty($_POST['voornaam'])) OR (empty($_POST['achternaam'])) OR (empty($_POST['email'])) OR (empty($_POST['gebruikersnaam'])) OR (empty($_POST['pswd0'])) OR (empty($_POST['pswd1']))){
@@ -104,7 +115,8 @@ if (isset($_POST['pswd1'])){
           $stmt_login_time->execute();
           $stmt_login_time->close();
 
-          // Setup user session
+          // Setup user session & prevent session fixation
+          session_regenerate_id(true);
           unset($_SESSION['kiosk_id'], $_SESSION['kiosk_priv'], $_SESSION['kiosk_naam']);
           $_SESSION['id'] = $row['id'];
           $_SESSION['priv'] = $row['priv'];
@@ -113,6 +125,14 @@ if (isset($_POST['pswd1'])){
           $_SESSION['gebruikersnaam'] = $row['gebruikersnaam'] ?? '';
           $_SESSION['gps'] = "false";
           $_SESSION['theme'] = $row['theme'] ?? 'light';
+
+          // Handle "Ingelogd Blijven" (Remember Me) persistent cookie
+          if (!empty($_POST['remember_me'])) {
+              $siteSettings = fetchSiteSettings($conn);
+              generateRememberToken($conn, (int)$row['id'], (int)$row['priv'], $siteSettings, $_SERVER['HTTP_USER_AGENT'] ?? null);
+          } else {
+              clearCurrentRememberToken($conn);
+          }
           
           // show welcome modal on next page load for new users (priv == 0)
           if ($row['priv'] == 0) {

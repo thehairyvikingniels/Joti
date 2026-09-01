@@ -167,25 +167,55 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
         </form>
       </div>
 
-      <!-- Theme Switcher -->
-      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6 flex flex-col">
-        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
-          <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-palette"></i> <span>Kleur Thema</span></h3>
-        </div>
-        <div class="p-6 flex-1 flex flex-col justify-between">
-          <p class="text-sm opacity-80 mb-4 leading-relaxed">Kies je favoriete kleurenschema. Deze wordt opgeslagen in je profiel en geladen op alle apparaten.</p>
-          
-          <div class="space-y-3">
-            <select onchange="changeTheme(this.value)" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer">
-              <option value="light" <?= $theme == 'light' ? 'selected' : '' ?>>Light</option>
-              <option value="dark" <?= $theme == 'dark' ? 'selected' : '' ?>>Dark</option>
-              <option value="rose-gold" <?= $theme == 'rose-gold' ? 'selected' : '' ?>>Rose Gold</option>
-              <option value="cyber" <?= $theme == 'cyber' ? 'selected' : '' ?>>Cyber</option>
-              <option value="nature" <?= $theme == 'nature' ? 'selected' : '' ?>>Nature</option>
-              <option value="coral" <?= $theme == 'coral' ? 'selected' : '' ?>>Coral</option>
-            </select>
+      <!-- Column (Row 2): Actieve Sessies & Kleur Thema gestapeld -->
+      <div class="flex flex-col justify-between gap-6 mb-6">
+        
+        <!-- Actieve Sessies -->
+        <div id="sessies" class="theme-card rounded-xl border shadow-sm overflow-hidden flex flex-col justify-between flex-1">
+          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-shield-alt"></i> <span>Actieve Sessies</span></h3>
+          </div>
+          <div class="p-6 flex-1 flex flex-col justify-between">
+            <?php if (isset($_GET['t']) && $_GET['t'] == "sessies"): ?>
+              <div class="bg-blue-100 text-blue-800 p-3 rounded-xl mb-4 flex justify-between items-start">
+                <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
+                <button type="button" onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
+              </div>
+            <?php endif; ?>
+            
+            <p class="text-sm opacity-80 leading-relaxed mb-4">
+              Ben je ingelogd op andere apparaten (via <em>Ingelogd blijven</em>)? Beëindig hier alle overige actieve sessies.
+            </p>
+            
+            <div class="text-center">
+              <button type="button" onclick="document.getElementById('revokeModal').classList.remove('hidden')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-6 rounded-xl transition shadow-sm w-full">
+                <i class="fas fa-sign-out-alt mr-1.5"></i>Overal Uitloggen
+              </button>
+            </div>
           </div>
         </div>
+
+        <!-- Kleur Thema -->
+        <div class="theme-card rounded-xl border shadow-sm overflow-hidden flex flex-col justify-between flex-1">
+          <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-palette"></i> <span>Kleur Thema</span></h3>
+          </div>
+          <div class="p-6 flex-1 flex flex-col justify-between">
+            <p class="text-sm opacity-80 mb-4 leading-relaxed">Kies je favoriete kleurenschema. Deze wordt opgeslagen in je profiel.</p>
+            
+            <div>
+              <select onchange="changeTheme(this.value)" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer">
+                <option value="light" <?= $theme == 'light' ? 'selected' : '' ?>>Light</option>
+                <option value="dark" <?= $theme == 'dark' ? 'selected' : '' ?>>Dark</option>
+                <option value="rose-gold" <?= $theme == 'rose-gold' ? 'selected' : '' ?>>Rose Gold</option>
+                <option value="cyber" <?= $theme == 'cyber' ? 'selected' : '' ?>>Cyber</option>
+                <option value="nature" <?= $theme == 'nature' ? 'selected' : '' ?>>Nature</option>
+                <option value="coral" <?= $theme == 'coral' ? 'selected' : '' ?>>Coral</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- Notificaties -->
@@ -279,6 +309,29 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
     </div>
   </main>
 
+
+  <!-- Revoke Sessions Modal -->
+  <div id="revokeModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 text-center">
+        <div class="relative inline-block theme-card rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full">
+            <div class="bg-red-600 px-4 py-3 sm:px-6 flex justify-between items-center text-white">
+                <h4 class="text-lg font-bold"><i class="fas fa-sign-out-alt mr-2"></i>Alle Sessies Beëindigen</h4>
+                <button type="button" onclick="document.getElementById('revokeModal').classList.add('hidden')" class="hover:text-gray-200 transition"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6">
+                <p class="mb-2 text-sm font-semibold opacity-90">Weet je zeker dat je alle actieve sessies op andere apparaten wilt beëindigen?</p>
+                <p class="text-xs opacity-70">Je blijft op dit apparaat ingelogd, maar alle andere apparaten en browsers waarop je via <em>Ingelogd blijven</em> bent ingelogd worden direct afgemeld.</p>
+            </div>
+            <div class="bg-black/5 px-4 py-3 sm:px-6 flex flex-row-reverse gap-3 border-t theme-card-border">
+                <form method="POST" action="instellingen_helper.php" class="m-0 w-full sm:w-auto">
+                    <input type="hidden" name="revoke_all_sessions" value="1">
+                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto">Overal Uitloggen</button>
+                </form>
+                <button type="button" onclick="document.getElementById('revokeModal').classList.add('hidden')" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto">Annuleren</button>
+            </div>
+        </div>
+    </div>
+  </div>
 
   <!-- Delete Modal -->
   <div id="deleteModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm" aria-labelledby="modal-title" role="dialog" aria-modal="true">

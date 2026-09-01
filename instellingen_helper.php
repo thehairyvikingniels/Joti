@@ -27,6 +27,7 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
         $stmt->bind_param("si", $hashed_password, $_SESSION['id']);
 
         if ($stmt->execute()) {
+            clearAllRememberTokensForUser($conn, (int)$_SESSION['id']);
             $e = "Succesvol gewijzigd";
             header("Location: instellingen.php?e=" . urlencode($e) . "&t=wachtwoord#wachtwoord");
         } else {
@@ -174,6 +175,11 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
     }
     $stmt->close();
     header("Location: instellingen.php?e=" . urlencode($e) . "&t=notificaties");
+    die();
+} elseif (isset($_POST['revoke_all_sessions'])) {
+    clearAllRememberTokensForUser($conn, (int)$_SESSION['id']);
+    $e = "Alle overige actieve sessies zijn succesvol beëindigd.";
+    header("Location: instellingen.php?e=" . urlencode($e) . "&t=sessies#sessies");
     die();
 }
 ?>

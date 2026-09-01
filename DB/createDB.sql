@@ -112,6 +112,26 @@ CREATE TABLE `Gebruikers` (
 -- --------------------------------------------------------
 
 --
+-- Tabelstructuur voor tabel `Gebruikers_Tokens`
+--
+
+CREATE TABLE `Gebruikers_Tokens` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `selector` varchar(64) NOT NULL,
+  `hashed_validator` varchar(64) NOT NULL,
+  `expiry` datetime NOT NULL,
+  `user_agent` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_selector` (`selector`),
+  KEY `fk_gebruikers_tokens_user` (`user_id`),
+  CONSTRAINT `fk_gebruikers_tokens_user` FOREIGN KEY (`user_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Tabelstructuur voor tabel `Groepen`
 --
 
@@ -217,7 +237,9 @@ INSERT INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) VALUES
 ('GROUP_LOGO_SMALL_URL', 'media/geusje_bevosd.png', 'A local or external URL for the group logo. '),
 ('GROUP_ID', '0', 'The ID of the scout group using this website. Used for point calculations.'),
 ('GROUP_URL', 'https://example.com/', 'The URL of the scout group using this website. '),
-('JOTIHUNT_CREDENTIALS',	'{\"username\":\"example@domain.com\",\"password\":\"example_password\"}',	'Credentials of the official Jotihunt website in JSON format.');
+('JOTIHUNT_CREDENTIALS',	'{\"username\":\"example@domain.com\",\"password\":\"example_password\"}',	'Credentials of the official Jotihunt website in JSON format.'),
+('REMEMBER_ME_HOURS', '72', 'Aantal uur dat een normale gebruiker (priv 0-1) ingelogd kan blijven. 0 = uitgeschakeld.'),
+('REMEMBER_ME_HOURS_ADMIN', '24', 'Aantal uur dat een admin (priv 2-3) ingelogd kan blijven. 0 = uitgeschakeld.');
 
 -- --------------------------------------------------------
 

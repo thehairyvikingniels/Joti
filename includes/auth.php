@@ -1,24 +1,37 @@
 <?php
-// Session bootstrap: handles authentication, user loading, and site settings.
+// Session bootstrap: handles authentication, persistent cookies ("Ingelogd Blijven"), user loading, and site settings.
 
-// 1. Defensive session start
+// 1. Session cookie hardening & defensive session start
+ini_set('session.cookie_httponly', '1');
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+if ($isHttps) {
+    ini_set('session.cookie_secure', '1');
+}
+ini_set('session.cookie_samesite', 'Lax');
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// 2. Auth check — redirect unauthenticated users
+// 2. Load database connection & remember-me helper
+require_once(__DIR__ . '/../dblogin.php');
+require_once(__DIR__ . '/remember_me.php');
+
+// 3. Auth check — validate persistent cookie or redirect unauthenticated users
 if (empty($_SESSION['id']) && empty($_SESSION['kiosk_id'])) {
-    // Determine correct redirect path (admin/ pages go up one level)
-    $redirect = (basename(dirname($_SERVER['SCRIPT_FILENAME'])) === 'admin') ? '../index' : 'index';
-    header('Location: ' . $redirect);
-    exit();
+    $rememberUserId = validateRememberToken($conn);
+    if ($rememberUserId !== null) {
+        $_SESSION['id'] = $rememberUserId;
+        session_regenerate_id(true);
+    } else {
+        $redirect = (basename(dirname($_SERVER['SCRIPT_FILENAME'])) === 'admin') ? '../index' : 'index';
+        header('Location: ' . $redirect);
+        exit();
+    }
 }
 
-// 3. Load database connection (which also loads globals.php -> $site_settings, fox names/colors)
-require_once(__DIR__ . '/../dblogin.php');
-
 // 4. Load user data from database
-$user_id = (int)$_SESSION['id'];
+$user_id = (int)($_SESSION['id'] ?? 0);
 $username = '';
 $user_name = '';
 $first_name = '';
@@ -43,8 +56,10 @@ if ($user_id > 0) {
         $privilege = (int)$user_data['priv'];
         $user_lat = $user_data['lat'] ?: 51.98769228691746;  // Default: HQ coordinates
         $user_lon = $user_data['lon'] ?: 5.876286397679744;
+        $_SESSION['priv'] = $privilege;
     } else {
-        // User no longer exists in DB — destroy session
+        // User no longer exists in DB — clear remember token and destroy session
+        clearCurrentRememberToken($conn);
         session_destroy();
         $redirect = (basename(dirname($_SERVER['SCRIPT_FILENAME'])) === 'admin') ? '../index' : 'index';
         header('Location: ' . $redirect);

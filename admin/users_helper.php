@@ -43,6 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user']) && isset($_PO
 
         if ($stmt_update->execute()) {
             $stmt_update->close();
+            if ($new_priv >= 2 && $current_priv < 2) {
+                clearAllRememberTokensForUser($conn, $target_user_id);
+            }
             header("Location: users?msg=success");
             exit();
         } else {
@@ -83,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_password_user_i
             $stmt_reset = $conn->prepare("UPDATE Gebruikers SET wachtwoord=? WHERE id=?");
             $stmt_reset->bind_param("si", $hashed, $target_user_id);
             if ($stmt_reset->execute()) {
+                clearAllRememberTokensForUser($conn, $target_user_id);
                 $stmt_reset->close();
                 $stmt_target->close();
                 header("Location: users?msg=password_reset");
