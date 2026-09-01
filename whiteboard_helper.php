@@ -40,13 +40,13 @@ if ($action === 'move_user') {
         
         // If becoming driver, remove previous driver of this car
         if ($is_bestuurder) {
-            $s = $conn->prepare("UPDATE Auto_Bijrijders SET is_bestuurder = 0 WHERE auto = ?");
+            $s = $conn->prepare("UPDATE Auto_Bijrijders SET is_driver = 0 WHERE auto = ?");
             $s->bind_param("s", $target_ref);
             $s->execute();
             $s->close();
         }
         
-        $stmt = $conn->prepare("INSERT INTO Auto_Bijrijders (auto, gebruiker_id, is_bestuurder) VALUES (?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO Auto_Bijrijders (auto, gebruiker_id, is_driver) VALUES (?, ?, ?)");
         $stmt->bind_param("sii", $target_ref, $user_id, $is_bestuurder);
         $stmt->execute();
         $stmt->close();
