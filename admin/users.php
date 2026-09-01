@@ -117,8 +117,10 @@ $stmt_users->close();
                   echo "    <div>".htmlspecialchars($row["voornaam"])."<br><span class='opacity-70 text-xs'>".htmlspecialchars($row["achternaam"])."</span></div>";
                   echo "  </td>";
                   echo "  <td class='px-6 py-4 opacity-80'>".htmlspecialchars($row["email"])."</td>";
-                  echo "  <td class='px-6 py-4 opacity-80'>".htmlspecialchars(time2str($row['last_login']))."</td>";
-                  echo "  <td class='px-6 py-4 opacity-80'>".htmlspecialchars(time2str($row['first_login']))."</td>";
+                  $lastLoginTitle = $row['last_login'] ? formatAmsterdamDateTime($row['last_login']) : 'Nooit';
+                  $firstLoginTitle = $row['first_login'] ? formatAmsterdamDateTime($row['first_login']) : 'Nooit';
+                  echo "  <td class='px-6 py-4 opacity-80' title='".htmlspecialchars($lastLoginTitle)."'>".htmlspecialchars(time2str($row['last_login']))."</td>";
+                  echo "  <td class='px-6 py-4 opacity-80' title='".htmlspecialchars($firstLoginTitle)."'>".htmlspecialchars(time2str($row['first_login']))."</td>";
                   
                   echo "  <td class='px-6 py-4 text-right'>";
                   echo "    <form id='priv_form_desk_".$row['id']."' action='users_helper.php' method='POST' class='flex items-center justify-end gap-2'>";
@@ -200,9 +202,11 @@ $stmt_users->close();
                 echo "    </div>";
                 echo "  </div>";
                 
+                $lastLoginTitle = $row['last_login'] ? formatAmsterdamDateTime($row['last_login']) : 'Nooit';
+                $firstLoginTitle = $row['first_login'] ? formatAmsterdamDateTime($row['first_login']) : 'Nooit';
                 echo "  <div class='text-xs opacity-70 mb-4 bg-black/5 p-2 rounded'>";
-                echo "    <p><b>Laatste:</b> ".htmlspecialchars(time2str($row['last_login']))."</p>";
-                echo "    <p><b>Eerste:</b> ".htmlspecialchars(time2str($row['first_login']))."</p>";
+                echo "    <p title='".htmlspecialchars($lastLoginTitle)."'><b>Laatste:</b> ".htmlspecialchars(time2str($row['last_login']))."</p>";
+                echo "    <p title='".htmlspecialchars($firstLoginTitle)."'><b>Eerste:</b> ".htmlspecialchars(time2str($row['first_login']))."</p>";
                 echo "  </div>";
                 
                 echo "  <form id='priv_form_mob_".$row['id']."' action='users_helper.php' method='POST' class='flex items-center gap-2 w-full'>";
