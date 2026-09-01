@@ -97,7 +97,7 @@ CREATE TABLE `Gebruikers` (
   `email` varchar(128) NOT NULL,
   `gebruikersnaam` varchar(128) NOT NULL,
   `wachtwoord` varchar(256) NOT NULL,
-  `telefoon` varchar(12) NOT NULL,
+  `phone` varchar(12) NOT NULL,
   `api` varchar(16) NOT NULL,
   `priv` int(1) NOT NULL,
   `first_login` datetime DEFAULT NULL,

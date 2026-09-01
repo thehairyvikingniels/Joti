@@ -38,7 +38,7 @@ if ($user_id > 0) {
         $first_name = $user_data['voornaam'];
         $last_name = $user_data['achternaam'];
         $email = $user_data['email'];
-        $telefoon = $user_data['telefoon'] ?? '';
+        $telefoon = $user_data['phone'] ?? ($user_data['telefoon'] ?? '');
         $profile_picture = $user_data['profile_picture'] ?? '';
         $privilege = (int)$user_data['priv'];
         $user_lat = $user_data['lat'] ?: 51.98769228691746;  // Default: HQ coordinates

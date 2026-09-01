@@ -38,7 +38,7 @@ if (isset($_POST['pswd1'])){
       
       $hashed_password = password_hash($pswd0, PASSWORD_DEFAULT);
       
-      $stmt_insert = $conn->prepare("INSERT INTO Gebruikers (gebruikersnaam, wachtwoord, api, voornaam, achternaam, email, priv, telefoon) VALUES (?, ?, ?, ?, ?, ?, 0, ?)");
+      $stmt_insert = $conn->prepare("INSERT INTO Gebruikers (gebruikersnaam, wachtwoord, api, voornaam, achternaam, email, priv, phone) VALUES (?, ?, ?, ?, ?, ?, 0, ?)");
       $stmt_insert->bind_param("sssssss", $reg_username, $hashed_password, $api, $first_name, $last_name, $email, $telnum);
       
       if ($stmt_insert->execute()) {
