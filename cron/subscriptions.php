@@ -33,6 +33,41 @@ try {
         throw new Exception("Invalid JSON response.");
     }
 
+    // Scrape CDN group logos from HTML page
+    $scraped_logos = [];
+    $ch_html = curl_init(JOTI_URL . "/subscriptions");
+    curl_setopt($ch_html, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch_html, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch_html, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+    $html = curl_exec($ch_html);
+    curl_close($ch_html);
+
+    if ($html) {
+        $dom = new DOMDocument();
+        @$dom->loadHTML($html);
+        $xpath = new DOMXPath($dom);
+        $rows = $xpath->query('//table//tbody//tr');
+        foreach ($rows as $row) {
+            $imgs = $xpath->query('.//img', $row);
+            $img_src = ($imgs->length > 0) ? $imgs->item(0)->getAttribute('src') : '';
+            $tds = $xpath->query('.//td', $row);
+            if ($tds->length >= 3) {
+                $row_name = trim($tds->item(2)->textContent);
+                $coords = ($tds->length >= 6) ? trim($tds->item(5)->textContent) : '';
+                if ($row_name && $img_src) {
+                    $scraped_logos[mb_strtolower($row_name)] = $img_src;
+                }
+                if ($coords && $img_src) {
+                    $parts = explode(',', $coords);
+                    if (count($parts) === 2) {
+                        $c_key = round((float)trim($parts[0]), 4) . ',' . round((float)trim($parts[1]), 4);
+                        $scraped_logos['coord_' . $c_key] = $img_src;
+                    }
+                }
+            }
+        }
+    }
+
     $a = 1;
     foreach ($data["data"] as $key => $value) {
         $gid = $key + 1;
@@ -45,8 +80,11 @@ try {
         $glon = $value['long'] ?? 0;
         $garea = $value['area'] ?? '';
 
-        $stmt = $conn->prepare("INSERT INTO Groepen (id, naam, gebruikersnaam, straat, huisnummer, postcode, plaats, lat, lon, url, deelgebied) VALUES (?, ?, 'null', ?, ?, ?, ?, ?, ?, 'null', ?) ON DUPLICATE KEY UPDATE deelgebied = ?");
-        $stmt->bind_param("isssssdddss", $gid, $gname, $gstreet, $ghouse, $gpostcode, $gcity, $glat, $glon, $garea, $garea);
+        $c_key = 'coord_' . round((float)$glat, 4) . ',' . round((float)$glon, 4);
+        $gurl = $scraped_logos[mb_strtolower($gname)] ?? $scraped_logos[$c_key] ?? 'null';
+
+        $stmt = $conn->prepare("INSERT INTO Groepen (id, naam, gebruikersnaam, straat, huisnummer, postal_code, plaats, lat, lon, url, deelgebied) VALUES (?, ?, 'null', ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE naam = VALUES(naam), straat = VALUES(straat), huisnummer = VALUES(huisnummer), postal_code = VALUES(postal_code), plaats = VALUES(plaats), lat = VALUES(lat), lon = VALUES(lon), url = VALUES(url), deelgebied = ?");
+        $stmt->bind_param("isssssddsss", $gid, $gname, $gstreet, $ghouse, $gpostcode, $gcity, $glat, $glon, $gurl, $garea, $garea);
         if ($stmt->execute()) {
             log2DB($a . " - " . $gname . "<br>");
         }

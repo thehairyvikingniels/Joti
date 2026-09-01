@@ -38,8 +38,8 @@ CREATE TABLE `Auto` (
 CREATE TABLE `Auto_Bijrijders` (
   `auto` char(8) NOT NULL,
   `gebruiker_id` int(11) NOT NULL,
-  `is_bestuurder` tinyint(1) NOT NULL DEFAULT 0,
-  `instaptijd` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `boarding_time` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `is_driver` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -144,7 +144,7 @@ CREATE TABLE `Groepen` (
   `gebruikersnaam` varchar(5) NOT NULL,
   `straat` varchar(64) NOT NULL,
   `huisnummer` varchar(32) NOT NULL,
-  `postcode` varchar(8) NOT NULL,
+  `postal_code` varchar(10) DEFAULT NULL,
   `plaats` varchar(32) NOT NULL,
   `url` varchar(512) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
