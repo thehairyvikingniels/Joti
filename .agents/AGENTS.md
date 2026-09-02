@@ -57,12 +57,16 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 | 3 | Superadmin | `Test3` | `Test3!!!!!` | Full access, site settings, global notifications |
 
 ### 2.4 Key Files
-- `dblogin.php` ??? Database credentials (gitignored, must set `$conn->set_charset("utf8mb4")`)
-- `includes/auth.php` ??? Session bootstrap (require_once on every page controller)
-- `includes/helpers.php` ??? Shared utility functions and cron loggers
-- `includes/db.php` ??? Parameterized data access layer
-- `includes/globals.php` ??? Site settings and global constants
-- `kiosk.php` ??? Kiosk authentication and status API
+- `dblogin.php` — Database credentials (gitignored, must set `$conn->set_charset("utf8mb4")`)
+- `includes/auth.php` — Session bootstrap (require_once on every page controller)
+- `includes/helpers.php` — Shared utility functions and cron loggers
+- `includes/db.php` — Parameterized data access layer
+- `includes/globals.php` — Site settings and global constants
+- `includes/telegram_bot.php` — Telegram Bot API client class (cURL, webhooks, messages)
+- `includes/telegram_parser.php` — Parser for Jotihunt game messages and broadcast dispatcher
+- `api/telegram_webhook.php` — Inbound webhook for commands and continuous live GPS streaming
+- `services/telegram_listener.py` — MTProto background listener daemon (Telethon)
+- `kiosk.php` — Kiosk authentication and status API
 
 ---
 
@@ -121,6 +125,7 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 | CSS (shared) | `includes/*.css` |
 | API endpoint | `api/*.php` |
 | Cron job | `cron/*.php` |
+| Background daemon / service | `services/*.py` |
 | Database schema | `DB/createDB.sql` |
 | Static assets | `media/` |
 
@@ -176,6 +181,7 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 | `Cronlogs` | `Cron_Logs` |
 | `Notification_Subscriptions` | `Notification_Subscriptions` |
 | `Notification_Backlog` | `Notification_Backlog` |
+| `Telegram_Messages` | `Telegram_Messages` |
 
 ### Common Variable Name Mapping (Legacy ??? New)
 | Legacy | New | Context |
