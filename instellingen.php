@@ -306,6 +306,143 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
         </div>
       </div>
 
+      <!-- Telegram Meldingen (Jagers & Admins) -->
+      <?php if ($privilege >= 1): 
+        // Ensure user has a valid 6-char linking code
+        if (empty($telegram_link_code)) {
+            $codeChars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            $telegram_link_code = substr(str_shuffle(str_repeat($codeChars, 4)), 0, 6);
+            $stmt_init_code = $conn->prepare("UPDATE Gebruikers SET telegram_link_code = ? WHERE id = ?");
+            if ($stmt_init_code) {
+                $stmt_init_code->bind_param("si", $telegram_link_code, $user_id);
+                $stmt_init_code->execute();
+                $stmt_init_code->close();
+            }
+        }
+        $is_linked = !empty($telegram_chat_id) && $telegram_enabled == 1;
+      ?>
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6 flex flex-col justify-between" id="telegram">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold flex items-center gap-2"><i class="fab fa-telegram-plane"></i> <span>Telegram Koppeling & Meldingen</span></h3>
+          <?php if ($is_linked): ?>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-300 border border-green-500/30">
+              <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Gekoppeld
+            </span>
+          <?php else: ?>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              Niet gekoppeld
+            </span>
+          <?php endif; ?>
+        </div>
+        
+        <div class="p-6 flex-1 flex flex-col justify-between space-y-6">
+          <?php if (isset($_GET['t']) && $_GET['t'] == "telegram"): ?>
+            <div class="bg-blue-100 text-blue-800 p-3 rounded-xl flex justify-between items-start">
+              <p class="text-sm font-medium"><?= htmlspecialchars($_GET['e']) ?></p>
+              <button type="button" onclick="this.parentElement.style.display='none'" class="text-blue-500 hover:text-blue-800"><i class="fas fa-times"></i></button>
+            </div>
+          <?php endif; ?>
+
+          <?php if ($is_linked): ?>
+            <!-- Gekoppeld Status Weergave -->
+            <div class="p-4 rounded-xl border bg-green-50/50 border-green-200 dark:bg-green-950/20 dark:border-green-800/40">
+              <div class="flex items-start gap-3">
+                <div class="p-2 rounded-lg bg-green-500 text-white mt-0.5">
+                  <i class="fas fa-check-circle text-lg"></i>
+                </div>
+                <div class="flex-1">
+                  <h4 class="text-sm font-bold text-green-900 dark:text-green-300">Account succesvol gekoppeld!</h4>
+                  <p class="text-xs text-green-800/80 dark:text-green-300/80 mt-1">
+                    Jouw Telegram Chat ID is <code class="font-mono font-bold"><?= htmlspecialchars($telegram_chat_id) ?></code>. Je ontvangt automatische updates van spelgebeurtenissen via de 40-seconden notificatie-wachtrij.
+                  </p>
+                  <p class="text-xs text-green-800/80 dark:text-green-300/80 mt-2 flex items-center gap-1.5">
+                    <i class="fas fa-satellite-dish text-green-600"></i>
+                    <span><strong>Live Locatie:</strong> Deel je live locatie via de paperclip 📎 in Telegram om continu op de kaart zichtbaar te blijven.</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <form method="POST" action="instellingen_helper.php" class="space-y-4">
+              <input type="hidden" name="action" value="update_telegram_toggle">
+              <div class="flex items-center justify-between p-3.5 rounded-xl border theme-override-bg">
+                <div>
+                  <span class="text-sm font-semibold block">Spelmeldingen via Telegram</span>
+                  <span class="text-xs opacity-70">Schakel notificaties tijdelijk uit of in</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" name="telegram_enabled" value="1" <?= $telegram_enabled ? 'checked' : '' ?> onchange="this.form.submit()">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </form>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <a href="https://t.me/JotifyScoutBot" target="_blank" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold shadow-sm transition">
+                <i class="fab fa-telegram-plane"></i> <span>Open @JotifyScoutBot</span>
+              </a>
+              <form method="POST" action="instellingen_helper.php" onsubmit="return confirm('Weet je zeker dat je de koppeling wilt resetten?');">
+                <input type="hidden" name="action" value="reset_telegram">
+                <button type="submit" class="text-xs text-red-500 hover:text-red-700 font-semibold underline p-2">
+                  Koppeling verbreken / opnieuw instellen
+                </button>
+              </form>
+            </div>
+
+          <?php else: ?>
+            <!-- Niet Gekoppeld: 1-Klik Koppelinstructies -->
+            <p class="text-sm opacity-80 leading-relaxed">
+              Koppel je Telegram-account aan <strong>@JotifyScoutBot</strong>. Je ontvangt dan automatisch vossenstatussen, hunt-beoordelingen, en kunt <strong>permanent je live locatie delen</strong> zodat je positie op de kaart blijft bijgewerkt, zelfs met een vergrendelde telefoon!
+            </p>
+
+            <div class="p-5 rounded-xl border text-center theme-override-bg space-y-4">
+              <div>
+                <span class="text-xs uppercase tracking-wider font-semibold opacity-70 block mb-1">Jouw Persoonlijke Koppelcode</span>
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg border font-mono text-2xl font-black tracking-widest text-blue-600 dark:text-blue-400">
+                  <span><?= htmlspecialchars($telegram_link_code) ?></span>
+                  <button type="button" onclick="navigator.clipboard.writeText('<?= htmlspecialchars($telegram_link_code) ?>'); alert('Code gekopieerd!');" class="text-xs opacity-60 hover:opacity-100 p-1" title="Kopieer code">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <a href="https://t.me/JotifyScoutBot?start=<?= urlencode($telegram_link_code) ?>" target="_blank" class="inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-bold text-sm shadow-md transition transform active:scale-95">
+                  <i class="fab fa-telegram-plane text-lg"></i> <span>Koppel direct met Telegram (1-klik)</span>
+                </a>
+              </div>
+
+              <div class="text-xs opacity-70 space-y-1 text-left max-w-md mx-auto pt-2 border-t border-gray-200/60 dark:border-gray-700/60">
+                <p class="font-semibold">Of koppel handmatig:</p>
+                <p>1. Open <a href="https://t.me/JotifyScoutBot" target="_blank" class="text-blue-500 font-bold hover:underline">@JotifyScoutBot</a> in Telegram.</p>
+                <p>2. Stuur het commando: <code class="font-mono bg-gray-200/60 dark:bg-gray-700 px-1 py-0.5 rounded">/start <?= htmlspecialchars($telegram_link_code) ?></code></p>
+                <p>3. Druk op Verzenden. Je account is direct gekoppeld!</p>
+              </div>
+            </div>
+
+            <!-- Geavanceerde fallback: Handmatig Chat ID invullen -->
+            <details class="text-xs opacity-70 cursor-pointer pt-1">
+              <summary class="font-semibold hover:opacity-100">Geavanceerd: Handmatig numeriek Chat ID invullen</summary>
+              <form method="POST" action="instellingen_helper.php" class="mt-3 p-3 rounded-xl border theme-override-bg space-y-3">
+                <input type="hidden" name="action" value="update_telegram">
+                <div>
+                  <label class="block text-xs font-semibold mb-1">Telegram Chat ID (Numeriek)</label>
+                  <input name="telegram_chat_id" type="text" value="<?= htmlspecialchars($telegram_chat_id) ?>" placeholder="Bijv. 123456789" class="w-full theme-override-bg theme-override-text border rounded-lg px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-blue-500">
+                </div>
+                <div class="flex justify-between items-center">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="telegram_enabled" value="1" <?= $telegram_enabled ? 'checked' : '' ?>>
+                    <span>Meldingen inschakelen</span>
+                  </label>
+                  <button type="submit" class="px-3 py-1.5 rounded-lg bg-gray-700 text-white font-semibold text-xs hover:bg-gray-800">Opslaan</button>
+                </div>
+              </form>
+            </details>
+          <?php endif; ?>
+        </div>
+      </div>
+      <?php endif; ?>
+
     </div>
   </main>
 

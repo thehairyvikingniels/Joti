@@ -124,38 +124,36 @@ if ('serviceWorker' in navigator) {
 <?php endif; ?>
 
 <script>
-// Universal Modal Esc & Backdrop Click Handler
+// Universal Modal Open & Close Utilities
+function openModal(el) {
+    const modal = (typeof el === 'string') ? document.getElementById(el) : el;
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.removeProperty('display');
+    }
+}
+
 function closeModal(el) {
     if (!el) {
-        document.querySelectorAll('.modal-backdrop, [id*="modal"], [id*="Modal"]').forEach(function(m) {
-            if (!m.classList.contains('hidden') && (m.classList.contains('fixed') || m.style.display === 'block' || m.style.display === 'flex')) {
-                m.classList.add('hidden');
-                m.style.display = 'none';
-            }
+        document.querySelectorAll('.modal-backdrop, [id*="modal"], [id*="Modal"], [role="dialog"]').forEach(function(m) {
+            m.classList.add('hidden');
+            m.style.removeProperty('display');
         });
         return;
     }
-    if (typeof el === 'string') {
-        const target = document.getElementById(el);
-        if (target) {
-            target.classList.add('hidden');
-            target.style.display = 'none';
-        }
-        return;
-    }
-    const modal = el.closest('.modal-backdrop, [role="dialog"], .fixed.inset-0') || el;
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.style.display = 'none';
+    const target = (typeof el === 'string') ? document.getElementById(el) : (el.closest('.modal-backdrop, [role="dialog"], .fixed.inset-0') || el);
+    if (target) {
+        target.classList.add('hidden');
+        target.style.removeProperty('display');
     }
 }
 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         document.querySelectorAll('.modal-backdrop, [id*="modal"], [id*="Modal"], [role="dialog"]').forEach(function(m) {
-            if (!m.classList.contains('hidden') && (m.classList.contains('fixed') || m.style.display === 'block' || m.style.display === 'flex')) {
+            if (!m.classList.contains('hidden')) {
                 m.classList.add('hidden');
-                m.style.display = 'none';
+                m.style.removeProperty('display');
             }
         });
     }
@@ -164,7 +162,7 @@ document.addEventListener('keydown', function(e) {
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('modal-backdrop') || (e.target.classList.contains('fixed') && e.target.classList.contains('inset-0') && !e.target.classList.contains('hidden'))) {
         e.target.classList.add('hidden');
-        e.target.style.display = 'none';
+        e.target.style.removeProperty('display');
     }
 });
 </script>

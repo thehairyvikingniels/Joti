@@ -132,8 +132,14 @@ def main():
             },
             "hunts": [],
             "opdrachten": [],
-            "foto_opdrachten": []
+            "foto_opdrachten": [],
+            "telegram_code": None
         }
+
+        # Look for Telegram registration code e.g. "/register ev8Noa"
+        telegram_match = re.search(r'/register\s+([A-Za-z0-9]+)', dashboard_page.text)
+        if telegram_match:
+            scraped_data["telegram_code"] = telegram_match.group(1)
 
         deelgebied_header = dashboard_soup.find('h1', string=re.compile("Deelgebieden", re.IGNORECASE))
         if deelgebied_header:

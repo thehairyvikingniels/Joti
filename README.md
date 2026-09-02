@@ -34,6 +34,48 @@ For use by all members of a scout group and associates. Groups may fork the repo
 - DB credentials are stored in dblogin.php. Change them to match your environment.
 - No external API is currently provided by the system.
 
+### Telegram Integration Setup (Bot API & MTProto Daemon)
+
+Jotify includes a complete bidirectional Telegram integration:
+1. **Interactive Telegram Bot (`@JotifyScoutBot`)**: Handles permanent GPS live location streaming, outbound game alerts (via the 40-second cron queue), 1-click hunter self-registration, and bot commands (`/status`, `/vossen`, `/score`, `/help`).
+2. **MTProto Listener Daemon (`services/telegram_listener.py`)**: Intercepts official game alerts in real time (<300ms) from `@Jotihunt_bot` on the team's paired Telegram user account.
+
+#### 1. Telegram Bot API Setup
+1. Open [@BotFather](https://t.me/BotFather) on Telegram and create your bot using `/newbot`.
+2. Copy the HTTP API token provided by BotFather.
+3. In Jotify, go to **Admin → Instellingen** and save the token under `TELEGRAM_BOT_TOKEN`.
+4. Go to **Admin → Telegram**:
+   - Click **Token Testen** to verify authorization.
+   - Click **Webhook Registreren** to register `https://your-domain/api/telegram_webhook.php` with Telegram.
+5. Hunters can now link their accounts in **Instellingen → Telegram** using the 1-click link button or `/start <CODE>`.
+6. Hunters can share their real-time location continuously by sending a **Live Locatie** via the Telegram paperclip 📎 menu in the bot chat.
+
+#### 2. MTProto User Account Daemon Setup
+To automatically intercept official messages sent by `@Jotihunt_bot` to your team account:
+1. Go to [my.telegram.org](https://my.telegram.org) → **API development tools** and create an app.
+2. Note your `App api_id` and `App api_hash`.
+3. Save these in **Admin → Instellingen** under `TELEGRAM_API_ID` and `TELEGRAM_API_HASH` (or in `Site_Instellingen`).
+4. Install Python dependencies on your server:
+   ```bash
+   pip3 install telethon
+   ```
+5. Authenticate the user account once via terminal:
+   ```bash
+   python3 /var/www/Joti/services/setup_session.py
+   ```
+   Follow the prompt to enter your phone number and login verification code.
+6. Install and start the background daemon:
+   ```bash
+   cp /var/www/Joti/services/jotify-telegram-listener.service /etc/systemd/system/
+   systemctl daemon-reload
+   systemctl enable --now jotify-telegram-listener
+   ```
+7. Check the daemon status:
+   ```bash
+   systemctl status jotify-telegram-listener
+   journalctl -u jotify-telegram-listener -f
+   ```
+
 ### Database & seeds
 - The DB schema lives in DB/createDB.sql. Import that to create tables.
 - No automated seeding beyond the SQL file; create users and set priv manually as needed.

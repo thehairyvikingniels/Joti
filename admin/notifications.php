@@ -2,6 +2,8 @@
 // Administrative dashboard for composing and dispatching web push notifications and viewing the notification backlog.
 define("PAGE_NAME", "sa_notifications");
 require_once(__DIR__ . '/../includes/auth.php');
+require_once(__DIR__ . '/../includes/telegram_parser.php');
+
 // Check admin privileges
 if ($privilege < 2){
   header("Location: ../home");
@@ -14,16 +16,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $message = $_POST['message'] ?? '';
     $url = $_POST['url'] ?? '/';
     $target_users = $_POST['users'] ?? [];
+    $send_telegram = !empty($_POST['send_telegram']);
     
-    if (!empty($title) && !empty($message) && !empty($target_users)) {
-        if (in_array('ALL', $target_users)) {
-            send_push_notification('ALL', $title, $message, $url, 'admin/notifications');
-        } else {
-            send_push_notification($target_users, $title, $message, $url, 'admin/notifications');
+    if (!empty($title) && !empty($message) && (!empty($target_users) || $send_telegram)) {
+        if (!empty($target_users)) {
+            if (in_array('ALL', $target_users)) {
+                send_push_notification('ALL', $title, $message, $url, 'admin/notifications');
+            } else {
+                send_push_notification($target_users, $title, $message, $url, 'admin/notifications');
+            }
         }
-        $success_msg = "Notificatie is in de wachtrij geplaatst.";
+        
+        $tg_info = '';
+        if ($send_telegram) {
+            $tg_count = send_telegram_broadcast_notification($conn, $title, $message, $url);
+            $tg_info = " Tevens verzonden naar {$tg_count} gekoppelde Telegram ontvanger(s).";
+        }
+        $success_msg = "Notificatie is succesvol verwerkt." . $tg_info;
     } else {
-        $error_msg = "Vul alle velden in en selecteer minimaal één gebruiker.";
+        $error_msg = "Vul alle velden in en selecteer minimaal één gebruiker of kies Telegram.";
     }
 }
 
@@ -49,6 +60,7 @@ $backlogRes = $stmt_backlog->get_result();
     <title>Notificaties - <?php echo htmlspecialchars($site_settings['GROUP_ID'] ? 'Jotify' : 'Jotify'); ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../includes/switch.css">
     <?php include_once('../includes/theme.php'); ?>
 </head>
 <body class="flex h-screen overflow-hidden bg-gray-50 text-gray-900">
@@ -83,7 +95,7 @@ $backlogRes = $stmt_backlog->get_result();
                     <h3 class="text-xl font-bold"><i class="fas fa-paper-plane mr-2"></i> Nieuwe Notificatie Versturen</h3>
                 </div>
                 <div class="p-6">
-                    <form method="POST" action="notifications.php">
+                    <form method="POST" action="notifications">
                         <input type="hidden" name="action" value="send_push">
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -134,6 +146,21 @@ $backlogRes = $stmt_backlog->get_result();
                                 </div>
                                 <p class="text-xs opacity-60 mt-1">Alleen gebruikers die permissie hebben gegeven in hun browser worden hier weergegeven.</p>
                             </div>
+                        </div>
+
+                        <!-- Telegram Broadcast Toggle Option -->
+                        <div class="mt-6 p-4 rounded-xl border flex items-center justify-between theme-override-bg" style="border-color: var(--theme-card-border);">
+                            <div class="flex items-center space-x-3">
+                                <i class="fab fa-telegram text-blue-500 text-2xl"></i>
+                                <div>
+                                    <span class="text-sm font-semibold block">Tevens verzenden via Telegram</span>
+                                    <span class="text-xs opacity-70">Stuur dit bericht ook door naar alle gekoppelde Telegram gebruikers en de centrale groep</span>
+                                </div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" name="send_telegram" value="1" checked>
+                                <span class="slider"></span>
+                            </label>
                         </div>
                         
                         <div class="mt-6">

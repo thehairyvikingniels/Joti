@@ -9,7 +9,7 @@ function showToken(token, id) {
     if (display) display.value = fullUrl;
     if (regenId) regenId.value = id;
     const modal = document.getElementById("tokenModal");
-    if (modal) modal.classList.remove("hidden");
+    openModal(modal);
 }
 
 function showDeleteModal(id, naam) {
@@ -18,7 +18,7 @@ function showDeleteModal(id, naam) {
     if (delId) delId.value = id;
     if (delName) delName.textContent = naam;
     const modal = document.getElementById("deleteModal");
-    if (modal) modal.classList.remove("hidden");
+    openModal(modal);
 }
 
 function copyToken() {
@@ -56,7 +56,7 @@ function openCreateModal() {
     const refresh = document.getElementById("formRefresh");
     if (refresh) refresh.value = "0";
     const modal = document.getElementById("createModal");
-    if (modal) modal.classList.remove("hidden");
+    openModal(modal);
 }
 
 function editAccount(account) {
@@ -77,10 +77,10 @@ function editAccount(account) {
     const refresh = document.getElementById("formRefresh");
     if (refresh) refresh.value = account.refresh_interval || 0;
     const modal = document.getElementById("createModal");
-    if (modal) modal.classList.remove("hidden");
+    openModal(modal);
 }
 
 function closeEditModal() {
     const modal = document.getElementById("createModal");
-    if (modal) modal.classList.add("hidden");
+    closeModal(modal);
 }

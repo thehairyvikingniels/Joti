@@ -7,6 +7,7 @@ $output = "";
 
 require_once(__DIR__ . '/../vendor/autoload.php');
 require_once(__DIR__ . '/../dblogin.php');
+require_once(__DIR__ . '/../includes/telegram_bot.php');
 
 $datumtijd = date('Y-m-d H:i:s');
 
@@ -24,6 +25,12 @@ $stmt_settings->close();
 
 $publicKey = $site_settings['VAPID_PUBLIC_KEY'] ?? '';
 $privateKey = $site_settings['VAPID_PRIVATE_KEY'] ?? '';
+$telegramGroupChat = $site_settings['TELEGRAM_GROUP_CHAT_ID'] ?? '';
+
+$tgBot = new TelegramBot($conn, $site_settings['TELEGRAM_BOT_TOKEN'] ?? null);
+$tgConfigured = $tgBot->isConfigured();
+$tgSentCount = 0;
+$tgFailedCount = 0;
 
 if (empty($publicKey) || empty($privateKey)) {
     log2DB("Error: VAPID keys are missing.");
@@ -113,12 +120,41 @@ while ($notification = $res->fetch_assoc()) {
     
     // Mark this individual backlog row as sent or failed
     $final_status = ($attempted_for_user && $success_for_user) ? 'sent' : 'failed';
+
+    // Dispatch via Telegram Bot API if configured and user has telegram enabled
+    if ($tgConfigured) {
+        $stmt_tg = $conn->prepare("SELECT telegram_chat_id, telegram_enabled, priv FROM Gebruikers WHERE id = ?");
+        if ($stmt_tg) {
+            $stmt_tg->bind_param("i", $user_id);
+            $stmt_tg->execute();
+            $tgUser = $stmt_tg->get_result()->fetch_assoc();
+            $stmt_tg->close();
+
+            if ($tgUser && (int)$tgUser['telegram_enabled'] === 1 && !empty($tgUser['telegram_chat_id']) && (int)$tgUser['priv'] >= 1) {
+                $attempted_for_user = true;
+                $cleanTitle = str_replace(['*', '_', '`', '['], '', $notification['title']);
+                $tgText = "📢 *{$cleanTitle}*\n\n" . $notification['message'];
+                if (!empty($notification['url']) && $notification['url'] !== '/') {
+                    $cleanUrl = str_starts_with($notification['url'], '/') ? $notification['url'] : '/' . $notification['url'];
+                    $tgText .= "\n\n🔗 [Openen in Jotify](https://joti.maarleveld.app{$cleanUrl})";
+                }
+                $resTg = $tgBot->sendMessage($tgUser['telegram_chat_id'], $tgText);
+                if ($resTg['ok'] ?? false) {
+                    $tgSentCount++;
+                    $final_status = 'sent';
+                } else {
+                    $tgFailedCount++;
+                    log2DB("[TG] Fout bij verzenden naar chat {$tgUser['telegram_chat_id']}: " . ($resTg['description'] ?? 'Onbekende fout') . "\n");
+                }
+            }
+        }
+    }
     
     $updateStmt->bind_param("si", $final_status, $notification['id']);
     $updateStmt->execute();
 }
 
-log2DB("Finished processing. Success: {$sentCount}, Failed: {$failedCount}.");
+log2DB("Finished processing. WebPush: Success {$sentCount}, Failed {$failedCount} | Telegram: Success {$tgSentCount}, Failed {$tgFailedCount}.");
 recordCronLog($conn, NAME, START_TIME, $output, 200);
 $conn->close();
 

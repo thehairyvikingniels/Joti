@@ -9,3 +9,9 @@ media/tegenhunt/*
 
 media/hunts/*
 !media/hunts/.gitkeep
+
+# Telegram session files
+*.session
+*.session-journal
+services/*.session
+

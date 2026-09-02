@@ -1,5 +1,5 @@
 /**
- * js/admin_database.js ??? Table sorting and edit/delete modal interactions for database manager.
+ * js/admin_database.js - Table sorting and edit/delete modal interactions for database manager.
  */
 
 const sortDirections = {};
@@ -47,26 +47,12 @@ function openEditModal(data) {
     if (document.getElementById("edit_coordinaat_y")) document.getElementById("edit_coordinaat_y").value = data.coordinaat_y || '';
     if (document.getElementById("edit_code")) document.getElementById("edit_code").value = data.code || '';
     if (document.getElementById("edit_opmerking")) document.getElementById("edit_opmerking").value = data.opmerking || '';
-    const modal = document.getElementById("editModal");
-    if (modal) {
-        modal.classList.remove("hidden");
-        modal.style.display = "flex";
-    }
+    
+    openModal("editModal");
 }
 
 function openDeleteModal(id) {
     const deleteLink = document.getElementById("deleteLink");
     if (deleteLink) deleteLink.href = `../functies.php?verwijder_voslocatie=${id}`;
-    const modal = document.getElementById("deleteModal");
-    if (modal) {
-        modal.classList.remove("hidden");
-        modal.style.display = "flex";
-    }
-}
-
-function openDeleteModal(id) {
-    const deleteLink = document.getElementById("deleteLink");
-    if (deleteLink) deleteLink.href = `../functies.php?verwijder_voslocatie=${id}`;
-    const modal = document.getElementById("deleteModal");
-    if (modal) modal.classList.remove("hidden");
+    openModal("deleteModal");
 }

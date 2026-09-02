@@ -98,6 +98,9 @@ CREATE TABLE `Gebruikers` (
   `gebruikersnaam` varchar(128) NOT NULL,
   `wachtwoord` varchar(256) NOT NULL,
   `phone` varchar(12) NOT NULL,
+  `telegram_chat_id` varchar(64) DEFAULT NULL,
+  `telegram_enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `telegram_link_code` varchar(16) DEFAULT NULL,
   `api` varchar(16) NOT NULL,
   `priv` int(1) NOT NULL,
   `first_login` datetime DEFAULT NULL,
@@ -239,7 +242,15 @@ INSERT INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) VALUES
 ('GROUP_URL', 'https://example.com/', 'The URL of the scout group using this website. '),
 ('JOTIHUNT_CREDENTIALS',	'{\"username\":\"example@domain.com\",\"password\":\"example_password\"}',	'Credentials of the official Jotihunt website in JSON format.'),
 ('REMEMBER_ME_HOURS', '72', 'Aantal uur dat een normale gebruiker (priv 0-1) ingelogd kan blijven. 0 = uitgeschakeld.'),
-('REMEMBER_ME_HOURS_ADMIN', '24', 'Aantal uur dat een admin (priv 2-3) ingelogd kan blijven. 0 = uitgeschakeld.');
+('REMEMBER_ME_HOURS_ADMIN', '24', 'Aantal uur dat een admin (priv 2-3) ingelogd kan blijven. 0 = uitgeschakeld.'),
+('HAPPY_HOUR', '0', 'Active status flag for Jotihunt Happy Hour indicating double points for fox locations (0 or 1).'),
+('TELEGRAM_API_ID', '0', 'Telegram API App ID from my.telegram.org for MTProto listener authentication.'),
+('TELEGRAM_API_HASH', 'placeholder_api_hash', 'Telegram API App Hash from my.telegram.org for MTProto listener authentication.'),
+('TELEGRAM_GROUP_CHAT_ID', '-1001234567890', 'Central Telegram group or channel chat ID where all game messages are forwarded.'),
+('TELEGRAM_FORWARD_MODE', 'forward', 'Delivery mode for subscriber messages: forward (keeps bot header) or relay (clean text).'),
+('TELEGRAM_INGEST_SECRET', 'placeholder_secret', 'Shared secret token required to authorize incoming Webhook and MTProto ingest requests.'),
+('TELEGRAM_REGISTRATION_CODE', 'placeholder_code', 'Latest registration token scraped from the Jotihunt portal used to pair with @Jotihunt_bot.'),
+('TELEGRAM_BOT_TOKEN', '123456789:ABCdefGHIjklMNOpqrSTUvwxYZ', 'Optional Telegram Bot API token from @BotFather used for sending outbound broadcast notifications.');
 
 -- --------------------------------------------------------
 
@@ -528,6 +539,26 @@ CREATE TABLE IF NOT EXISTS `Tegenhunt_Breadcrumbs` (
   CONSTRAINT `Tegenhunt_Breadcrumbs_ibfk_1` FOREIGN KEY (`session_id`) REFERENCES `Tegenhunt_Sessions` (`id`) ON DELETE CASCADE,
   CONSTRAINT `Tegenhunt_Breadcrumbs_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Tabelstructuur voor tabel `Telegram_Messages`
+--
+
+CREATE TABLE IF NOT EXISTS `Telegram_Messages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `telegram_message_id` bigint(20) DEFAULT NULL,
+  `sender` varchar(64) NOT NULL DEFAULT '@Jotihunt_bot',
+  `message_text` text NOT NULL,
+  `parsed_type` varchar(32) NOT NULL DEFAULT 'unknown',
+  `parsed_payload` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `forwarded_to` text DEFAULT NULL,
+  `processed` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_telegram_msg_id` (`telegram_message_id`),
+  KEY `idx_parsed_type` (`parsed_type`),
+  KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 COMMIT;
 

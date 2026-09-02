@@ -208,7 +208,7 @@ $stmt_groups->close();
                         </div>
                     <?php else: ?>
                         <div class="flex-1 min-w-0">
-                            <input class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" type="text" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" value="<?php echo htmlspecialchars($setting['Waarde']); ?>" required>
+                            <input class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" type="text" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" value="<?php echo htmlspecialchars($setting['Waarde']); ?>">
                         </div>
                     <?php endif; ?>
                     
