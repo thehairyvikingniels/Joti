@@ -34,6 +34,9 @@ function goToStep(step) {
     }
 
     currentStep = step;
+    if (step === 4 && fetchedGroupsList.length === 0) {
+        fetchJotihuntGroups();
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -228,8 +231,144 @@ async function submitAdmin(e) {
 }
 
 // =============================================================================
-// 4. Jotihunt Scraping & Live API Validation
+// 4. Jotihunt Scraping, Group Selection & Logo Upload
 // =============================================================================
+let fetchedGroupsList = [];
+
+async function fetchJotihuntGroups() {
+    const btn = document.getElementById('btn-fetch-groups');
+    const statusBox = document.getElementById('group-fetch-status');
+    const select = document.getElementById('group_select');
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Ophalen...';
+    }
+    if (statusBox) {
+        statusBox.classList.remove('hidden');
+        statusBox.className = 'text-xs text-blue-400 mt-1 block';
+        statusBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Deelnemende groepen ophalen van Jotihunt.nl API...';
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'fetch_jotihunt_groups');
+        const resp = await fetch('install_helper.php', { method: 'POST', body: formData });
+        const data = await resp.json();
+
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down mr-1"></i> Haal Groepen Op';
+        }
+
+        if (data.ok && data.groups && data.groups.length > 0) {
+            fetchedGroupsList = data.groups;
+            if (select) {
+                select.innerHTML = '';
+                data.groups.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g.id;
+                    opt.dataset.name = g.name;
+                    opt.dataset.city = g.city || '';
+                    opt.dataset.area = g.area || '';
+                    opt.textContent = `${g.id} - ${g.name} (${g.city || g.area || 'Gelderland'})`;
+                    select.appendChild(opt);
+                });
+
+                const optManual = document.createElement('option');
+                optManual.value = 'custom';
+                optManual.textContent = '+ Handmatig ander groepsnummer invoeren';
+                select.appendChild(optManual);
+
+                onGroupSelect(select);
+            }
+
+            if (statusBox) {
+                statusBox.className = 'text-xs text-emerald-400 mt-1 block font-medium';
+                statusBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> ${data.count} groepen succesvol opgehaald en gesynchroniseerd!`;
+            }
+        } else {
+            if (statusBox) {
+                statusBox.className = 'text-xs text-amber-400 mt-1 block';
+                statusBox.innerHTML = '<i class="fa-solid fa-info-circle mr-1"></i> Geen groepen gevonden op API. Standaard placeholder groep ingesteld.';
+            }
+        }
+    } catch (err) {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down mr-1"></i> Haal Groepen Op';
+        }
+        if (statusBox) {
+            statusBox.className = 'text-xs text-red-400 mt-1 block';
+            statusBox.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Fout bij ophalen: ' + err.message;
+        }
+    }
+}
+
+function onGroupSelect(select) {
+    const val = select.value;
+    const selectedOpt = select.options[select.selectedIndex];
+    const idInput = document.getElementById('group_id');
+    const nameInput = document.getElementById('group_name');
+
+    if (val === 'custom') {
+        if (idInput) idInput.focus();
+        return;
+    }
+
+    if (idInput) idInput.value = val;
+    if (nameInput && selectedOpt && selectedOpt.dataset.name) {
+        nameInput.value = selectedOpt.dataset.name;
+    }
+}
+
+async function uploadLogoFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const statusEl = document.getElementById('logo-upload-status');
+    const btn = document.getElementById('btn-upload-logo');
+    const preview = document.getElementById('logo_preview');
+    const urlInput = document.getElementById('group_logo_large_url');
+
+    if (statusEl) {
+        statusEl.classList.remove('hidden');
+        statusEl.className = 'text-xs text-blue-400 mt-1';
+        statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Logo uploaden...';
+    }
+    if (btn) btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('action', 'upload_logo');
+    formData.append('logo_file', file);
+
+    try {
+        const resp = await fetch('install_helper.php', { method: 'POST', body: formData });
+        const data = await resp.json();
+        if (btn) btn.disabled = false;
+
+        if (data.ok && data.file_url) {
+            if (statusEl) {
+                statusEl.className = 'text-xs text-emerald-400 font-medium mt-1';
+                statusEl.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> ' + data.message;
+            }
+            if (urlInput) urlInput.value = data.file_url;
+            if (preview) preview.src = data.file_url;
+        } else {
+            if (statusEl) {
+                statusEl.className = 'text-xs text-red-400 mt-1';
+                statusEl.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> ' + (data.error || 'Upload mislukt');
+            }
+        }
+    } catch (err) {
+        if (btn) btn.disabled = false;
+        if (statusEl) {
+            statusEl.className = 'text-xs text-red-400 mt-1';
+            statusEl.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> Fout: ' + err.message;
+        }
+    }
+}
+
 async function scrapeJotihuntPortal() {
     const user = document.getElementById('joti_user').value.trim();
     const pass = document.getElementById('joti_pass').value.trim();
@@ -262,7 +401,34 @@ async function scrapeJotihuntPortal() {
             statusBox.className = 'text-xs mt-2 p-2.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 block';
             statusBox.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> Gegevens succesvol opgehaald van Jotihunt.nl!';
 
-            if (data.group_id) document.getElementById('group_id').value = data.group_id;
+            if (data.group_name) {
+                const nameInput = document.getElementById('group_name');
+                if (nameInput) nameInput.value = data.group_name;
+            }
+            if (data.group_id) {
+                const idInput = document.getElementById('group_id');
+                if (idInput) idInput.value = data.group_id;
+
+                const select = document.getElementById('group_select');
+                if (select) {
+                    let found = false;
+                    for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i].value == data.group_id) {
+                            select.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found && data.group_name) {
+                        const opt = document.createElement('option');
+                        opt.value = data.group_id;
+                        opt.dataset.name = data.group_name;
+                        opt.textContent = `${data.group_id} - ${data.group_name}`;
+                        select.insertBefore(opt, select.firstChild);
+                        select.selectedIndex = 0;
+                    }
+                }
+            }
             if (data.group_url) document.getElementById('group_url').value = data.group_url;
         } else {
             statusBox.className = 'text-xs mt-2 p-2.5 rounded bg-red-500/10 border border-red-500/30 text-red-400 block';
@@ -329,6 +495,7 @@ async function submitSettings(e) {
     const formData = new FormData();
     formData.append('action', 'save_settings');
     formData.append('group_id', document.getElementById('group_id').value);
+    formData.append('group_name', document.getElementById('group_name') ? document.getElementById('group_name').value : '');
     formData.append('group_url', document.getElementById('group_url').value);
     formData.append('group_logo_large_url', document.getElementById('group_logo_large_url').value);
     formData.append('api_key_mapbox', document.getElementById('api_key_mapbox').value);

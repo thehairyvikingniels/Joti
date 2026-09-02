@@ -31,18 +31,29 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
-// Get points for Geuzen
-$stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')");
-$stmt->execute();
-$result = $stmt->get_result();
+// Get points for group
+$my_group_id = (int)($site_settings['GROUP_ID'] ?? 0);
+$total_points = 0;
+$rank = "?";
 
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-    $total_points = ($row['hunts'] ?? 0) + ($row['tegenhunts'] ?? 0) + ($row['opdrachten'] ?? 0) + ($row['foto_opdrachten'] ?? 0) + ($row['hints'] ?? 0) - ($row['strafpunten'] ?? 0);
-    $rank = $row['plaats'] ?? "?";
-  }
+if ($my_group_id > 0) {
+    $stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = ?");
+    $stmt->bind_param("i", $my_group_id);
+} else {
+    $stmt = $conn->prepare("SELECT * FROM Punten ORDER BY (COALESCE(hunts,0) + COALESCE(tegenhunts,0) + COALESCE(opdrachten,0) + COALESCE(foto_opdrachten,0) + COALESCE(hints,0) + COALESCE(bonus,0) - COALESCE(strafpunten,0)) DESC LIMIT 1");
 }
-$stmt->close();
+if ($stmt) {
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result && $result->num_rows > 0) {
+      while($row = $result->fetch_assoc()) {
+        $total_points = ($row['hunts'] ?? 0) + ($row['tegenhunts'] ?? 0) + ($row['opdrachten'] ?? 0) + ($row['foto_opdrachten'] ?? 0) + ($row['hints'] ?? 0) + ($row['bonus'] ?? 0) - ($row['strafpunten'] ?? 0);
+        $rank = $row['plaats'] ?? "?";
+      }
+    }
+    $stmt->close();
+}
 ?>
 
 <!DOCTYPE html>

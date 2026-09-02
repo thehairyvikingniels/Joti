@@ -217,11 +217,11 @@ if (file_exists($lockFile)) {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">Voornaam</label>
-                        <input type="text" id="admin_voornaam" required placeholder="Bijv. Niels" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                        <input type="text" id="admin_voornaam" required placeholder="Bijv. Jan" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">Achternaam</label>
-                        <input type="text" id="admin_achternaam" required placeholder="Bijv. Maarleveld" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                        <input type="text" id="admin_achternaam" required placeholder="Bijv. Vossen" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
                     </div>
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">E-mailadres</label>
@@ -293,23 +293,60 @@ if (file_exists($lockFile)) {
                     <div id="scrape-status" class="hidden text-xs mt-2 p-2 rounded bg-slate-800/80 border border-slate-700"></div>
                 </div>
 
-                <!-- Card 2: Group Identity -->
-                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700 space-y-3">
-                    <h3 class="text-sm font-semibold text-blue-400 flex items-center gap-2">
-                        <i class="fa-solid fa-campground"></i> Scoutinggroep Identiteit
-                    </h3>
+                <!-- Card 2: Group Identity & Logo -->
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-blue-400 flex items-center gap-2">
+                            <i class="fa-solid fa-campground"></i> Scoutinggroep Identiteit
+                        </h3>
+                        <button type="button" onclick="fetchJotihuntGroups()" id="btn-fetch-groups" class="bg-blue-600/80 hover:bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-cloud-arrow-down"></i>
+                            <span>Haal Groepen Op van Jotihunt</span>
+                        </button>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs text-slate-400 mb-1">Selecteer Scoutinggroep</label>
+                            <select id="group_select" onchange="onGroupSelect(this)" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                                <option value="1" data-name="Mijn Scoutinggroep" data-city="Arnhem">1 - Mijn Scoutinggroep (Standaard / Handmatig)</option>
+                            </select>
+                            <div id="group-fetch-status" class="text-xs text-slate-400 mt-1 hidden"></div>
+                        </div>
                         <div>
-                            <label class="block text-xs text-slate-400 mb-1">Groeps-ID (Jotihunt Nummer)</label>
-                            <input type="number" id="group_id" value="0" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white">
+                            <label class="block text-xs text-slate-400 mb-1">Groeps-ID (Nummer)</label>
+                            <input type="number" id="group_id" value="1" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Groepsnaam</label>
+                            <input type="text" id="group_name" value="Mijn Scoutinggroep" placeholder="Bijv. Scouting De Vossen" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
                         </div>
                         <div>
                             <label class="block text-xs text-slate-400 mb-1">Website URL</label>
-                            <input type="url" id="group_url" value="https://example.com/" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white">
+                            <input type="url" id="group_url" value="https://scouting.nl" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
                         </div>
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">Groepslogo URL</label>
-                            <input type="text" id="group_logo_large_url" value="media/geusje_bevosd.png" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white">
+                    </div>
+
+                    <!-- Logo Upload & Selector -->
+                    <div class="pt-2 border-t border-slate-800">
+                        <label class="block text-xs text-slate-400 mb-2">Groepslogo</label>
+                        <div class="flex flex-wrap items-center gap-4">
+                            <img id="logo_preview" src="media/geusje_bevosd.png" alt="Logo preview" class="w-14 h-14 object-contain bg-slate-800 rounded-xl p-1 border border-slate-600 shadow-inner">
+                            <div class="space-y-1.5 flex-grow">
+                                <div class="flex items-center gap-2">
+                                    <input type="file" id="group_logo_file" accept="image/png,image/jpeg,image/svg+xml,image/webp" class="hidden" onchange="uploadLogoFile(event)">
+                                    <button type="button" onclick="document.getElementById('group_logo_file').click()" id="btn-upload-logo" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-upload"></i>
+                                        <span>Upload Eigen Logo</span>
+                                    </button>
+                                    <span class="text-xs text-slate-400">of voer een pad / URL in:</span>
+                                </div>
+                                <input type="text" id="group_logo_large_url" value="media/geusje_bevosd.png" onchange="document.getElementById('logo_preview').src = this.value" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono">
+                                <div id="logo-upload-status" class="text-xs hidden"></div>
+                            </div>
                         </div>
                     </div>
                 </div>

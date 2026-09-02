@@ -81,7 +81,7 @@ if (isset($_POST['pswd1'])){
   $username = $_POST['username'];
   $pswd = $_POST['pswd'];
 
-  $stmt_login = $conn->prepare("SELECT id, priv, wachtwoord, theme FROM Gebruikers WHERE gebruikersnaam = ? OR email = ?");
+  $stmt_login = $conn->prepare("SELECT id, priv, wachtwoord, theme, voornaam, achternaam, gebruikersnaam FROM Gebruikers WHERE gebruikersnaam = ? OR email = ?");
   $stmt_login->bind_param("ss", $username, $username);
   $stmt_login->execute();
   $result = $stmt_login->get_result();

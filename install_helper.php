@@ -364,11 +364,30 @@ switch ($action) {
             $scrapedData = json_decode($jsonString, true);
 
             if (is_array($scrapedData) && !isset($scrapedData['error'])) {
+                $groupId = $scrapedData['group_id'] ?? null;
+                $groupName = $scrapedData['group_name'] ?? null;
+
+                if (empty($groupId) && !empty($groupName) && file_exists(__DIR__ . '/dblogin.php')) {
+                    require_once(__DIR__ . '/dblogin.php');
+                    $likeName = '%' . $groupName . '%';
+                    $stmtF = $conn->prepare("SELECT id, naam, url FROM Groepen WHERE naam LIKE ? LIMIT 1");
+                    if ($stmtF) {
+                        $stmtF->bind_param("s", $likeName);
+                        $stmtF->execute();
+                        $resF = $stmtF->get_result();
+                        if ($rowF = $resF->fetch_assoc()) {
+                            $groupId = (int)$rowF['id'];
+                            $groupName = $rowF['naam'];
+                        }
+                        $stmtF->close();
+                    }
+                }
+
                 sendSuccess([
                     'scraped' => true,
-                    'group_name' => $scrapedData['group_name'] ?? null,
+                    'group_name' => $groupName,
                     'group_url' => $scrapedData['group_url'] ?? null,
-                    'group_id' => $scrapedData['group_id'] ?? null,
+                    'group_id' => $groupId,
                     'registration_code' => $scrapedData['telegram_code'] ?? $scrapedData['registration_code'] ?? null,
                     'raw' => $scrapedData
                 ]);
@@ -376,6 +395,121 @@ switch ($action) {
         }
 
         sendError('Kon niet inloggen op Jotihunt.nl of geen gegevens gevonden. Controleer je inloggegevens.');
+        break;
+
+    // =========================================================================
+    // 5b. Fetch Jotihunt Groups List from API
+    // =========================================================================
+    case 'fetch_jotihunt_groups':
+        $url = "https://jotihunt.nl/api/2.0/subscriptions";
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 10,
+            CURLOPT_USERAGENT => 'JotifyInstaller/1.0'
+        ]);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $groups = [];
+        if ($response && $httpCode === 200) {
+            $json = json_decode($response, true);
+            if (isset($json['data']) && is_array($json['data'])) {
+                foreach ($json['data'] as $idx => $g) {
+                    $gid = (int)($g['id'] ?? ($idx + 1));
+                    $gname = trim($g['name'] ?? '');
+                    $gcity = trim($g['city'] ?? '');
+                    $garea = trim($g['area'] ?? '');
+                    $glat = (float)($g['lat'] ?? 0);
+                    $glon = (float)($g['long'] ?? 0);
+                    $gstreet = trim($g['street'] ?? '');
+                    $ghouse = trim(($g['housenumber'] ?? '') . ($g['housenumber_addition'] ?? ''));
+                    $gpostcode = trim($g['postcode'] ?? '');
+
+                    $groups[] = [
+                        'id' => $gid,
+                        'name' => $gname,
+                        'city' => $gcity,
+                        'area' => $garea,
+                        'lat' => $glat,
+                        'lon' => $glon
+                    ];
+
+                    // Insert or update into Groepen table if dblogin.php exists
+                    if (file_exists(__DIR__ . '/dblogin.php')) {
+                        require_once(__DIR__ . '/dblogin.php');
+                        $stmtG = $conn->prepare("INSERT INTO Groepen (id, naam, gebruikersnaam, straat, huisnummer, postal_code, plaats, lat, lon, url, deelgebied) VALUES (?, ?, 'null', ?, ?, ?, ?, ?, ?, '', ?) ON DUPLICATE KEY UPDATE naam = VALUES(naam), straat = VALUES(straat), huisnummer = VALUES(huisnummer), postal_code = VALUES(postal_code), plaats = VALUES(plaats), lat = VALUES(lat), lon = VALUES(lon), deelgebied = VALUES(deelgebied)");
+                        if ($stmtG) {
+                            $stmtG->bind_param("isssssddss", $gid, $gname, $gstreet, $ghouse, $gpostcode, $gcity, $glat, $glon, $garea);
+                            $stmtG->execute();
+                            $stmtG->close();
+                        }
+                    }
+                }
+            }
+        }
+
+        // If no groups found via API, provide placeholder
+        if (empty($groups)) {
+            $groups[] = [
+                'id' => 1,
+                'name' => 'Mijn Scoutinggroep (Standaard)',
+                'city' => 'Arnhem',
+                'area' => 'Alpha',
+                'lat' => 52.0,
+                'lon' => 5.9
+            ];
+            if (file_exists(__DIR__ . '/dblogin.php')) {
+                require_once(__DIR__ . '/dblogin.php');
+                $conn->query("INSERT INTO Groepen (id, naam, lat, lon, deelgebied, gebruikersnaam, straat, huisnummer, postal_code, plaats, url) VALUES (1, 'Mijn Scoutinggroep', 52.00000, 5.90000, 'Alpha', 'placeholder', 'Dorpsstraat', '1', '1234 AB', 'Arnhem', '') ON DUPLICATE KEY UPDATE id=id");
+                $conn->query("INSERT INTO Punten (groep_id, hunts, tegenhunts, opdrachten, foto_opdrachten, hints, strafpunten, bonus) VALUES (1, 0, 0, 0, 0, 0, 0, 0) ON DUPLICATE KEY UPDATE groep_id=groep_id");
+            }
+        }
+
+        sendSuccess(['groups' => $groups, 'count' => count($groups)]);
+        break;
+
+    // =========================================================================
+    // 5c. Upload Group Logo
+    // =========================================================================
+    case 'upload_logo':
+        if (empty($_FILES['logo_file'])) {
+            sendError('Geen bestand geüpload.');
+        }
+
+        $file = $_FILES['logo_file'];
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            sendError('Uploadfout code: ' . $file['error']);
+        }
+
+        if ($file['size'] > 5 * 1024 * 1024) {
+            sendError('Bestand mag maximaal 5 MB zijn.');
+        }
+
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowedExts = ['png', 'jpg', 'jpeg', 'svg', 'webp', 'gif'];
+        if (!in_array($ext, $allowedExts)) {
+            sendError('Alleen PNG, JPG, JPEG, SVG, WEBP en GIF bestanden zijn toegestaan.');
+        }
+
+        $targetDir = __DIR__ . '/media';
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+
+        $targetFileName = 'groepslogo_' . time() . '.' . $ext;
+        $targetPath = $targetDir . '/' . $targetFileName;
+        $relativeUrl = 'media/' . $targetFileName;
+
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            sendError('Kon het logo niet opslaan in media map. Controleer maprechten.');
+        }
+
+        sendSuccess([
+            'message' => 'Logo succesvol geüpload!',
+            'file_url' => $relativeUrl
+        ]);
         break;
 
     // =========================================================================
@@ -387,11 +521,18 @@ switch ($action) {
         }
         require_once(__DIR__ . '/dblogin.php');
 
+        $groupId   = (int)($_POST['group_id'] ?? 1);
+        if ($groupId <= 0) $groupId = 1;
+        $groupName = trim($_POST['group_name'] ?? 'Mijn Scoutinggroep');
+        $groupUrl  = trim($_POST['group_url'] ?? 'https://scouting.nl');
+        $logoUrl   = trim($_POST['group_logo_large_url'] ?? 'media/geusje_bevosd.png');
+
         $settingsToSave = [
-            'GROUP_ID'              => trim($_POST['group_id'] ?? '0'),
-            'GROUP_URL'             => trim($_POST['group_url'] ?? 'https://example.com/'),
-            'GROUP_LOGO_LARGE_URL'  => trim($_POST['group_logo_large_url'] ?? 'media/geusje_bevosd.png'),
-            'GROUP_LOGO_SMALL_URL'  => trim($_POST['group_logo_small_url'] ?? 'media/geusje_bevosd.png'),
+            'GROUP_ID'              => (string)$groupId,
+            'GROUP_NAME'            => $groupName,
+            'GROUP_URL'             => $groupUrl,
+            'GROUP_LOGO_LARGE_URL'  => $logoUrl,
+            'GROUP_LOGO_SMALL_URL'  => $logoUrl,
             'API_KEY_MAPBOX'        => trim($_POST['api_key_mapbox'] ?? 'jouw_mapbox_api_key_hier'),
             'API_KEY_FIREBASE'      => trim($_POST['api_key_firebase'] ?? 'jouw_firebase_api_key_hier'),
             'TELEGRAM_BOT_TOKEN'    => trim($_POST['telegram_bot_token'] ?? '123456789:ABCdefGHIjklMNOpqrSTUvwxYZ'),
@@ -406,6 +547,21 @@ switch ($action) {
             'FOX_NAMES'             => trim($_POST['fox_names'] ?? 'Alpha,Bravo,Charlie,Delta,Echo,Foxtrot,Golf,Hotel,Oscar'),
             'FOX_COLORS'            => trim($_POST['fox_colors'] ?? '#9829FF,#36D12B,#FF8A00,#F5F02C,#FFA12E,#F52E2B,#FF6F6F,#00BFA5,#333333')
         ];
+
+        // Ensure this group exists in Groepen and Punten tables so queries never fail
+        $stmtG = $conn->prepare("INSERT INTO Groepen (id, naam, gebruikersnaam, straat, huisnummer, postal_code, plaats, lat, lon, url, deelgebied) VALUES (?, ?, 'null', 'Dorpsstraat', '1', '1234 AB', 'Arnhem', 52.00000, 5.90000, ?, 'Alpha') ON DUPLICATE KEY UPDATE naam = VALUES(naam), url = VALUES(url)");
+        if ($stmtG) {
+            $stmtG->bind_param("iss", $groupId, $groupName, $groupUrl);
+            $stmtG->execute();
+            $stmtG->close();
+        }
+
+        $stmtP = $conn->prepare("INSERT INTO Punten (groep_id, hunts, tegenhunts, opdrachten, foto_opdrachten, hints, strafpunten, bonus) VALUES (?, 0, 0, 0, 0, 0, 0, 0) ON DUPLICATE KEY UPDATE groep_id = VALUES(groep_id)");
+        if ($stmtP) {
+            $stmtP->bind_param("i", $groupId);
+            $stmtP->execute();
+            $stmtP->close();
+        }
 
         // Store Jotihunt Credentials if provided
         $jotiUser = trim($_POST['joti_user'] ?? '');
