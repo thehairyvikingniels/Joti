@@ -7,6 +7,7 @@
 -- PHP-versie: 8.1.2-1ubuntu2.22
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET FOREIGN_KEY_CHECKS = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
@@ -24,7 +25,7 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `Auto` (
-  `kenteken` char(8) NOT NULL,
+  `kenteken` char(8) NOT NULL PRIMARY KEY,
   `eigenaar` int(11) NOT NULL,
   `aangemaakt_op` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -91,7 +92,7 @@ CREATE TABLE `Cronlogs` (
 --
 
 CREATE TABLE `Gebruikers` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `voornaam` varchar(16) NOT NULL,
   `achternaam` varchar(32) NOT NULL,
   `email` varchar(128) NOT NULL,
@@ -336,7 +337,6 @@ CREATE TABLE `Voslog` (
 -- Indexen voor tabel `Auto`
 --
 ALTER TABLE `Auto`
-  ADD PRIMARY KEY (`kenteken`),
   ADD KEY `eigenaar` (`eigenaar`);
 
 --
@@ -365,12 +365,6 @@ ALTER TABLE `Cronjobs`
 ALTER TABLE `Cronlogs`
   ADD PRIMARY KEY (`name`,`exec_time`),
   ADD UNIQUE KEY `name` (`name`,`exec_time`);
-
---
--- Indexen voor tabel `Gebruikers`
---
-ALTER TABLE `Gebruikers`
-  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexen voor tabel `Groepen`
@@ -424,12 +418,6 @@ ALTER TABLE `Voslog`
 --
 -- AUTO_INCREMENT voor geëxporteerde tabellen
 --
-
---
--- AUTO_INCREMENT voor een tabel `Gebruikers`
---
-ALTER TABLE `Gebruikers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT voor een tabel `Voslocaties`
@@ -560,6 +548,7 @@ CREATE TABLE IF NOT EXISTS `Telegram_Messages` (
   KEY `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+SET FOREIGN_KEY_CHECKS = 1;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
