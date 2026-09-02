@@ -65,23 +65,25 @@ if [ -z "$GIT_BRANCH" ]; then
     if [ -t 0 ]; then
         echo ""
         echo "Select Jotify Git Branch or Version to install:"
-        echo "  1) dev    - Active development (Recommended for latest features)"
-        echo "  2) main   - Stable release branch"
-        echo "  3) custom - Specify custom branch / tag"
-        read -p "Choose option [1-3, default: 1]: " BRANCH_CHOICE
+        echo "  1) autoinstall - Auto-installer branch"
+        echo "  2) dev         - Active development branch"
+        echo "  3) main        - Stable release branch"
+        echo "  4) custom      - Specify custom branch / tag"
+        read -p "Choose option [1-4, default: 1]: " BRANCH_CHOICE
         BRANCH_CHOICE=${BRANCH_CHOICE:-1}
 
         case $BRANCH_CHOICE in
-            1) GIT_BRANCH="dev" ;;
-            2) GIT_BRANCH="main" ;;
-            3)
+            1) GIT_BRANCH="autoinstall" ;;
+            2) GIT_BRANCH="dev" ;;
+            3) GIT_BRANCH="main" ;;
+            4)
                 read -p "Enter branch or tag name: " CUSTOM_BRANCH
-                GIT_BRANCH=${CUSTOM_BRANCH:-"dev"}
+                GIT_BRANCH=${CUSTOM_BRANCH:-"autoinstall"}
                 ;;
-            *) GIT_BRANCH="dev" ;;
+            *) GIT_BRANCH="autoinstall" ;;
         esac
     else
-        GIT_BRANCH="dev"
+        GIT_BRANCH="autoinstall"
     fi
 fi
 

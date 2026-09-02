@@ -10,6 +10,14 @@ ini_set('session.cookie_samesite', 'Lax');
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+if (!file_exists(__DIR__ . '/dblogin.php') || !file_exists(__DIR__ . '/.installed')) {
+    if (file_exists(__DIR__ . '/install.php') || file_exists(__DIR__ . '/install')) {
+        header("Location: install");
+        exit();
+    }
+}
+
 require_once('dblogin.php');
 require_once('includes/remember_me.php');
 require_once('includes/db.php');
