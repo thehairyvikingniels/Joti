@@ -10,6 +10,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // =============================================================================
+// Safe HTTP JSON Utility
+// =============================================================================
+async function fetchJson(url, options = {}) {
+    const resp = await fetch(url, options);
+    const text = await resp.text();
+    try {
+        return JSON.parse(text);
+    } catch (err) {
+        console.error('Non-JSON server response from ' + url + ':', text);
+        const clean = text.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+        throw new Error(clean.substring(0, 150) || 'Lege of ongeldige respons van server');
+    }
+}
+
+// =============================================================================
 // Step Navigation
 // =============================================================================
 function goToStep(step) {
@@ -85,8 +100,7 @@ async function runSystemChecks() {
     btnNext.disabled = true;
 
     try {
-        const resp = await fetch('install_helper.php?action=check_requirements');
-        const data = await resp.json();
+        const data = await fetchJson('install_helper.php?action=check_requirements');
 
         loading.classList.add('hidden');
         results.classList.remove('hidden');
@@ -176,8 +190,7 @@ async function submitDatabase(e) {
     formData.append('root_pass', document.getElementById('root_pass').value);
 
     try {
-        const resp = await fetch('install_helper.php', { method: 'POST', body: formData });
-        const data = await resp.json();
+        const data = await fetchJson('install_helper.php', { method: 'POST', body: formData });
 
         if (data.ok) {
             showAlert('Database en tabellenschema succesvol geïnstalleerd!', 'success');
@@ -214,8 +227,7 @@ async function submitAdmin(e) {
     formData.append('password', document.getElementById('admin_password').value);
 
     try {
-        const resp = await fetch('install_helper.php', { method: 'POST', body: formData });
-        const data = await resp.json();
+        const data = await fetchJson('install_helper.php', { method: 'POST', body: formData });
 
         if (data.ok) {
             showAlert(`Beheerderaccount '${data.username}' succesvol aangemaakt!`, 'success');
@@ -253,8 +265,7 @@ async function fetchJotihuntGroups() {
     try {
         const formData = new FormData();
         formData.append('action', 'fetch_jotihunt_groups');
-        const resp = await fetch('install_helper.php', { method: 'POST', body: formData });
-        const data = await resp.json();
+        const data = await fetchJson('install_helper.php', { method: 'POST', body: formData });
 
         if (btn) {
             btn.disabled = false;
@@ -343,8 +354,7 @@ async function uploadLogoFile(e) {
     formData.append('logo_file', file);
 
     try {
-        const resp = await fetch('install_helper.php', { method: 'POST', body: formData });
-        const data = await resp.json();
+        const data = await fetchJson('install_helper.php', { method: 'POST', body: formData });
         if (btn) btn.disabled = false;
 
         if (data.ok && data.file_url) {
@@ -391,8 +401,7 @@ async function scrapeJotihuntPortal() {
     formData.append('joti_pass', pass);
 
     try {
-        const resp = await fetch('install_helper.php', { method: 'POST', body: formData });
-        const data = await resp.json();
+        const data = await fetchJson('install_helper.php', { method: 'POST', body: formData });
 
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Gegevens Ophalen';
@@ -469,8 +478,7 @@ async function testApiKey(type) {
     formData.append('key', keyInput.value.trim());
 
     try {
-        const resp = await fetch('install_helper.php', { method: 'POST', body: formData });
-        const data = await resp.json();
+        const data = await fetchJson('install_helper.php', { method: 'POST', body: formData });
 
         if (data.ok && data.valid) {
             statusEl.className = 'text-xs mt-1 text-emerald-400 font-medium';
@@ -511,8 +519,7 @@ async function submitSettings(e) {
     formData.append('joti_pass', document.getElementById('joti_pass').value);
 
     try {
-        const resp = await fetch('install_helper.php', { method: 'POST', body: formData });
-        const data = await resp.json();
+        const data = await fetchJson('install_helper.php', { method: 'POST', body: formData });
 
         if (data.ok) {
             showAlert('Spel- en API instellingen succesvol opgeslagen!', 'success');
@@ -543,8 +550,7 @@ async function submitCrontab(e) {
     formData.append('cron_interval', document.getElementById('cron_interval').value);
 
     try {
-        const resp = await fetch('install_helper.php', { method: 'POST', body: formData });
-        const data = await resp.json();
+        const data = await fetchJson('install_helper.php', { method: 'POST', body: formData });
 
         if (data.ok) {
             showAlert('Achtergrondtaken en crontab succesvol ingesteld!', 'success');
@@ -572,8 +578,7 @@ async function finalizeInstallation() {
     formData.append('action', 'finalize_installation');
 
     try {
-        const resp = await fetch('install_helper.php', { method: 'POST', body: formData });
-        const data = await resp.json();
+        const data = await fetchJson('install_helper.php', { method: 'POST', body: formData });
 
         if (data.ok) {
             window.location.href = data.redirect || 'login';

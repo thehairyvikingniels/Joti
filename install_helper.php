@@ -401,56 +401,67 @@ switch ($action) {
     // 5b. Fetch Jotihunt Groups List from API
     // =========================================================================
     case 'fetch_jotihunt_groups':
-        $url = "https://jotihunt.nl/api/2.0/subscriptions";
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 10,
-            CURLOPT_USERAGENT => 'JotifyInstaller/1.0'
-        ]);
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
         $groups = [];
-        if ($response && $httpCode === 200) {
-            $json = json_decode($response, true);
-            if (isset($json['data']) && is_array($json['data'])) {
-                foreach ($json['data'] as $idx => $g) {
-                    $gid = (int)($g['id'] ?? ($idx + 1));
-                    $gname = trim($g['name'] ?? '');
-                    $gcity = trim($g['city'] ?? '');
-                    $garea = trim($g['area'] ?? '');
-                    $glat = (float)($g['lat'] ?? 0);
-                    $glon = (float)($g['long'] ?? 0);
-                    $gstreet = trim($g['street'] ?? '');
-                    $ghouse = trim(($g['housenumber'] ?? '') . ($g['housenumber_addition'] ?? ''));
-                    $gpostcode = trim($g['postcode'] ?? '');
+        try {
+            $url = "https://jotihunt.nl/api/2.0/subscriptions";
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 8,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_USERAGENT => 'JotifyInstaller/1.0'
+            ]);
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
 
-                    $groups[] = [
-                        'id' => $gid,
-                        'name' => $gname,
-                        'city' => $gcity,
-                        'area' => $garea,
-                        'lat' => $glat,
-                        'lon' => $glon
-                    ];
+            if ($response && $httpCode === 200) {
+                $json = json_decode($response, true);
+                if (isset($json['data']) && is_array($json['data'])) {
+                    foreach ($json['data'] as $idx => $g) {
+                        $gid = (int)($g['id'] ?? ($idx + 1));
+                        $gname = trim($g['name'] ?? '');
+                        $gcity = trim($g['city'] ?? '');
+                        $garea = trim($g['area'] ?? '');
+                        $glat = (float)($g['lat'] ?? 0);
+                        $glon = (float)($g['long'] ?? 0);
 
-                    // Insert or update into Groepen table if dblogin.php exists
-                    if (file_exists(__DIR__ . '/dblogin.php')) {
-                        require_once(__DIR__ . '/dblogin.php');
-                        $stmtG = $conn->prepare("INSERT INTO Groepen (id, naam, gebruikersnaam, straat, huisnummer, postal_code, plaats, lat, lon, url, deelgebied) VALUES (?, ?, 'null', ?, ?, ?, ?, ?, ?, '', ?) ON DUPLICATE KEY UPDATE naam = VALUES(naam), straat = VALUES(straat), huisnummer = VALUES(huisnummer), postal_code = VALUES(postal_code), plaats = VALUES(plaats), lat = VALUES(lat), lon = VALUES(lon), deelgebied = VALUES(deelgebied)");
-                        if ($stmtG) {
-                            $stmtG->bind_param("isssssddss", $gid, $gname, $gstreet, $ghouse, $gpostcode, $gcity, $glat, $glon, $garea);
-                            $stmtG->execute();
-                            $stmtG->close();
-                        }
+                        $groups[] = [
+                            'id' => $gid,
+                            'name' => $gname,
+                            'city' => $gcity,
+                            'area' => $garea,
+                            'lat' => $glat,
+                            'lon' => $glon
+                        ];
                     }
                 }
             }
+
+            // Sync to Groepen table if database is connected
+            if (!empty($groups) && file_exists(__DIR__ . '/dblogin.php')) {
+                try {
+                    require_once(__DIR__ . '/dblogin.php');
+                    if (isset($conn) && $conn instanceof mysqli && !$conn->connect_error) {
+                        $stmtG = $conn->prepare("INSERT INTO Groepen (id, naam, gebruikersnaam, straat, huisnummer, postal_code, plaats, lat, lon, url, deelgebied) VALUES (?, ?, 'null', '', '', '', ?, ?, ?, '', ?) ON DUPLICATE KEY UPDATE naam = VALUES(naam), plaats = VALUES(plaats), lat = VALUES(lat), lon = VALUES(lon), deelgebied = VALUES(deelgebied)");
+                        if ($stmtG) {
+                            foreach ($groups as $grp) {
+                                $stmtG->bind_param("issdds", $grp['id'], $grp['name'], $grp['city'], $grp['lat'], $grp['lon'], $grp['area']);
+                                $stmtG->execute();
+                            }
+                            $stmtG->close();
+                        }
+                    }
+                } catch (\Throwable $dbEx) {
+                    // Ignore DB sync error during fetch; save_settings will handle it
+                }
+            }
+        } catch (\Throwable $e) {
+            // Handle error gracefully
         }
 
-        // If no groups found via API, provide placeholder
+        // If no groups found via API, provide default placeholder group
         if (empty($groups)) {
             $groups[] = [
                 'id' => 1,
@@ -460,11 +471,6 @@ switch ($action) {
                 'lat' => 52.0,
                 'lon' => 5.9
             ];
-            if (file_exists(__DIR__ . '/dblogin.php')) {
-                require_once(__DIR__ . '/dblogin.php');
-                $conn->query("INSERT INTO Groepen (id, naam, lat, lon, deelgebied, gebruikersnaam, straat, huisnummer, postal_code, plaats, url) VALUES (1, 'Mijn Scoutinggroep', 52.00000, 5.90000, 'Alpha', 'placeholder', 'Dorpsstraat', '1', '1234 AB', 'Arnhem', '') ON DUPLICATE KEY UPDATE id=id");
-                $conn->query("INSERT INTO Punten (groep_id, hunts, tegenhunts, opdrachten, foto_opdrachten, hints, strafpunten, bonus) VALUES (1, 0, 0, 0, 0, 0, 0, 0) ON DUPLICATE KEY UPDATE groep_id=groep_id");
-            }
         }
 
         sendSuccess(['groups' => $groups, 'count' => count($groups)]);
