@@ -10,7 +10,7 @@ $status_code = 200;
 
 require_once(__DIR__ . '/../dblogin.php');
 require_once(__DIR__ . '/../includes/helpers.php');
-require_once(__DIR__ . '/../admin/update_helper.php');
+require_once(__DIR__ . '/../admin/system_helper.php');
 
 $webroot = realpath(__DIR__ . '/..');
 $backupDir = $webroot . '/DB/backups';

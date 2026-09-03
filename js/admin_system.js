@@ -1,12 +1,15 @@
 /**
- * Jotify System Auto-Update Client Logic
+ * Jotify System Dashboard Client Logic
  */
 
 let currentBranchState = '';
 let targetBranchToSwitch = '';
+let metricsInterval = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     checkUpdates();
+    refreshMetrics();
+    metricsInterval = setInterval(refreshMetrics, 10000);
 });
 
 function showAlert(text, type = 'success') {
@@ -48,7 +51,7 @@ async function checkUpdates() {
     if (btn) btn.disabled = true;
 
     try {
-        const data = await fetchJsonSafely('update_helper.php?action=check_updates');
+        const data = await fetchJsonSafely('system_helper.php?action=check_updates');
 
         if (!data.ok) {
             showAlert(data.error || 'Fout bij het controleren op updates.', 'error');
@@ -217,19 +220,23 @@ function renderBackupsTable(backups) {
             ? `<a href="https://github.com/thehairyvikingniels/Joti/commit/${b.commit}" target="_blank" class="font-mono text-xs font-bold hover:underline theme-primary">${escapeHtml(b.commit)}</a>`
             : '<span class="text-xs opacity-50">-</span>';
 
+        const displaySize = (typeof b.size_bytes === 'number') ? bitbyte2string(b.size_bytes) : (b.size || '—');
+
         html += `
         <tr class="hover:bg-black/5 transition">
-          <td class="px-6 py-4 font-mono font-medium text-xs flex items-center gap-2">
-            <i class="fas fa-file-archive text-amber-500"></i>
-            <span title="${escapeHtml(b.filename)}">${escapeHtml(b.filename)}</span>
+          <td class="px-4 py-3 font-mono font-medium text-xs max-w-0">
+            <div class="flex items-center gap-2" title="${escapeHtml(b.filename)}">
+              <i class="fas fa-file-archive text-amber-500 shrink-0"></i>
+              <span class="truncate">${escapeHtml(b.filename)}</span>
+            </div>
           </td>
-          <td class="px-6 py-4">${typeBadge}</td>
-          <td class="px-6 py-4">${commitDisplay}</td>
-          <td class="px-6 py-4 text-xs opacity-75">${escapeHtml(b.date)}</td>
-          <td class="px-6 py-4 text-xs font-mono opacity-75">${escapeHtml(b.size)}</td>
-          <td class="px-6 py-4 text-right">
+          <td class="px-4 py-3 whitespace-nowrap">${typeBadge}</td>
+          <td class="px-4 py-3 whitespace-nowrap">${commitDisplay}</td>
+          <td class="px-4 py-3 text-xs opacity-75 whitespace-nowrap">${escapeHtml(b.date)}</td>
+          <td class="px-4 py-3 text-xs font-mono opacity-75 whitespace-nowrap">${escapeHtml(displaySize)}</td>
+          <td class="px-4 py-3 text-right whitespace-nowrap">
             <div class="inline-flex items-center gap-1.5">
-              <a href="update_helper.php?action=download_backup&filename=${encodeURIComponent(b.filename)}" 
+              <a href="system_helper.php?action=download_backup&filename=${encodeURIComponent(b.filename)}" 
                  class="p-1.5 rounded hover:bg-black/10 text-blue-500 transition" title="Downloaden">
                 <i class="fas fa-download"></i>
               </a>
@@ -237,7 +244,7 @@ function renderBackupsTable(backups) {
                       class="p-1.5 rounded hover:bg-black/10 text-amber-500 transition" title="Herstellen">
                 <i class="fas fa-history"></i>
               </button>
-              <button onclick="confirmDeleteBackup('${escapeHtml(b.filename)}')" 
+              <button onclick="openDeleteBackupModal('${escapeHtml(b.filename)}')" 
                       class="p-1.5 rounded hover:bg-black/10 text-red-500 transition" title="Verwijderen">
                 <i class="fas fa-trash-alt"></i>
               </button>
@@ -283,7 +290,7 @@ async function confirmAndPerformUpdate() {
         formData.append('action', 'perform_update');
         formData.append('do_backup', doBackup);
 
-        const data = await fetchJsonSafely('update_helper.php', {
+        const data = await fetchJsonSafely('system_helper.php', {
             method: 'POST',
             body: formData
         });
@@ -364,7 +371,7 @@ async function executeSwitchBranch() {
         formData.append('action', 'switch_branch');
         formData.append('branch', targetBranchToSwitch);
 
-        const data = await fetchJsonSafely('update_helper.php', {
+        const data = await fetchJsonSafely('system_helper.php', {
             method: 'POST',
             body: formData
         });
@@ -402,7 +409,7 @@ async function createBackupNow() {
         const formData = new FormData();
         formData.append('action', 'create_backup');
 
-        const data = await fetchJsonSafely('update_helper.php', {
+        const data = await fetchJsonSafely('system_helper.php', {
             method: 'POST',
             body: formData
         });
@@ -446,7 +453,7 @@ async function handleUploadBackup(event) {
         formData.append('action', 'upload_backup');
         formData.append('backup_file', file);
 
-        const data = await fetchJsonSafely('update_helper.php', {
+        const data = await fetchJsonSafely('system_helper.php', {
             method: 'POST',
             body: formData
         });
@@ -519,7 +526,7 @@ async function executeRestoreBackup() {
         if (doSafetyBackup === '1') {
             const safeData = new FormData();
             safeData.append('action', 'create_backup');
-            await fetchJsonSafely('update_helper.php', { method: 'POST', body: safeData });
+            await fetchJsonSafely('system_helper.php', { method: 'POST', body: safeData });
         }
 
         // Step 2: Perform restore
@@ -530,7 +537,7 @@ async function executeRestoreBackup() {
             formData.append('force', '1');
         }
 
-        const data = await fetchJsonSafely('update_helper.php', {
+        const data = await fetchJsonSafely('system_helper.php', {
             method: 'POST',
             body: formData
         });
@@ -573,22 +580,45 @@ async function executeRestoreBackup() {
     }
 }
 
-async function confirmDeleteBackup(filename) {
-    if (!confirm(`Weet je zeker dat je back-up '${filename}' permanent wilt verwijderen?`)) {
-        return;
+// =============================================================================
+// Delete Backup Modal
+// =============================================================================
+let targetBackupToDelete = '';
+
+function openDeleteBackupModal(filename) {
+    targetBackupToDelete = filename;
+    const nameEl = document.getElementById('delete-target-filename');
+    if (nameEl) nameEl.textContent = filename;
+    const modal = document.getElementById('modal-delete-backup');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeDeleteBackupModal() {
+    targetBackupToDelete = '';
+    const modal = document.getElementById('modal-delete-backup');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function executeDeleteBackup() {
+    if (!targetBackupToDelete) return;
+    const btn = document.getElementById('btn-confirm-delete-backup');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Verwijderen...';
     }
 
     try {
         const formData = new FormData();
         formData.append('action', 'delete_backup');
-        formData.append('filename', filename);
+        formData.append('filename', targetBackupToDelete);
 
-        const data = await fetchJsonSafely('update_helper.php', {
+        const data = await fetchJsonSafely('system_helper.php', {
             method: 'POST',
             body: formData
         });
 
         if (data.ok) {
+            closeDeleteBackupModal();
             showAlert(data.message || 'Back-up succesvol verwijderd!', 'success');
             checkUpdates();
         } else {
@@ -597,6 +627,11 @@ async function confirmDeleteBackup(filename) {
     } catch (err) {
         console.error('Delete backup error:', err);
         showAlert('Fout bij verwijderen: ' + err.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-trash-alt"></i> <span>Ja, Verwijder Definitief</span>';
+        }
     }
 }
 
@@ -608,4 +643,129 @@ function escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+// =============================================================================
+// System Metrics
+// =============================================================================
+
+/**
+ * Format bytes or bits into a human-readable string with custom 800-unit threshold.
+ * 
+ * Threshold rule: value stays in current unit until reaching 800:
+ *   799 KB stays 799 KB
+ *   900 KB -> 0.9 MB
+ *   1,000,000 KB -> 1 GB
+ *   Network in bits: 400 Kb/s, 4.6 Mb/s, etc.
+ * 
+ * @param {number} bytes 
+ * @param {boolean} [asBits=false] 
+ * @param {number} [precision=1] 
+ * @param {boolean} [perSecond=false] 
+ * @returns {string}
+ */
+function bitbyte2string(bytes, asBits = false, precision = 1, perSecond = false) {
+    const units = asBits
+        ? ['b', 'Kb', 'Mb', 'Gb', 'Tb']
+        : ['B', 'KB', 'MB', 'GB', 'TB'];
+
+    let val = asBits ? (bytes * 8.0) : Number(bytes);
+
+    if (isNaN(val) || val <= 0) {
+        return '0 ' + units[0] + (perSecond ? '/s' : '');
+    }
+
+    let idx = 0;
+    const maxIdx = units.length - 1;
+
+    while (val >= 800.0 && idx < maxIdx) {
+        val /= 1024.0;
+        idx++;
+    }
+
+    const rounded = Number(val.toFixed(precision));
+    const numStr = (rounded % 1 === 0) ? String(Math.round(rounded)) : rounded.toFixed(precision);
+
+    return numStr + ' ' + units[idx] + (perSecond ? '/s' : '');
+}
+window.bitbyte2string = bitbyte2string;
+
+function setBarColor(barEl, pct) {
+    barEl.classList.remove('bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-red-500');
+    if (pct > 90) barEl.classList.add('bg-red-500');
+    else if (pct > 70) barEl.classList.add('bg-amber-500');
+    else if (pct > 40) barEl.classList.add('bg-blue-500');
+    else barEl.classList.add('bg-emerald-500');
+}
+
+async function refreshMetrics() {
+    const spinIcon = document.getElementById('icon-metrics-spin');
+    if (spinIcon) spinIcon.classList.add('animate-spin');
+
+    try {
+        const data = await fetchJsonSafely('system_helper.php?action=get_system_metrics');
+        if (!data.ok) return;
+
+        const m = data.metrics;
+
+        // CPU
+        const cpuPct = Math.round(m.cpu.current_percent);
+        document.getElementById('cpu-current').textContent = cpuPct + '%';
+        const cpuBar = document.getElementById('cpu-bar');
+        cpuBar.style.width = cpuPct + '%';
+        setBarColor(cpuBar, cpuPct);
+        document.getElementById('cpu-avg').textContent = Math.round(m.cpu.avg_5min_percent) + '%';
+
+        // RAM
+        const ramPct = Math.round(m.ram.used_percent);
+        document.getElementById('ram-current').textContent = ramPct + '%';
+        const ramBar = document.getElementById('ram-bar');
+        ramBar.style.width = ramPct + '%';
+        setBarColor(ramBar, ramPct);
+        document.getElementById('ram-used').textContent = m.ram.used_gb.toFixed(1) + ' / ' + m.ram.total_gb.toFixed(1) + ' GB';
+        document.getElementById('ram-avg').textContent = Math.round(m.ram.avg_5min_percent) + '%';
+
+        // Network (bits per second with 800 threshold: Kb/s, Mb/s, Gb/s)
+        const rxStr = m.network.rx_formatted || bitbyte2string(m.network.rx_bytes_sec, true, 1, true);
+        const txStr = m.network.tx_formatted || bitbyte2string(m.network.tx_bytes_sec, true, 1, true);
+        const avgRxStr = m.network.avg_5min_rx_formatted || bitbyte2string(m.network.avg_5min_rx, true, 1, true);
+        const avgTxStr = m.network.avg_5min_tx_formatted || bitbyte2string(m.network.avg_5min_tx, true, 1, true);
+        const totalRateStr = bitbyte2string((m.network.rx_bytes_sec || 0) + (m.network.tx_bytes_sec || 0), true, 1, true);
+
+        const elRx = document.getElementById('net-rx');
+        const elTx = document.getElementById('net-tx');
+        const elAvgRx = document.getElementById('net-avg-rx');
+        const elAvgTx = document.getElementById('net-avg-tx');
+        const elTotal = document.getElementById('net-total-rate');
+        const elIface = document.getElementById('net-interface');
+
+        if (elRx) elRx.textContent = rxStr;
+        if (elTx) elTx.textContent = txStr;
+        if (elAvgRx) elAvgRx.textContent = avgRxStr;
+        if (elAvgTx) elAvgTx.textContent = avgTxStr;
+        if (elTotal) elTotal.textContent = totalRateStr;
+        if (elIface && m.network.interface) elIface.textContent = m.network.interface;
+
+        const elAvg = document.getElementById('net-avg');
+        if (elAvg) elAvg.textContent = `↓ ${avgRxStr} • ↑ ${avgTxStr}`;
+
+        // Storage
+        const storagePct = Math.round(m.storage.used_percent);
+        document.getElementById('storage-pct').textContent = storagePct + '%';
+        const storageBar = document.getElementById('storage-bar');
+        storageBar.style.width = storagePct + '%';
+        setBarColor(storageBar, storagePct);
+        document.getElementById('storage-used').textContent = m.storage.used_gb.toFixed(1) + ' / ' + m.storage.total_gb.toFixed(1) + ' GB';
+        document.getElementById('storage-free').textContent = m.storage.free_gb.toFixed(1) + ' GB vrij';
+
+        // Timestamp
+        const now = new Date();
+        document.getElementById('metrics-last-update').textContent =
+            'Bijgewerkt: ' + now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    } catch (err) {
+        console.error('Metrics fetch failed:', err);
+    } finally {
+        if (spinIcon) spinIcon.classList.remove('animate-spin');
+    }
 }

@@ -166,7 +166,7 @@ foreach ($fox_names as $vosnaam) {
             'sa_notifications' => 'Notificaties',
             'admin_telegram' => 'Telegram',
             'sa_settings' => 'Instellingen',
-            'sa_update' => 'Systeem Update'
+            'sa_system' => 'Systeem'
         ];
         $displayPageTitle = $topbarTitles[PAGE_NAME] ?? ucfirst(PAGE_NAME);
         ?>
