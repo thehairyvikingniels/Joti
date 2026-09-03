@@ -237,16 +237,76 @@ function create_full_backup(mysqli $conn, string $webroot, string $backupDir, st
         }
 
         // Copy media/profiles
-        $profilesDir = $webroot . '/media/profiles';
+        // Copy user media assets
+        @mkdir($tmpDir . '/media', 0775, true);
+
+        // 1. Profiles
         $hasProfiles = false;
+        $profilesDir = $webroot . '/media/profiles';
         if (is_dir($profilesDir)) {
-            @mkdir($tmpDir . '/profiles', 0775, true);
+            @mkdir($tmpDir . '/media/profiles', 0775, true);
             $profileFiles = glob($profilesDir . '/*');
             if (!empty($profileFiles)) {
                 $hasProfiles = true;
                 foreach ($profileFiles as $pf) {
                     if (is_file($pf)) {
-                        @copy($pf, $tmpDir . '/profiles/' . basename($pf));
+                        @copy($pf, $tmpDir . '/media/profiles/' . basename($pf));
+                    }
+                }
+            }
+        }
+
+        // 2. Hunt Photos
+        $hasHunts = false;
+        $huntsDir = $webroot . '/media/hunts';
+        if (is_dir($huntsDir)) {
+            @mkdir($tmpDir . '/media/hunts', 0775, true);
+            $huntFiles = glob($huntsDir . '/*');
+            if (!empty($huntFiles)) {
+                $hasHunts = true;
+                foreach ($huntFiles as $hf) {
+                    if (is_file($hf) && basename($hf) !== '.gitkeep') {
+                        @copy($hf, $tmpDir . '/media/hunts/' . basename($hf));
+                    }
+                }
+            }
+        }
+
+        // 3. Counterhunt Photos
+        $hasTegenhunt = false;
+        $tegenhuntDir = $webroot . '/media/tegenhunt';
+        if (is_dir($tegenhuntDir)) {
+            @mkdir($tmpDir . '/media/tegenhunt', 0775, true);
+            $tegenhuntFiles = glob($tegenhuntDir . '/*');
+            if (!empty($tegenhuntFiles)) {
+                $hasTegenhunt = true;
+                foreach ($tegenhuntFiles as $thf) {
+                    if (is_file($thf) && basename($thf) !== '.gitkeep') {
+                        @copy($thf, $tmpDir . '/media/tegenhunt/' . basename($thf));
+                    }
+                }
+            }
+        }
+
+        // 4. Custom Scouting Logo
+        $hasLogo = false;
+        $logoFile = $webroot . '/media/scoutingLogo.png';
+        if (file_exists($logoFile)) {
+            $hasLogo = true;
+            @copy($logoFile, $tmpDir . '/media/scoutingLogo.png');
+        }
+
+        // 5. Telegram MTProto Listener Session (*.session)
+        $hasSession = false;
+        $servicesDir = $webroot . '/services';
+        if (is_dir($servicesDir)) {
+            @mkdir($tmpDir . '/services', 0775, true);
+            $sessionFiles = glob($servicesDir . '/*.session');
+            if (!empty($sessionFiles)) {
+                $hasSession = true;
+                foreach ($sessionFiles as $sf) {
+                    if (is_file($sf)) {
+                        @copy($sf, $tmpDir . '/services/' . basename($sf));
                     }
                 }
             }
@@ -254,7 +314,7 @@ function create_full_backup(mysqli $conn, string $webroot, string $backupDir, st
 
         // Write metadata
         $meta = [
-            'format' => 2,
+            'format' => 3,
             'type' => $type,
             'created_at' => date('d-m-Y H:i:s', $now),
             'timestamp' => $now,
@@ -262,13 +322,17 @@ function create_full_backup(mysqli $conn, string $webroot, string $backupDir, st
             'git_full_hash' => $gitFullHash,
             'git_branch' => $gitBranch,
             'has_profiles' => $hasProfiles,
+            'has_hunts' => $hasHunts,
+            'has_tegenhunt' => $hasTegenhunt,
+            'has_logo' => $hasLogo,
+            'has_session' => $hasSession,
             'user_count' => count($usersList),
             'users' => $usersList
         ];
         file_put_contents($tmpDir . '/backup_meta.json', json_encode($meta, JSON_PRETTY_PRINT));
 
-        // Package into .tar.gz archive
-        $tarCmd = sprintf('tar -czf %s -C %s . 2>&1', escapeshellarg($archivePath), escapeshellarg($tmpDir));
+        // Package into .tar.gz archive with gzip -9 (maximum compression)
+        $tarCmd = sprintf('tar -I "gzip -9" -cf %s -C %s . 2>&1', escapeshellarg($archivePath), escapeshellarg($tmpDir));
         $tarOutput = [];
         $tarExitCode = 0;
         exec($tarCmd, $tarOutput, $tarExitCode);
@@ -303,7 +367,7 @@ function get_backup_meta(string $backupPath): array {
     $filename = basename($backupPath);
     $type = str_starts_with($filename, 'auto_backup_') ? 'auto' : 'manual';
     
-    $cmd = sprintf('tar -xzf %s --wildcards "*backup_meta.json" -O 2>/dev/null', escapeshellarg($backupPath));
+    $cmd = sprintf('tar -xf %s --wildcards "*backup_meta.json" -O 2>/dev/null', escapeshellarg($backupPath));
     $metaJson = shell_exec($cmd);
     if (!empty($metaJson)) {
         $data = json_decode($metaJson, true);
@@ -331,9 +395,11 @@ function get_backup_meta(string $backupPath): array {
  */
 function restore_backup(mysqli $conn, string $webroot, string $backupDir, string $filename, bool $force = false): array {
     $cleanName = basename($filename);
+    $lower = strtolower($cleanName);
     $backupPath = $backupDir . '/' . $cleanName;
-    if (!file_exists($backupPath) || !str_ends_with(strtolower($cleanName), '.tar.gz')) {
-        throw new RuntimeException("Back-up bestand niet gevonden of heeft geen .tar.gz extensie: {$cleanName}");
+    $isTar = str_ends_with($lower, '.tar.gz') || str_ends_with($lower, '.tar.xz') || str_ends_with($lower, '.tgz');
+    if (!file_exists($backupPath) || !$isTar) {
+        throw new RuntimeException("Back-up bestand niet gevonden of heeft geen geldige extensie (.tar.gz / .tar.xz): {$cleanName}");
     }
 
     $meta = get_backup_meta($backupPath);
@@ -368,8 +434,8 @@ function restore_backup(mysqli $conn, string $webroot, string $backupDir, string
     @mkdir($tmpRestoreDir, 0775, true);
 
     try {
-        // Extract archive
-        $extractCmd = sprintf('tar -xzf %s -C %s 2>&1', escapeshellarg($backupPath), escapeshellarg($tmpRestoreDir));
+        // Extract archive (tar -xf automatically handles both gzip and xz)
+        $extractCmd = sprintf('tar -xf %s -C %s 2>&1', escapeshellarg($backupPath), escapeshellarg($tmpRestoreDir));
         $extOut = [];
         $extExit = 0;
         exec($extractCmd, $extOut, $extExit);
@@ -412,17 +478,79 @@ function restore_backup(mysqli $conn, string $webroot, string $backupDir, string
             import_sql_file($conn, $sqlFile);
         }
 
-        // Restore media/profiles
-        $restoredPhotosCount = 0;
-        if (is_dir($tmpRestoreDir . '/profiles')) {
+        // Restore user media assets
+        $restoredMediaCount = 0;
+
+        // 1. Profiles (support both format 3 'media/profiles' and legacy format 2 'profiles')
+        $srcProfiles = is_dir($tmpRestoreDir . '/media/profiles') 
+            ? $tmpRestoreDir . '/media/profiles' 
+            : (is_dir($tmpRestoreDir . '/profiles') ? $tmpRestoreDir . '/profiles' : null);
+        if ($srcProfiles) {
             $destDir = $webroot . '/media/profiles';
             @mkdir($destDir, 0775, true);
-            $profileFiles = glob($tmpRestoreDir . '/profiles/*');
+            $profileFiles = glob($srcProfiles . '/*');
             if (!empty($profileFiles)) {
                 foreach ($profileFiles as $pf) {
                     if (is_file($pf)) {
                         @copy($pf, $destDir . '/' . basename($pf));
-                        $restoredPhotosCount++;
+                        $restoredMediaCount++;
+                    }
+                }
+            }
+            @chmod($destDir, 0775);
+        }
+
+        // 2. Hunt Photos
+        if (is_dir($tmpRestoreDir . '/media/hunts')) {
+            $destDir = $webroot . '/media/hunts';
+            @mkdir($destDir, 0775, true);
+            $huntFiles = glob($tmpRestoreDir . '/media/hunts/*');
+            if (!empty($huntFiles)) {
+                foreach ($huntFiles as $hf) {
+                    if (is_file($hf)) {
+                        @copy($hf, $destDir . '/' . basename($hf));
+                        $restoredMediaCount++;
+                    }
+                }
+            }
+            @chmod($destDir, 0775);
+        }
+
+        // 3. Counterhunt Photos
+        if (is_dir($tmpRestoreDir . '/media/tegenhunt')) {
+            $destDir = $webroot . '/media/tegenhunt';
+            @mkdir($destDir, 0775, true);
+            $thFiles = glob($tmpRestoreDir . '/media/tegenhunt/*');
+            if (!empty($thFiles)) {
+                foreach ($thFiles as $thf) {
+                    if (is_file($thf)) {
+                        @copy($thf, $destDir . '/' . basename($thf));
+                        $restoredMediaCount++;
+                    }
+                }
+            }
+            @chmod($destDir, 0775);
+        }
+
+        // 4. Scouting Logo
+        if (file_exists($tmpRestoreDir . '/media/scoutingLogo.png')) {
+            @copy($tmpRestoreDir . '/media/scoutingLogo.png', $webroot . '/media/scoutingLogo.png');
+            @chmod($webroot . '/media/scoutingLogo.png', 0664);
+            $restoredMediaCount++;
+        }
+
+        // 5. Telegram MTProto Listener Session
+        $restoredSession = false;
+        if (is_dir($tmpRestoreDir . '/services')) {
+            $destDir = $webroot . '/services';
+            @mkdir($destDir, 0775, true);
+            $sessionFiles = glob($tmpRestoreDir . '/services/*.session');
+            if (!empty($sessionFiles)) {
+                foreach ($sessionFiles as $sf) {
+                    if (is_file($sf)) {
+                        @copy($sf, $destDir . '/' . basename($sf));
+                        @chmod($destDir . '/' . basename($sf), 0660);
+                        $restoredSession = true;
                     }
                 }
             }
@@ -441,12 +569,15 @@ function restore_backup(mysqli $conn, string $webroot, string $backupDir, string
         // Refresh directory permissions
         @chmod($webroot . '/media', 0775);
         @chmod($webroot . '/media/profiles', 0775);
+        @chmod($webroot . '/media/hunts', 0775);
+        @chmod($webroot . '/media/tegenhunt', 0775);
         @chmod($webroot . '/services', 0775);
         @chmod($webroot . '/DB/backups', 0775);
 
+        $extraMsg = $restoredSession ? " en Telegram sessie" : "";
         return [
             'ok' => true,
-            'message' => "Back-up succesvol hersteld! Database hersteld, {$restoredPhotosCount} profielfoto('s) teruggezet{$commitMessage}.",
+            'message' => "Back-up succesvol hersteld! Database hersteld, {$restoredMediaCount} mediabestand(en){$extraMsg} teruggezet{$commitMessage}.",
             'restored_commit' => $targetCommit,
             'user_warning_given' => !$userFound
         ];
@@ -489,12 +620,13 @@ function upload_backup(string $backupDir): array {
     }
 
     $origName = basename($_FILES['backup_file']['name']);
-    if (!str_ends_with(strtolower($origName), '.tar.gz')) {
-        throw new RuntimeException("Alleen .tar.gz archieven zijn toegestaan.");
+    $lower = strtolower($origName);
+    if (!str_ends_with($lower, '.tar.gz') && !str_ends_with($lower, '.tar.xz') && !str_ends_with($lower, '.tgz')) {
+        throw new RuntimeException("Alleen .tar.gz en .tar.xz archieven zijn toegestaan.");
     }
 
     $tmpPath = $_FILES['backup_file']['tmp_name'];
-    $checkCmd = sprintf('tar -tzf %s 2>&1 | grep "database.sql"', escapeshellarg($tmpPath));
+    $checkCmd = sprintf('tar -tf %s 2>&1 | grep "database.sql"', escapeshellarg($tmpPath));
     $checkRes = shell_exec($checkCmd);
     if (empty(trim($checkRes ?? ''))) {
         throw new RuntimeException("Het geüploade bestand is geen geldige Jotify back-up (database.sql ontbreekt in archief).");
@@ -561,7 +693,7 @@ function prune_backups_tiered(string $backupDir): array {
         return ['deleted_count' => 0, 'kept_count' => 0, 'deleted' => []];
     }
 
-    $files = glob($backupDir . '/*.tar.gz');
+    $files = array_merge(glob($backupDir . '/*.tar.gz') ?: [], glob($backupDir . '/*.tar.xz') ?: []);
     if (empty($files)) {
         return ['deleted_count' => 0, 'kept_count' => 0, 'deleted' => []];
     }
@@ -755,10 +887,10 @@ switch ($action) {
             $availableBranches = [$currentBranch];
         }
         
-        // 10. Existing backups list (.tar.gz archives)
+        // 10. Existing backups list (.tar.gz and .tar.xz archives)
         $backups = [];
         if (is_dir($backupDir)) {
-            $files = glob($backupDir . '/*.tar.gz');
+            $files = array_merge(glob($backupDir . '/*.tar.gz') ?: [], glob($backupDir . '/*.tar.xz') ?: []);
             rsort($files);
             foreach ($files as $f) {
                 $base = basename($f);

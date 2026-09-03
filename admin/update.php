@@ -179,7 +179,7 @@ $commitMsg = get_server_git_val('git log -1 --format="%s"', $webroot);
             <i class="fas fa-database"></i> <span>Systeem Back-ups (Database & Foto's)</span>
           </h3>
           <div class="flex items-center gap-2">
-            <input type="file" id="input-upload-backup" accept=".tar.gz" class="hidden" onchange="handleUploadBackup(event)">
+            <input type="file" id="input-upload-backup" accept=".tar.gz,.tar.xz" class="hidden" onchange="handleUploadBackup(event)">
             <button onclick="document.getElementById('input-upload-backup').click()" id="btn-upload-backup" class="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
               <i class="fas fa-upload"></i>
               <span>Upload Back-up</span>

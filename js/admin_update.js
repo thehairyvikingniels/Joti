@@ -427,8 +427,9 @@ async function handleUploadBackup(event) {
     if (!input.files || input.files.length === 0) return;
 
     const file = input.files[0];
-    if (!file.name.endsWith('.tar.gz')) {
-        showAlert('Alleen .tar.gz archieven zijn toegestaan.', 'error');
+    const nameLower = file.name.toLowerCase();
+    if (!nameLower.endsWith('.tar.gz') && !nameLower.endsWith('.tar.xz')) {
+        showAlert('Alleen .tar.gz en .tar.xz archieven zijn toegestaan.', 'error');
         input.value = '';
         return;
     }
