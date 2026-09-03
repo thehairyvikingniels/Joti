@@ -142,6 +142,15 @@ PACKAGES=(
 echo -e "${CYAN}Installing system packages: ${PACKAGES[*]}...${NC}"
 apt-get install -y "${PACKAGES[@]}"
 
+# Tune PHP upload and execution limits for backups and large migrations
+for ini_file in /etc/php/*/apache2/php.ini /etc/php/*/cli/php.ini /etc/php/*/fpm/php.ini; do
+    if [ -f "$ini_file" ]; then
+        sed -i 's/upload_max_filesize = .*/upload_max_filesize = 64M/' "$ini_file"
+        sed -i 's/post_max_size = .*/post_max_size = 64M/' "$ini_file"
+        sed -i 's/max_execution_time = .*/max_execution_time = 300/' "$ini_file"
+    fi
+done
+
 # 4. Install Composer if not already present
 if ! command -v composer &> /dev/null; then
     echo -e "${CYAN}Installing Composer globally...${NC}"

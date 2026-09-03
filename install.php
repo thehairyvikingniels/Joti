@@ -144,17 +144,43 @@ if (file_exists($lockFile)) {
                         <label class="relative flex items-center p-3 rounded-lg border border-blue-500/50 bg-blue-500/10 cursor-pointer transition hover:bg-blue-500/20" id="label_mode_create">
                             <input type="radio" name="db_mode" value="create_new" checked onchange="toggleDbMode(this.value)" class="text-blue-500 focus:ring-blue-400">
                             <div class="ml-3">
-                                <span class="block text-sm font-medium text-white">Nieuwe Database Aanmaken</span>
-                                <span class="block text-xs text-slate-400">Maakt database en gebruiker aan (vereist root)</span>
+                                <span class="block text-sm font-medium text-white">Nieuwe Database</span>
+                                <span class="block text-xs text-slate-400">Aanmaken via MariaDB root</span>
                             </div>
                         </label>
                         <label class="relative flex items-center p-3 rounded-lg border border-slate-700 bg-slate-800/60 cursor-pointer transition hover:bg-slate-800" id="label_mode_existing">
                             <input type="radio" name="db_mode" value="use_existing" onchange="toggleDbMode(this.value)" class="text-blue-500 focus:ring-blue-400">
                             <div class="ml-3">
-                                <span class="block text-sm font-medium text-white">Bestaande Database Gebruiken</span>
-                                <span class="block text-xs text-slate-400">Verbindt direct met opgegeven gebruiker (geen root)</span>
+                                <span class="block text-sm font-medium text-white">Bestaande Database</span>
+                                <span class="block text-xs text-slate-400">Verbinden met app-user</span>
                             </div>
                         </label>
+                        <label class="relative flex items-center p-3 rounded-lg border border-slate-700 bg-slate-800/60 cursor-pointer transition hover:bg-slate-800" id="label_mode_restore">
+                            <input type="radio" name="db_mode" value="restore_backup" onchange="toggleDbMode(this.value)" class="text-blue-500 focus:ring-blue-400">
+                            <div class="ml-3">
+                                <span class="block text-sm font-medium text-white">Back-up Herstellen</span>
+                                <span class="block text-xs text-emerald-400 font-semibold">Migreren (.tar.gz / .tar.xz)</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Backup Upload Card (only shown in restore_backup mode) -->
+                    <div id="card-backup-upload" class="hidden mt-4 mb-2 bg-emerald-950/30 border border-emerald-500/40 p-5 rounded-xl">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-bold text-emerald-400 flex items-center gap-2">
+                                <i class="fa-solid fa-file-arrow-up"></i> Selecteer Jotify Back-up Archief
+                            </h4>
+                            <span class="text-xs text-slate-400 font-mono">.tar.gz / .tar.xz</span>
+                        </div>
+                        <p class="text-xs text-slate-300 mb-4">
+                            Upload een volledige Jotify back-up van een eerdere installatie of andere server. Alle tabellen, accounts, instellingen en mediabestanden worden automatisch geïmporteerd.
+                        </p>
+                        <div class="border-2 border-dashed border-emerald-500/40 hover:border-emerald-400 rounded-xl p-6 text-center cursor-pointer transition bg-slate-900/50" onclick="document.getElementById('backup_file').click()">
+                            <input type="file" id="backup_file" name="backup_file" accept=".tar.gz,.tar.xz" class="hidden" onchange="onBackupFileSelected(event)">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-emerald-400 mb-2"></i>
+                            <p class="text-sm font-medium text-white" id="backup-file-label">Klik hier om een back-upbestand te selecteren</p>
+                            <p class="text-xs text-slate-400 mt-1" id="backup-file-info">Ondersteunt .tar.gz en .tar.xz archieven</p>
+                        </div>
                     </div>
 
                     <!-- Optional Table Wipe for Existing DB -->
@@ -241,6 +267,20 @@ if (file_exists($lockFile)) {
                 </h2>
                 <p class="text-sm text-slate-400">Maak het primaire beheerdersaccount aan met volledige rechten (Privilege 3).</p>
             </div>
+            <!-- Migration Banner (only shown when restored from backup) -->
+            <div id="card-admin-migrated" class="hidden mb-6 bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl text-xs text-emerald-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                <div class="flex items-start gap-3">
+                    <i class="fa-solid fa-circle-check text-base text-emerald-400 mt-0.5"></i>
+                    <div>
+                        <strong class="text-emerald-300 text-sm block mb-1">Beheerdersaccounts Succesvol Gemigreerd!</strong>
+                        <span id="migrated-admin-desc">De gebruikersaccounts uit de back-up zijn hersteld. Je kunt hieronder een extra beheerder aanmaken of direct doorgaan naar de spelinstellingen.</span>
+                    </div>
+                </div>
+                <button type="button" onclick="goToStep(4)" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition shrink-0 flex items-center gap-1.5 shadow">
+                    <span>Direct naar Stap 4</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
 
             <form id="form-admin" class="space-y-6" onsubmit="submitAdmin(event)">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -291,6 +331,21 @@ if (file_exists($lockFile)) {
                     <i class="fa-solid fa-sliders text-amber-400"></i> Spel- & API Instellingen
                 </h2>
                 <p class="text-sm text-slate-400">Configureer Scoutinggroep gegevens, API sleutels en speldata.</p>
+            </div>
+
+            <!-- Migration Banner (only shown when restored from backup) -->
+            <div id="card-settings-migrated" class="hidden mb-6 bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl text-xs text-emerald-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                <div class="flex items-start gap-3">
+                    <i class="fa-solid fa-circle-check text-base text-emerald-400 mt-0.5"></i>
+                    <div>
+                        <strong class="text-emerald-300 text-sm block mb-1">Spel- & API-Instellingen Gemigreerd!</strong>
+                        <span>Alle configuratiewaarden uit de back-up zijn automatisch hersteld. Controleer ze hieronder of ga direct door naar de achtergrondtaken.</span>
+                    </div>
+                </div>
+                <button type="button" onclick="goToStep(5)" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg text-xs transition shrink-0 flex items-center gap-1.5 shadow">
+                    <span>Direct naar Stap 5</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
             </div>
 
             <form id="form-settings" class="space-y-6" onsubmit="submitSettings(event)">

@@ -143,7 +143,207 @@ switch ($action) {
 
         mysqli_report(MYSQLI_REPORT_OFF);
 
-        if ($dbMode === 'create_new') {
+        if ($dbMode === 'restore_backup') {
+            // Validate backup file upload
+            if (isset($_FILES['backup_file']) && $_FILES['backup_file']['error'] === UPLOAD_ERR_INI_SIZE) {
+                sendError('Het bestand is groter dan de toegestane uploadlimiet van PHP (upload_max_filesize).');
+            }
+            if (empty($_FILES['backup_file']['tmp_name']) || !is_uploaded_file($_FILES['backup_file']['tmp_name'])) {
+                sendError('Geen back-upbestand ontvangen door de server.');
+            }
+
+            $origName = basename($_FILES['backup_file']['name']);
+            $lower = strtolower($origName);
+            if (!str_ends_with($lower, '.tar.gz') && !str_ends_with($lower, '.tar.xz') && !str_ends_with($lower, '.tgz')) {
+                sendError('Alleen .tar.gz en .tar.xz back-upbestanden worden ondersteund.');
+            }
+
+            // Test if we have root access to create clean database, or connect directly
+            $rootConn = @new mysqli($dbHost, $rootUser, $rootPass);
+            if ($rootConn->connect_error) {
+                $fallbackHost = ($dbHost === 'localhost') ? '127.0.0.1' : 'localhost';
+                $rootConn = @new mysqli($fallbackHost, $rootUser, $rootPass);
+            }
+
+            if (!$rootConn->connect_error) {
+                $rootConn->set_charset('utf8mb4');
+                $rootConn->query("DROP DATABASE IF EXISTS `$dbName`;");
+                $rootConn->query("CREATE DATABASE `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;");
+                $escapedPass = $rootConn->real_escape_string($dbPass);
+                $rootConn->query("CREATE USER IF NOT EXISTS '$dbUser'@'localhost' IDENTIFIED BY '$escapedPass';");
+                $rootConn->query("ALTER USER '$dbUser'@'localhost' IDENTIFIED BY '$escapedPass';");
+                $rootConn->query("GRANT ALL PRIVILEGES ON `$dbName`.* TO '$dbUser'@'localhost';");
+                $rootConn->query("CREATE USER IF NOT EXISTS '$dbUser'@'127.0.0.1' IDENTIFIED BY '$escapedPass';");
+                $rootConn->query("ALTER USER '$dbUser'@'127.0.0.1' IDENTIFIED BY '$escapedPass';");
+                $rootConn->query("GRANT ALL PRIVILEGES ON `$dbName`.* TO '$dbUser'@'127.0.0.1';");
+                $rootConn->query("FLUSH PRIVILEGES;");
+                $rootConn->close();
+            }
+
+            // Extract archive
+            $tmpRestoreDir = sys_get_temp_dir() . '/jotify_install_restore_' . uniqid();
+            @mkdir($tmpRestoreDir, 0775, true);
+
+            try {
+                $extractCmd = sprintf('tar -xf %s -C %s 2>&1', escapeshellarg($_FILES['backup_file']['tmp_name']), escapeshellarg($tmpRestoreDir));
+                $extOut = [];
+                $extExit = 0;
+                exec($extractCmd, $extOut, $extExit);
+                if ($extExit !== 0) {
+                    sendError('Uitpakken van back-uparchief is mislukt: ' . implode("\n", $extOut));
+                }
+
+                $sqlFile = $tmpRestoreDir . '/database.sql';
+                if (!file_exists($sqlFile)) {
+                    sendError('Ongeldige back-up: database.sql ontbreekt in het archief.');
+                }
+
+                // Import SQL
+                $cliHost = ($dbHost === 'localhost') ? '127.0.0.1' : $dbHost;
+                $importCmd = "mariadb -h " . escapeshellarg($cliHost) . " -u " . escapeshellarg($dbUser) . " -p" . escapeshellarg($dbPass) . " " . escapeshellarg($dbName) . " < " . escapeshellarg($sqlFile) . " 2>&1";
+                exec($importCmd, $importOut, $importRet);
+
+                // Verify import
+                $userConn = @new mysqli($dbHost, $dbUser, $dbPass, $dbName);
+                if ($userConn->connect_error) {
+                    $userConn = @new mysqli('127.0.0.1', $dbUser, $dbPass, $dbName);
+                }
+                if ($userConn->connect_error) {
+                    sendError('Verbinding met database mislukt na herstel: ' . $userConn->connect_error);
+                }
+                $userConn->set_charset('utf8mb4');
+
+                // Fallback multi_query if tables not imported
+                $checkTbls = $userConn->query("SHOW TABLES");
+                if (!$checkTbls || $checkTbls->num_rows === 0) {
+                    $sqlContent = file_get_contents($sqlFile);
+                    if ($userConn->multi_query($sqlContent)) {
+                        do {
+                            if ($res = $userConn->store_result()) { $res->free(); }
+                        } while ($userConn->more_results() && $userConn->next_result());
+                    }
+                }
+
+                // Restore user media assets
+                $webroot = __DIR__;
+                $srcProfiles = is_dir($tmpRestoreDir . '/media/profiles') 
+                    ? $tmpRestoreDir . '/media/profiles' 
+                    : (is_dir($tmpRestoreDir . '/profiles') ? $tmpRestoreDir . '/profiles' : null);
+                if ($srcProfiles) {
+                    @mkdir($webroot . '/media/profiles', 0775, true);
+                    foreach (glob($srcProfiles . '/*') ?: [] as $pf) {
+                        if (is_file($pf)) @copy($pf, $webroot . '/media/profiles/' . basename($pf));
+                    }
+                }
+
+                if (is_dir($tmpRestoreDir . '/media/hunts')) {
+                    @mkdir($webroot . '/media/hunts', 0775, true);
+                    foreach (glob($tmpRestoreDir . '/media/hunts/*') ?: [] as $hf) {
+                        if (is_file($hf)) @copy($hf, $webroot . '/media/hunts/' . basename($hf));
+                    }
+                }
+
+                if (is_dir($tmpRestoreDir . '/media/tegenhunt')) {
+                    @mkdir($webroot . '/media/tegenhunt', 0775, true);
+                    foreach (glob($tmpRestoreDir . '/media/tegenhunt/*') ?: [] as $thf) {
+                        if (is_file($thf)) @copy($thf, $webroot . '/media/tegenhunt/' . basename($thf));
+                    }
+                }
+
+                if (file_exists($tmpRestoreDir . '/media/scoutingLogo.png')) {
+                    @copy($tmpRestoreDir . '/media/scoutingLogo.png', $webroot . '/media/scoutingLogo.png');
+                    @chmod($webroot . '/media/scoutingLogo.png', 0664);
+                }
+
+                if (is_dir($tmpRestoreDir . '/services')) {
+                    @mkdir($webroot . '/services', 0775, true);
+                    foreach (glob($tmpRestoreDir . '/services/*.session') ?: [] as $sf) {
+                        if (is_file($sf)) {
+                            @copy($sf, $webroot . '/services/' . basename($sf));
+                            @chmod($webroot . '/services/' . basename($sf), 0660);
+                        }
+                    }
+                }
+
+                @chmod($webroot . '/media', 0775);
+                @chmod($webroot . '/media/profiles', 0775);
+                @chmod($webroot . '/media/hunts', 0775);
+                @chmod($webroot . '/media/tegenhunt', 0775);
+                @chmod($webroot . '/services', 0775);
+
+                // Read metadata
+                $meta = [];
+                if (file_exists($tmpRestoreDir . '/backup_meta.json')) {
+                    $meta = json_decode(file_get_contents($tmpRestoreDir . '/backup_meta.json'), true) ?: [];
+                }
+
+                // Query existing admin accounts
+                $adminUsers = [];
+                $tblUsers = 'Gebruikers';
+                $checkUsersTbl = $userConn->query("SHOW TABLES LIKE 'Users'");
+                if ($checkUsersTbl && $checkUsersTbl->num_rows > 0) {
+                    $tblUsers = 'Users';
+                }
+                $resU = $userConn->query("SELECT id, gebruikersnaam, email, voornaam, achternaam, priv FROM `$tblUsers` WHERE priv >= 2");
+                if ($resU) {
+                    while ($ru = $resU->fetch_assoc()) {
+                        $adminUsers[] = $ru;
+                    }
+                    $resU->free();
+                }
+
+                // Query existing site settings
+                $settingsMap = [];
+                $tblSettings = 'Site_Instellingen';
+                $checkSettingsTbl = $userConn->query("SHOW TABLES LIKE 'Site_Settings'");
+                if ($checkSettingsTbl && $checkSettingsTbl->num_rows > 0) {
+                    $tblSettings = 'Site_Settings';
+                }
+                $resS = $userConn->query("SELECT instelling, waarde FROM `$tblSettings`");
+                if ($resS) {
+                    while ($rs = $resS->fetch_assoc()) {
+                        $settingsMap[$rs['instelling']] = $rs['waarde'];
+                    }
+                    $resS->free();
+                }
+
+                $userConn->close();
+
+                // Write dblogin.php
+                $dbloginContent = "<?php\n"
+                    . "// Jotify Database Configuration\n"
+                    . "\$servername = " . var_export($dbHost, true) . ";\n"
+                    . "\$username = " . var_export($dbUser, true) . ";\n"
+                    . "\$password = " . var_export($dbPass, true) . ";\n"
+                    . "\$dbname = " . var_export($dbName, true) . ";\n\n"
+                    . "date_default_timezone_set('Europe/Amsterdam');\n\n"
+                    . "// Create connection\n"
+                    . "\$conn = new mysqli(\$servername, \$username, \$password, \$dbname);\n"
+                    . "if (\$conn->connect_error) {\n"
+                    . "    die(\"Database connection failed: \" . \$conn->connect_error);\n"
+                    . "}\n\n"
+                    . "\$conn->set_charset(\"utf8mb4\");\n\n"
+                    . "require_once(__DIR__ . '/includes/globals.php');\n";
+
+                if (file_put_contents(__DIR__ . '/dblogin.php', $dbloginContent) === false) {
+                    sendError('Kon dblogin.php niet opslaan. Controleer de schrijfrechten.');
+                }
+                chmod(__DIR__ . '/dblogin.php', 0640);
+
+                sendSuccess([
+                    'message' => 'Database, mediabestanden en instellingen succesvol hersteld vanuit back-up!',
+                    'migrated' => true,
+                    'meta' => $meta,
+                    'admin_users' => $adminUsers,
+                    'settings' => $settingsMap
+                ]);
+            } finally {
+                if (is_dir($tmpRestoreDir)) {
+                    shell_exec('rm -rf ' . escapeshellarg($tmpRestoreDir));
+                }
+            }
+            break;
+        } elseif ($dbMode === 'create_new') {
             // 1. Connect as root
             $rootConn = @new mysqli($dbHost, $rootUser, $rootPass);
 
