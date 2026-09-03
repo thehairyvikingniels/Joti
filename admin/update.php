@@ -172,30 +172,39 @@ $commitMsg = get_server_git_val('git log -1 --format="%s"', $webroot);
         </div>
       </div>
 
-      <!-- Card 3: Recente Back-ups -->
+      <!-- Card 3: Systeem Back-ups -->
       <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
           <h3 class="text-xl font-bold flex items-center gap-2">
-            <i class="fas fa-database"></i> <span>Database Back-ups</span>
+            <i class="fas fa-database"></i> <span>Systeem Back-ups (Database & Foto's)</span>
           </h3>
-          <button onclick="createBackupNow()" class="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-            <i class="fas fa-plus"></i>
-            <span>Nieuwe Back-up Maken</span>
-          </button>
+          <div class="flex items-center gap-2">
+            <input type="file" id="input-upload-backup" accept=".tar.gz" class="hidden" onchange="handleUploadBackup(event)">
+            <button onclick="document.getElementById('input-upload-backup').click()" id="btn-upload-backup" class="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+              <i class="fas fa-upload"></i>
+              <span>Upload Back-up</span>
+            </button>
+            <button onclick="createBackupNow()" id="btn-create-backup" class="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+              <i id="icon-backup-spin" class="fas fa-plus"></i>
+              <span id="text-backup-btn">Nieuwe Back-up Maken</span>
+            </button>
+          </div>
         </div>
         <div class="p-0 overflow-x-auto">
           <table class="w-full text-sm text-left whitespace-nowrap">
             <thead class="text-xs uppercase bg-black/5 border-b" style="border-color: var(--theme-card-border);">
               <tr>
                 <th class="px-6 py-3 font-bold">Bestandsnaam</th>
+                <th class="px-6 py-3 font-bold">Type</th>
+                <th class="px-6 py-3 font-bold">Build / Versie</th>
                 <th class="px-6 py-3 font-bold">Datum & Tijd</th>
                 <th class="px-6 py-3 font-bold">Grootte</th>
-                <th class="px-6 py-3 font-bold text-right">Locatie</th>
+                <th class="px-6 py-3 font-bold text-right">Acties</th>
               </tr>
             </thead>
             <tbody id="backups-table-body" class="divide-y" style="border-color: var(--theme-card-border);">
               <tr>
-                <td colspan="4" class="px-6 py-6 text-center opacity-60">Back-ups worden geladen...</td>
+                <td colspan="6" class="px-6 py-6 text-center opacity-60">Back-ups worden geladen...</td>
               </tr>
             </tbody>
           </table>
@@ -255,6 +264,61 @@ $commitMsg = get_server_git_val('git log -1 --format="%s"', $webroot);
           </button>
           <button id="btn-confirm-switch" onclick="executeSwitchBranch()" class="theme-bg-primary hover:opacity-80 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition">
             Wissel Branch
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Back-up Herstellen -->
+  <div id="modal-restore" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+    <div class="theme-card rounded-2xl border shadow-2xl w-full max-w-lg overflow-hidden animate-fadeIn" style="border-color: var(--theme-card-border);">
+      <div class="px-6 py-4 border-b text-white flex items-center justify-between bg-amber-600">
+        <h3 class="text-lg font-bold flex items-center gap-2">
+          <i class="fas fa-triangle-exclamation"></i>
+          <span>Back-up Herstellen</span>
+        </h3>
+        <button onclick="closeRestoreModal()" class="text-white/80 hover:text-white"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div id="restore-warning-user" class="hidden p-3.5 rounded-lg bg-red-500/15 border border-red-500/40 text-red-700 dark:text-red-300 text-xs flex items-start gap-2.5">
+          <i class="fas fa-exclamation-circle text-base flex-shrink-0 mt-0.5"></i>
+          <div>
+            <strong class="block font-bold">Gebruikersaccount Waarschuwing!</strong>
+            <span id="restore-warning-user-text">Jouw account is niet aanwezig in deze back-up!</span>
+          </div>
+        </div>
+
+        <p class="text-sm">
+          Weet je zeker dat je back-up <strong id="restore-target-filename" class="font-mono theme-primary"></strong> wilt terugzetten?
+        </p>
+
+        <div class="p-3.5 rounded-lg border bg-black/5 text-xs space-y-2" style="border-color: var(--theme-card-border);">
+          <div class="flex items-center gap-2 text-amber-500 font-semibold">
+            <i class="fas fa-info-circle"></i>
+            <span>Gevolgen van het herstel:</span>
+          </div>
+          <ul class="list-disc pl-5 space-y-1 opacity-80">
+            <li>Overschrijft alle huidige tabellen en gegevens in de database.</li>
+            <li>Zet opgeslagen profielfoto's terug naar de staat van de back-up.</li>
+            <li>Downgradet het actieve systeem naar commit <strong id="restore-target-commit" class="font-mono"></strong>.</li>
+          </ul>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+          <input type="checkbox" id="check-backup-before-restore" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer">
+          <label for="check-backup-before-restore" class="text-xs cursor-pointer select-none">
+            <strong>Maak eerst een veiligheidsback-up van de huidige staat</strong>
+          </label>
+        </div>
+
+        <div class="pt-4 border-t flex items-center justify-end gap-3" style="border-color: var(--theme-card-border);">
+          <button onclick="closeRestoreModal()" class="px-4 py-2 text-sm font-semibold rounded-lg border hover:bg-black/5 transition" style="border-color: var(--theme-card-border);">
+            Annuleren
+          </button>
+          <button id="btn-confirm-restore" onclick="executeRestoreBackup()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-5 py-2 text-sm rounded-lg shadow transition flex items-center gap-2">
+            <i class="fas fa-history"></i>
+            <span>Ja, Herstel Back-up</span>
           </button>
         </div>
       </div>

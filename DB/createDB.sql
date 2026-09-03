@@ -101,6 +101,10 @@ CREATE TABLE IF NOT EXISTS `Cronjobs` (
   PRIMARY KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+INSERT INTO `Cronjobs` (`name`, `enabled`, `URL`, `description`, `interval`) VALUES
+('auto_backup', 1, 'cron/backup.php', 'Automatische database- en mediaback-up met getrapte bewaartermijn', 3600)
+ON DUPLICATE KEY UPDATE `description` = VALUES(`description`), `interval` = VALUES(`interval`);
+
 -- --------------------------------------------------------
 
 --

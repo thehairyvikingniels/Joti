@@ -638,7 +638,8 @@ switch ($action) {
             ['notifications', 1, 'cron/notifications.php', 'Push notificaties en Telegram berichten wachtrij verwerken', 40],
             ['subscriptions', 1, 'cron/subscriptions.php', 'Deelnemende scoutinggroepen synchroniseren', 300],
             ['welcome', 0, 'cron/welcome.php', 'Automatisch welkomstbericht bij nadering clubhuis', 60],
-            ['jotiPortal', 1, 'cron/scraper_helper.php', 'Punten, hunts en telegram registratiecode scrapen', 180]
+            ['jotiPortal', 1, 'cron/scraper_helper.php', 'Punten, hunts en telegram registratiecode scrapen', 180],
+            ['auto_backup', 1, 'cron/backup.php', 'Automatische database- en mediaback-up met getrapte bewaartermijn', 3600]
         ];
 
         $stmt = $conn->prepare("INSERT INTO Cronjobs (name, enabled, URL, description, `interval`) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE enabled = VALUES(enabled), `interval` = VALUES(`interval`)");

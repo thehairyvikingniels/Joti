@@ -202,21 +202,47 @@ function renderBackupsTable(backups) {
     if (!tbody) return;
 
     if (!backups || backups.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-6 text-center opacity-60">Nog geen eerdere back-ups gevonden.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-6 text-center opacity-60">Nog geen eerdere back-ups gevonden.</td></tr>';
         return;
     }
 
     let html = '';
     backups.forEach(b => {
+        const isAuto = (b.type === 'auto');
+        const typeBadge = isAuto 
+            ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-600 border border-blue-500/30">Automatisch</span>'
+            : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-600 border border-purple-500/30">Handmatig</span>';
+
+        const commitDisplay = (b.commit && b.commit !== 'onbekend')
+            ? `<a href="https://github.com/thehairyvikingniels/Joti/commit/${b.commit}" target="_blank" class="font-mono text-xs font-bold hover:underline theme-primary">${escapeHtml(b.commit)}</a>`
+            : '<span class="text-xs opacity-50">-</span>';
+
         html += `
         <tr class="hover:bg-black/5 transition">
           <td class="px-6 py-4 font-mono font-medium text-xs flex items-center gap-2">
-            <i class="fas fa-file-lines opacity-60"></i>
-            <span>${escapeHtml(b.filename)}</span>
+            <i class="fas fa-file-archive text-amber-500"></i>
+            <span title="${escapeHtml(b.filename)}">${escapeHtml(b.filename)}</span>
           </td>
+          <td class="px-6 py-4">${typeBadge}</td>
+          <td class="px-6 py-4">${commitDisplay}</td>
           <td class="px-6 py-4 text-xs opacity-75">${escapeHtml(b.date)}</td>
           <td class="px-6 py-4 text-xs font-mono opacity-75">${escapeHtml(b.size)}</td>
-          <td class="px-6 py-4 text-right text-xs opacity-50 font-mono">DB/backups/</td>
+          <td class="px-6 py-4 text-right">
+            <div class="inline-flex items-center gap-1.5">
+              <a href="update_helper.php?action=download_backup&filename=${encodeURIComponent(b.filename)}" 
+                 class="p-1.5 rounded hover:bg-black/10 text-blue-500 transition" title="Downloaden">
+                <i class="fas fa-download"></i>
+              </a>
+              <button onclick="openRestoreModal('${escapeHtml(b.filename)}', '${escapeHtml(b.commit || '')}')" 
+                      class="p-1.5 rounded hover:bg-black/10 text-amber-500 transition" title="Herstellen">
+                <i class="fas fa-history"></i>
+              </button>
+              <button onclick="confirmDeleteBackup('${escapeHtml(b.filename)}')" 
+                      class="p-1.5 rounded hover:bg-black/10 text-red-500 transition" title="Verwijderen">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+          </td>
         </tr>`;
     });
 
@@ -364,6 +390,14 @@ async function executeSwitchBranch() {
 }
 
 async function createBackupNow() {
+    const btn = document.getElementById('btn-create-backup');
+    const icon = document.getElementById('icon-backup-spin');
+    const text = document.getElementById('text-backup-btn');
+
+    if (btn) btn.disabled = true;
+    if (icon) icon.className = 'fas fa-spinner animate-spin';
+    if (text) text.textContent = 'Back-up Maken...';
+
     try {
         const formData = new FormData();
         formData.append('action', 'create_backup');
@@ -381,6 +415,187 @@ async function createBackupNow() {
     } catch (err) {
         console.error('Backup error:', err);
         showAlert('Fout bij back-up maken: ' + err.message, 'error');
+    } finally {
+        if (btn) btn.disabled = false;
+        if (icon) icon.className = 'fas fa-plus';
+        if (text) text.textContent = 'Nieuwe Back-up Maken';
+    }
+}
+
+async function handleUploadBackup(event) {
+    const input = event.target;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    if (!file.name.endsWith('.tar.gz')) {
+        showAlert('Alleen .tar.gz archieven zijn toegestaan.', 'error');
+        input.value = '';
+        return;
+    }
+
+    const uploadBtn = document.getElementById('btn-upload-backup');
+    const origHtml = uploadBtn ? uploadBtn.innerHTML : '';
+    if (uploadBtn) {
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner animate-spin"></i><span>Uploaden...</span>';
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'upload_backup');
+        formData.append('backup_file', file);
+
+        const data = await fetchJsonSafely('update_helper.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (data.ok) {
+            showAlert(data.message || 'Back-up succesvol geüpload!', 'success');
+            checkUpdates();
+        } else {
+            showAlert(data.error || 'Fout bij uploaden back-up.', 'error');
+        }
+    } catch (err) {
+        console.error('Upload backup error:', err);
+        showAlert('Fout bij uploaden back-up: ' + err.message, 'error');
+    } finally {
+        if (uploadBtn) {
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = origHtml;
+        }
+        input.value = '';
+    }
+}
+
+let targetRestoreFilename = '';
+let targetRestoreCommit = '';
+let restoreForce = false;
+
+function openRestoreModal(filename, commit) {
+    targetRestoreFilename = filename;
+    targetRestoreCommit = commit || 'onbekend';
+    restoreForce = false;
+
+    const modal = document.getElementById('modal-restore');
+    const fnElem = document.getElementById('restore-target-filename');
+    const cElem = document.getElementById('restore-target-commit');
+    const warnElem = document.getElementById('restore-warning-user');
+    const btn = document.getElementById('btn-confirm-restore');
+
+    if (fnElem) fnElem.textContent = filename;
+    if (cElem) cElem.textContent = commit || 'onbekend';
+    if (warnElem) warnElem.classList.add('hidden');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-history"></i><span>Ja, Herstel Back-up</span>';
+    }
+
+    if (modal) modal.classList.remove('hidden');
+}
+
+function closeRestoreModal() {
+    const modal = document.getElementById('modal-restore');
+    if (modal) modal.classList.add('hidden');
+    targetRestoreFilename = '';
+    targetRestoreCommit = '';
+    restoreForce = false;
+}
+
+async function executeRestoreBackup() {
+    if (!targetRestoreFilename) return;
+
+    const btn = document.getElementById('btn-confirm-restore');
+    const doSafetyBackup = document.getElementById('check-backup-before-restore')?.checked ? '1' : '0';
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner animate-spin mr-1"></i> Herstellen...';
+    }
+
+    try {
+        // Step 1: Optional safety backup before restore
+        if (doSafetyBackup === '1') {
+            const safeData = new FormData();
+            safeData.append('action', 'create_backup');
+            await fetchJsonSafely('update_helper.php', { method: 'POST', body: safeData });
+        }
+
+        // Step 2: Perform restore
+        const formData = new FormData();
+        formData.append('action', 'restore_backup');
+        formData.append('filename', targetRestoreFilename);
+        if (restoreForce) {
+            formData.append('force', '1');
+        }
+
+        const data = await fetchJsonSafely('update_helper.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (data.requires_confirmation) {
+            const warnElem = document.getElementById('restore-warning-user');
+            const warnText = document.getElementById('restore-warning-user-text');
+            if (warnElem && warnText) {
+                warnText.textContent = data.message;
+                warnElem.classList.remove('hidden');
+            }
+            restoreForce = true;
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i> Toch Doorgaan & Herstellen';
+            }
+            return;
+        }
+
+        if (data.ok) {
+            closeRestoreModal();
+            showAlert(data.message, 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showAlert(data.error || 'Kan back-up niet herstellen.', 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-history"></i><span>Ja, Herstel Back-up</span>';
+            }
+        }
+    } catch (err) {
+        console.error('Restore error:', err);
+        showAlert('Fout bij herstellen: ' + err.message, 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-history"></i><span>Ja, Herstel Back-up</span>';
+        }
+    }
+}
+
+async function confirmDeleteBackup(filename) {
+    if (!confirm(`Weet je zeker dat je back-up '${filename}' permanent wilt verwijderen?`)) {
+        return;
+    }
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'delete_backup');
+        formData.append('filename', filename);
+
+        const data = await fetchJsonSafely('update_helper.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (data.ok) {
+            showAlert(data.message || 'Back-up succesvol verwijderd!', 'success');
+            checkUpdates();
+        } else {
+            showAlert(data.error || 'Fout bij het verwijderen van de back-up.', 'error');
+        }
+    } catch (err) {
+        console.error('Delete backup error:', err);
+        showAlert('Fout bij verwijderen: ' + err.message, 'error');
     }
 }
 
