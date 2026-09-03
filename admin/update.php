@@ -1,0 +1,269 @@
+<?php
+// System Auto-Update dashboard: view version, check for upstream commits, review changelog, and trigger 1-click update.
+define("PAGE_NAME", "sa_update");
+require_once(__DIR__ . '/../includes/auth.php');
+
+if ($privilege < 3) {
+    header("Location: ../home");
+    exit();
+}
+
+$webroot = realpath(__DIR__ . '/..');
+
+function get_server_git_val(string $cmd, string $webroot): string {
+    $cleanCmd = preg_replace('/^git\s+/', 'git -c safe.directory=* ', trim($cmd));
+    $output = shell_exec('cd ' . escapeshellarg($webroot) . ' && ' . $cleanCmd . ' 2>/dev/null');
+    return trim($output ?? '');
+}
+
+$branch = get_server_git_val('git rev-parse --abbrev-ref HEAD', $webroot) ?: 'main';
+$commit = get_server_git_val('git rev-parse --short HEAD', $webroot) ?: 'onbekend';
+$commitDate = get_server_git_val('git log -1 --format="%ad" --date=format:"%d-%m-%Y %H:%M"', $webroot);
+$commitMsg = get_server_git_val('git log -1 --format="%s"', $webroot);
+?>
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<title>Jotify - Systeem Update</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="shortcut icon" type="image/png" href="../media/geusje.png"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<?php include_once('../includes/theme.php'); ?>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+<!-- Sidebar -->
+<?php include_once('../includes/sidebar.php') ?>
+
+<!-- Main Content -->
+<div class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+  <!-- Topbar -->
+  <?php include_once('../includes/topbar.php') ?>
+
+  <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
+
+    <div class="space-y-6 mb-24 max-w-5xl">
+
+      <!-- Dynamic Feedback Alerts -->
+      <div id="status-alert" class="hidden px-4 py-3 rounded-lg border relative shadow-sm flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <i id="status-alert-icon" class="fas fa-check-circle text-lg"></i>
+          <span id="status-alert-text" class="text-sm font-medium"></span>
+        </div>
+        <button type="button" onclick="document.getElementById('status-alert').classList.add('hidden')" class="opacity-70 hover:opacity-100 transition">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Card 1: Huidige Systeemstatus -->
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold flex items-center gap-2">
+            <i class="fas fa-microchip"></i> <span>Systeemstatus & Huidige Versie</span>
+          </h3>
+          <div class="flex items-center gap-2">
+            <button id="btn-check-updates" onclick="checkUpdates()" class="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+              <i id="icon-check-spin" class="fas fa-rotate"></i>
+              <span>Controleer op Updates</span>
+            </button>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Versie / Commit -->
+            <div class="p-4 rounded-xl border bg-black/5 flex flex-col justify-between" style="border-color: var(--theme-card-border);">
+              <span class="text-xs uppercase tracking-wider opacity-60 font-semibold mb-1">Geïnstalleerde Versie</span>
+              <div class="flex items-baseline gap-2 mb-1">
+                <a id="display-commit-link" href="https://github.com/thehairyvikingniels/Joti/commit/<?= htmlspecialchars($commit) ?>" target="_blank" class="font-mono text-xl font-bold hover:underline theme-primary">
+                  <?= htmlspecialchars($commit) ?>
+                </a>
+                <span class="text-xs opacity-60 font-mono">(HEAD)</span>
+              </div>
+              <p id="display-commit-date" class="text-xs opacity-70 truncate"><?= htmlspecialchars($commitDate) ?></p>
+            </div>
+
+            <!-- Actieve Branch -->
+            <div class="p-4 rounded-xl border bg-black/5 flex flex-col justify-between" style="border-color: var(--theme-card-border);">
+              <span class="text-xs uppercase tracking-wider opacity-60 font-semibold mb-1">Actieve Git Branch</span>
+              <div class="flex items-center gap-2 mb-1">
+                <i class="fas fa-code-branch opacity-60 text-sm"></i>
+                <select id="select-branch" onchange="promptSwitchBranch(this.value)" class="bg-transparent font-bold text-base focus:outline-none cursor-pointer border-b border-dashed border-current">
+                  <option value="<?= htmlspecialchars($branch) ?>" selected><?= htmlspecialchars($branch) ?></option>
+                </select>
+              </div>
+              <p class="text-xs opacity-60">Wissel tussen hoofdbranches</p>
+            </div>
+
+            <!-- Up-to-date Status -->
+            <div class="p-4 rounded-xl border bg-black/5 flex flex-col justify-between" style="border-color: var(--theme-card-border);">
+              <span class="text-xs uppercase tracking-wider opacity-60 font-semibold mb-1">Updatestatus</span>
+              <div id="status-pill-container" class="flex items-center gap-2 mb-1">
+                <span id="status-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
+                  <i class="fas fa-check-circle"></i>
+                  <span>Up-to-date</span>
+                </span>
+              </div>
+              <p id="status-subtext" class="text-xs opacity-70">Laatste controle: <span id="last-check-time">Zojuist</span></p>
+            </div>
+
+          </div>
+
+          <div class="mt-4 pt-4 border-t text-xs opacity-70 flex items-center justify-between" style="border-color: var(--theme-card-border);">
+            <div class="flex items-center gap-2 truncate">
+              <i class="fas fa-comment-alt opacity-50"></i>
+              <span id="display-commit-msg" class="truncate"><?= htmlspecialchars($commitMsg) ?></span>
+            </div>
+            <button onclick="createBackupNow()" class="hover:underline flex items-center gap-1 font-medium ml-4 flex-shrink-0">
+              <i class="fas fa-download"></i> <span>Handmatige Back-up Maken</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Beschikbare Updates (Verborgen als up-to-date) -->
+      <div id="card-updates-available" class="hidden theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center bg-amber-600" style="border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold flex items-center gap-2">
+            <i class="fas fa-cloud-arrow-down"></i>
+            <span>Nieuwe Updates Beschikbaar!</span>
+          </h3>
+          <span id="badge-commits-count" class="bg-black/20 text-white font-mono text-xs font-bold px-2.5 py-1 rounded-full">
+            0 commits achter
+          </span>
+        </div>
+        <div class="p-6 space-y-6">
+
+          <!-- Impact Tags -->
+          <div>
+            <h4 class="text-sm font-semibold uppercase tracking-wider opacity-60 mb-2">Gedetecteerde Wijzigingen:</h4>
+            <div id="impact-tags-container" class="flex flex-wrap gap-2">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Changelog Commits Timeline -->
+          <div>
+            <h4 class="text-sm font-semibold uppercase tracking-wider opacity-60 mb-3">Changelog & Commits:</h4>
+            <div id="commits-list-container" class="space-y-2 max-h-72 overflow-y-auto pr-2">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Action & Backup Bar -->
+          <div class="p-4 rounded-xl border bg-black/5 flex flex-col md:flex-row items-center justify-between gap-4" style="border-color: var(--theme-card-border);">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" id="check-backup-before" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer">
+              <label for="check-backup-before" class="text-sm cursor-pointer select-none">
+                <strong>Maak vooraf automatisch een database back-up</strong>
+                <span class="block text-xs opacity-70">Slaat een momentopname op in DB/backups/ voor eventuele rollback.</span>
+              </label>
+            </div>
+            <button onclick="confirmAndPerformUpdate()" class="theme-bg-primary hover:opacity-80 text-white font-bold px-6 py-2.5 rounded-lg shadow-md transition flex items-center gap-2 flex-shrink-0">
+              <i class="fas fa-bolt"></i>
+              <span>Nu Bijwerken naar Nieuwste Versie</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Card 3: Recente Back-ups -->
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold flex items-center gap-2">
+            <i class="fas fa-database"></i> <span>Database Back-ups</span>
+          </h3>
+          <button onclick="createBackupNow()" class="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <i class="fas fa-plus"></i>
+            <span>Nieuwe Back-up Maken</span>
+          </button>
+        </div>
+        <div class="p-0 overflow-x-auto">
+          <table class="w-full text-sm text-left whitespace-nowrap">
+            <thead class="text-xs uppercase bg-black/5 border-b" style="border-color: var(--theme-card-border);">
+              <tr>
+                <th class="px-6 py-3 font-bold">Bestandsnaam</th>
+                <th class="px-6 py-3 font-bold">Datum & Tijd</th>
+                <th class="px-6 py-3 font-bold">Grootte</th>
+                <th class="px-6 py-3 font-bold text-right">Locatie</th>
+              </tr>
+            </thead>
+            <tbody id="backups-table-body" class="divide-y" style="border-color: var(--theme-card-border);">
+              <tr>
+                <td colspan="4" class="px-6 py-6 text-center opacity-60">Back-ups worden geladen...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modal: Live Update Uitvoering -->
+  <div id="modal-update" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+    <div class="theme-card rounded-2xl border shadow-2xl w-full max-w-2xl overflow-hidden animate-fadeIn" style="border-color: var(--theme-card-border);">
+      <div class="px-6 py-4 border-b text-white flex items-center justify-between" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+        <h3 class="text-lg font-bold flex items-center gap-2">
+          <i id="modal-icon" class="fas fa-rotate animate-spin"></i>
+          <span id="modal-title">Systeemupdate Wordt Uitgevoerd...</span>
+        </h3>
+      </div>
+      <div class="p-6 space-y-6">
+        
+        <!-- Status Step List -->
+        <div id="modal-steps-container" class="space-y-3">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Terminal Output Log -->
+        <div class="p-3 bg-black/90 rounded-xl border border-white/10 font-mono text-xs text-emerald-400 max-h-48 overflow-y-auto" id="modal-console-log">
+          <div>[INFO] Update proces gestart...</div>
+        </div>
+
+        <div id="modal-actions" class="hidden flex justify-end gap-3 pt-2">
+          <button onclick="window.location.reload()" class="theme-bg-primary hover:opacity-80 text-white font-bold px-6 py-2.5 rounded-lg shadow transition flex items-center gap-2">
+            <i class="fas fa-arrows-rotate"></i>
+            <span>Pagina Herladen</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Wisselen van Branch Bevestigen -->
+  <div id="modal-switch-branch" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+    <div class="theme-card rounded-2xl border shadow-2xl w-full max-w-md overflow-hidden" style="border-color: var(--theme-card-border);">
+      <div class="px-6 py-4 border-b text-white flex items-center justify-between" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+        <h3 class="text-lg font-bold flex items-center gap-2">
+          <i class="fas fa-code-branch"></i>
+          <span>Wisselen van Git Branch</span>
+        </h3>
+        <button onclick="closeSwitchBranchModal()" class="opacity-70 hover:opacity-100"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-6 space-y-4">
+        <p class="text-sm">Weet je zeker dat je wilt wisselen naar branch <strong id="switch-target-branch" class="font-mono"></strong>?</p>
+        <p class="text-xs opacity-70">De server voert een checkout en pull uit van deze branch. Eventuele gewijzigde codebestanden worden gesynchroniseerd.</p>
+        <div class="flex justify-end gap-3 pt-2">
+          <button onclick="closeSwitchBranchModal()" class="px-4 py-2 text-sm font-semibold rounded-lg border hover:bg-black/5 transition" style="border-color: var(--theme-card-border);">
+            Annuleren
+          </button>
+          <button id="btn-confirm-switch" onclick="executeSwitchBranch()" class="theme-bg-primary hover:opacity-80 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition">
+            Wissel Branch
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <?php include_once('../includes/footer.php') ?>
+</div>
+
+<script src="../js/admin_update.js"></script>
+</body>
+</html>

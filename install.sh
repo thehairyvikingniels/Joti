@@ -262,10 +262,17 @@ chown -R www-data:www-data "$WEBROOT"
 find "$WEBROOT" -type d -exec chmod 755 {} \;
 find "$WEBROOT" -type f -exec chmod 644 {} \;
 
-# Ensure writeable directories for uploads & media
-mkdir -p "$WEBROOT/media/profiles" "$WEBROOT/media/hunts" "$WEBROOT/media/tegenhunt" "$WEBROOT/services"
-chown -R www-data:www-data "$WEBROOT/media" "$WEBROOT/services"
-chmod -R 775 "$WEBROOT/media"
+# Ensure writeable directories for uploads & media & backups
+mkdir -p "$WEBROOT/media/profiles" "$WEBROOT/media/hunts" "$WEBROOT/media/tegenhunt" "$WEBROOT/services" "$WEBROOT/DB/backups"
+chown -R www-data:www-data "$WEBROOT/media" "$WEBROOT/services" "$WEBROOT/DB/backups"
+chmod -R 775 "$WEBROOT/media" "$WEBROOT/services" "$WEBROOT/DB/backups"
+
+# Git repository configuration for in-app updates
+git config --system --add safe.directory "$WEBROOT" || true
+git config --system --add safe.directory '*' || true
+git config --global --add safe.directory "$WEBROOT" || true
+su -s /bin/bash www-data -c "git config --global --add safe.directory '$WEBROOT' || true" || true
+su -s /bin/bash www-data -c "git -C '$WEBROOT' config core.filemode false || true" || true
 
 # Start / Restart Services
 if [ ! -d "/var/lib/mysql/mysql" ]; then

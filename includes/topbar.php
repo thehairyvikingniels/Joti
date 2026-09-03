@@ -144,8 +144,34 @@ foreach ($fox_names as $vosnaam) {
     <div class="flex items-center">
         <button class="md:hidden opacity-60 hover:opacity-100 mr-3 transition" onclick="w3_open()"><i
                 class="fas fa-bars"></i></button>
+        <?php
+        $topbarTitles = [
+            'home' => 'Overzicht',
+            'kaarten' => 'Kaarten',
+            'tegenhunt' => 'Tegenhunt',
+            'vossen' => 'Vossen',
+            'voslocaties' => 'Voslocaties',
+            'nieuws' => 'Nieuws',
+            'opdrachten' => 'Opdrachten',
+            'hints' => 'Hints',
+            'punten' => 'Punten',
+            'groepen' => 'Groepen',
+            'instellingen' => 'Instellingen',
+            'autos' => "Auto's",
+            'whiteboard' => 'Whiteboard',
+            'a_users' => 'Gebruikers',
+            'a_serviceaccounts' => 'Service Accounts',
+            'a_cronjobs' => 'Cronjobs',
+            'a_database' => 'Database',
+            'sa_notifications' => 'Notificaties',
+            'admin_telegram' => 'Telegram',
+            'sa_settings' => 'Instellingen',
+            'sa_update' => 'Systeem Update'
+        ];
+        $displayPageTitle = $topbarTitles[PAGE_NAME] ?? ucfirst(PAGE_NAME);
+        ?>
         <h2 class="text-base sm:text-lg font-semibold whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer md:cursor-auto"
-            onclick="if(window.innerWidth < 768) w3_open()"><?= htmlspecialchars(ucfirst(PAGE_NAME)) ?></h2>
+            onclick="if(window.innerWidth < 768) w3_open()"><?= htmlspecialchars($displayPageTitle) ?></h2>
         <span
             class="ml-2 sm:ml-4 text-xs sm:text-sm font-medium opacity-60 border-l pl-2 sm:pl-4 whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px] sm:max-w-none"
             style="border-color: var(--theme-card-border);"><?= htmlspecialchars($topbarGroupName) ?></span>
