@@ -67,6 +67,8 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 - `api/telegram_webhook.php` — Inbound webhook for commands and continuous live GPS streaming
 - `services/telegram_listener.py` — MTProto background listener daemon (Telethon)
 - `kiosk.php` — Kiosk authentication and status API
+- `install.sh` — Bash bootstrapper for automated LAMP server deployment
+- `install.php` & `install_helper.php` — 6-step interactive web setup wizard & AJAX backend
 
 ---
 
@@ -83,7 +85,7 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 - Standalone cron scripts in `cron/` must **NEVER** include `includes/auth.php` or `functies.php`
 - Use `$conn` for database access (provided by `dblogin.php`)
 - Always ensure `$conn->set_charset("utf8mb4");` is configured
-- Use prepared statements for ALL queries ??? no exceptions
+- Use prepared statements for ALL queries — no exceptions
 - Use `htmlspecialchars()` when outputting any user-provided data
 - Use `require_once` for critical includes, `include_once` for optional UI components
 - Single quotes by default, double quotes only for string interpolation
@@ -109,6 +111,17 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 - Never drop tables or columns without explicit user approval
 - Don't add user content like API keys and names to `DB/createDB.sql` as the repository is public. Use placeholders if needed.
 
+### 3.6 Auto-Installer Maintenance
+Whenever introducing or altering major system components, database tables, site settings, API keys, background daemons, or system dependencies:
+1. **System Packages & Dependencies (`install.sh`)**: Ensure all required apt packages, PHP extensions, Python packages (`pip3`), Composer packages, and Apache modules are present in `install.sh`.
+2. **Web Setup Wizard (`install.php`, `install_helper.php`, `js/install.js`)**:
+   - Update Step 1 (Requirements Check) if new PHP extensions or writable directories are required.
+   - Update Step 2 (Database Setup) if schema import or database user privileges need adjustments.
+   - Update Step 4 (Site & API Settings) if new API keys (e.g. Mapbox, Firebase, Telegram) or `Site_Instellingen` rows are introduced. Include live validation test buttons in `install.php` / `js/install.js` / `install_helper.php` where applicable.
+   - Update Step 5 (Crontab & Background Tasks) if new recurring background scripts or default `Cronjobs` entries are added.
+3. **Database Schema (`DB/createDB.sql`)**: Ensure table definitions maintain `PRIMARY KEY` and `AUTO_INCREMENT` directly on table creation so foreign keys resolve without order dependency.
+4. **Documentation (`README.md`)**: Ensure hardware requirements (e.g., minimum 8 GB disk space) and the single-line installation command remain accurate.
+
 ---
 
 ## 4. File Placement Rules
@@ -119,6 +132,7 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 | New page | Root directory (`*.php`) |
 | Admin page | `admin/*.php` |
 | AJAX/POST handler | `*_helper.php` (next to its page) |
+| Server installer / bootstrapper | `install.sh`, `install.php`, `install_helper.php` |
 | Reusable PHP function | `includes/helpers.php` or `includes/db.php` |
 | Shared UI component | `includes/*.php` |
 | JavaScript (shared) | `js/*.js` |

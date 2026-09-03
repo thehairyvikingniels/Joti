@@ -136,6 +136,33 @@ def main():
             "telegram_code": None
         }
 
+        # Look for group_id in links or page text e.g. /scoutingGroup/12
+        group_id_match = re.search(r'/(?:scoutingGroup|scoutinggroep|groep|subscriptions)/(\d+)', dashboard_page.text)
+        if group_id_match:
+            scraped_data["group_id"] = int(group_id_match.group(1))
+        else:
+            scraped_data["group_id"] = None
+
+        # Look for group name in title or heading
+        group_name = None
+        title_tag = dashboard_soup.find('title')
+        if title_tag and '-' in title_tag.text:
+            parts = [p.strip() for p in title_tag.text.split('-')]
+            for p in parts:
+                if p.lower() not in ['jotihunt', 'dashboard', 'home', 'inloggen']:
+                    group_name = p
+                    break
+
+        if not group_name:
+            for heading in dashboard_soup.find_all(['h1', 'h2', 'span', 'p']):
+                txt = heading.text.strip()
+                if any(k in txt.lower() for k in ['scouting', 'groep']):
+                    if len(txt) < 60 and not any(s in txt.lower() for s in ['ingestuurd', 'dashboard', 'deelgebieden', 'punten', 'hunts', 'foto-opdracht']):
+                        group_name = txt
+                        break
+
+        scraped_data["group_name"] = group_name
+
         # Look for Telegram registration code e.g. "/register ev8Noa"
         telegram_match = re.search(r'/register\s+([A-Za-z0-9]+)', dashboard_page.text)
         if telegram_match:

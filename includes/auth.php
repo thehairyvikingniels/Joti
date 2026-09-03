@@ -16,8 +16,7 @@ if (session_status() === PHP_SESSION_NONE) {
 // 2. Check if installation is complete; if not, redirect to installer
 if (!file_exists(__DIR__ . '/../dblogin.php') || !file_exists(__DIR__ . '/../.installed')) {
     if (file_exists(__DIR__ . '/../install.php') || file_exists(__DIR__ . '/../install')) {
-        $installRedirect = (basename(dirname($_SERVER['SCRIPT_FILENAME'])) === 'admin') ? '../install' : 'install';
-        header('Location: ' . $installRedirect);
+        header('Location: /install');
         exit();
     }
 }
