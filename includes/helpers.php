@@ -451,3 +451,45 @@ if (!function_exists('recordCronLog')) {
         }
     }
 }
+
+/**
+ * Format bytes or bits into a human-readable string with custom 800-unit threshold.
+ *
+ * Threshold rule: value stays in current unit until hitting 800, then shifts to next unit:
+ *   799 KB stays 799 KB
+ *   900 KB -> 0.9 MB
+ *   1,000,000 KB -> 1 GB
+ *
+ * @param float|int $bytes Number of bytes.
+ * @param bool $asBits If true, converts bytes to bits (x8) and outputs (b, Kb, Mb, Gb, Tb).
+ * @param int $precision Number of decimals (default 1).
+ * @param bool $perSecond If true, appends '/s' (e.g. 'Kb/s', 'MB/s').
+ * @return string
+ */
+if (!function_exists('bitbyte2string')) {
+    function bitbyte2string(float|int $bytes, bool $asBits = false, int $precision = 1, bool $perSecond = false): string {
+        $units = $asBits
+            ? ['b', 'Kb', 'Mb', 'Gb', 'Tb']
+            : ['B', 'KB', 'MB', 'GB', 'TB'];
+
+        $val = $asBits ? ($bytes * 8.0) : (float)$bytes;
+
+        if ($val <= 0) {
+            return '0 ' . $units[0] . ($perSecond ? '/s' : '');
+        }
+
+        $idx = 0;
+        $maxIdx = count($units) - 1;
+
+        while ($val >= 800.0 && $idx < $maxIdx) {
+            $val /= 1024.0;
+            $idx++;
+        }
+
+        $rounded = round($val, $precision);
+        $numStr = (fmod($rounded, 1.0) == 0.0) ? (string)(int)$rounded : number_format($rounded, $precision, '.', '');
+
+        return $numStr . ' ' . $units[$idx] . ($perSecond ? '/s' : '');
+    }
+}
+

@@ -142,6 +142,15 @@ PACKAGES=(
 echo -e "${CYAN}Installing system packages: ${PACKAGES[*]}...${NC}"
 apt-get install -y "${PACKAGES[@]}"
 
+# Tune PHP upload and execution limits for backups and large migrations
+for ini_file in /etc/php/*/apache2/php.ini /etc/php/*/cli/php.ini /etc/php/*/fpm/php.ini; do
+    if [ -f "$ini_file" ]; then
+        sed -i 's/upload_max_filesize = .*/upload_max_filesize = 64M/' "$ini_file"
+        sed -i 's/post_max_size = .*/post_max_size = 64M/' "$ini_file"
+        sed -i 's/max_execution_time = .*/max_execution_time = 300/' "$ini_file"
+    fi
+done
+
 # 4. Install Composer if not already present
 if ! command -v composer &> /dev/null; then
     echo -e "${CYAN}Installing Composer globally...${NC}"
@@ -262,10 +271,17 @@ chown -R www-data:www-data "$WEBROOT"
 find "$WEBROOT" -type d -exec chmod 755 {} \;
 find "$WEBROOT" -type f -exec chmod 644 {} \;
 
-# Ensure writeable directories for uploads & media
-mkdir -p "$WEBROOT/media/profiles" "$WEBROOT/media/hunts" "$WEBROOT/media/tegenhunt" "$WEBROOT/services"
-chown -R www-data:www-data "$WEBROOT/media" "$WEBROOT/services"
-chmod -R 775 "$WEBROOT/media"
+# Ensure writeable directories for uploads & media & backups
+mkdir -p "$WEBROOT/media/profiles" "$WEBROOT/media/hunts" "$WEBROOT/media/tegenhunt" "$WEBROOT/services" "$WEBROOT/DB/backups"
+chown -R www-data:www-data "$WEBROOT/media" "$WEBROOT/services" "$WEBROOT/DB/backups"
+chmod -R 775 "$WEBROOT/media" "$WEBROOT/services" "$WEBROOT/DB/backups"
+
+# Git repository configuration for in-app updates
+git config --system --add safe.directory "$WEBROOT" || true
+git config --system --add safe.directory '*' || true
+git config --global --add safe.directory "$WEBROOT" || true
+su -s /bin/bash www-data -c "git config --global --add safe.directory '$WEBROOT' || true" || true
+su -s /bin/bash www-data -c "git -C '$WEBROOT' config core.filemode false || true" || true
 
 # Start / Restart Services
 if [ ! -d "/var/lib/mysql/mysql" ]; then

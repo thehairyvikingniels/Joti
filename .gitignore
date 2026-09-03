@@ -23,3 +23,9 @@ __pycache__/
 services/__pycache__/
 
 
+
+# Database backups
+DB/backups/
+*.sql.gz
+DB/*.sql
+!DB/createDB.sql

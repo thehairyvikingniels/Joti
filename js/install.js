@@ -164,33 +164,63 @@ async function runSystemChecks() {
 function toggleDbMode(mode) {
     const cardRoot = document.getElementById('card-root-credentials');
     const cardExisting = document.getElementById('card-existing-options');
+    const cardBackup = document.getElementById('card-backup-upload');
     const labelCreate = document.getElementById('label_mode_create');
     const labelExisting = document.getElementById('label_mode_existing');
+    const labelRestore = document.getElementById('label_mode_restore');
     const rootUser = document.getElementById('root_user');
     const btnText = document.getElementById('db-btn-text');
 
-    if (mode === 'use_existing') {
+    if (labelCreate) labelCreate.className = 'relative flex items-center p-3 rounded-lg border border-slate-700 bg-slate-800/60 cursor-pointer transition hover:bg-slate-800';
+    if (labelExisting) labelExisting.className = 'relative flex items-center p-3 rounded-lg border border-slate-700 bg-slate-800/60 cursor-pointer transition hover:bg-slate-800';
+    if (labelRestore) labelRestore.className = 'relative flex items-center p-3 rounded-lg border border-slate-700 bg-slate-800/60 cursor-pointer transition hover:bg-slate-800';
+
+    if (mode === 'restore_backup') {
+        if (cardRoot) cardRoot.classList.remove('hidden');
+        if (cardExisting) cardExisting.classList.add('hidden');
+        if (cardBackup) cardBackup.classList.remove('hidden');
+        if (rootUser) rootUser.removeAttribute('required');
+        if (labelRestore) labelRestore.className = 'relative flex items-center p-3 rounded-lg border border-emerald-500/50 bg-emerald-500/10 cursor-pointer transition hover:bg-emerald-500/20';
+        if (btnText) btnText.textContent = 'Database Configureren & Back-up Herstellen';
+    } else if (mode === 'use_existing') {
         if (cardRoot) cardRoot.classList.add('hidden');
         if (cardExisting) cardExisting.classList.remove('hidden');
+        if (cardBackup) cardBackup.classList.add('hidden');
         if (rootUser) rootUser.removeAttribute('required');
-        if (labelCreate) {
-            labelCreate.className = 'relative flex items-center p-3 rounded-lg border border-slate-700 bg-slate-800/60 cursor-pointer transition hover:bg-slate-800';
-        }
-        if (labelExisting) {
-            labelExisting.className = 'relative flex items-center p-3 rounded-lg border border-blue-500/50 bg-blue-500/10 cursor-pointer transition hover:bg-blue-500/20';
-        }
+        if (labelExisting) labelExisting.className = 'relative flex items-center p-3 rounded-lg border border-blue-500/50 bg-blue-500/10 cursor-pointer transition hover:bg-blue-500/20';
         if (btnText) btnText.textContent = 'Schema Importeren in Bestaande Database';
     } else {
         if (cardRoot) cardRoot.classList.remove('hidden');
         if (cardExisting) cardExisting.classList.add('hidden');
+        if (cardBackup) cardBackup.classList.add('hidden');
         if (rootUser) rootUser.setAttribute('required', 'required');
-        if (labelCreate) {
-            labelCreate.className = 'relative flex items-center p-3 rounded-lg border border-blue-500/50 bg-blue-500/10 cursor-pointer transition hover:bg-blue-500/20';
-        }
-        if (labelExisting) {
-            labelExisting.className = 'relative flex items-center p-3 rounded-lg border border-slate-700 bg-slate-800/60 cursor-pointer transition hover:bg-slate-800';
-        }
+        if (labelCreate) labelCreate.className = 'relative flex items-center p-3 rounded-lg border border-blue-500/50 bg-blue-500/10 cursor-pointer transition hover:bg-blue-500/20';
         if (btnText) btnText.textContent = 'Database Installeren & Schema Importeren';
+    }
+}
+
+function onBackupFileSelected(event) {
+    const input = event.target;
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const label = document.getElementById('backup-file-label');
+        const info = document.getElementById('backup-file-info');
+        if (label) label.textContent = file.name;
+        if (info) info.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB • Klaar voor herstel';
+    }
+}
+
+function prefillSettings(settings) {
+    if (!settings) return;
+    for (const [key, val] of Object.entries(settings)) {
+        const input = document.getElementById(key);
+        if (input) {
+            if (input.type === 'checkbox') {
+                input.checked = (val == '1' || val === true || val === 'true');
+            } else {
+                input.value = val;
+            }
+        }
     }
 }
 
@@ -215,7 +245,14 @@ async function submitDatabase(e) {
     const btn = document.getElementById('btn-submit-db');
     const btnText = document.getElementById('db-btn-text');
     btn.disabled = true;
-    btnText.textContent = (dbMode === 'use_existing') ? 'Verbinding testen & tabellen importeren...' : 'Database aanmaken & schema importeren...';
+
+    if (dbMode === 'restore_backup') {
+        btnText.textContent = 'Back-up uitpakken & data migreren...';
+    } else if (dbMode === 'use_existing') {
+        btnText.textContent = 'Verbinding testen & tabellen importeren...';
+    } else {
+        btnText.textContent = 'Database aanmaken & schema importeren...';
+    }
 
     const formData = new FormData();
     formData.append('action', 'setup_database');
@@ -226,7 +263,18 @@ async function submitDatabase(e) {
     formData.append('db_user', document.getElementById('db_user').value.trim());
     formData.append('db_pass', document.getElementById('db_pass').value);
 
-    if (dbMode === 'create_new') {
+    if (dbMode === 'restore_backup') {
+        const fileInput = document.getElementById('backup_file');
+        if (!fileInput.files || fileInput.files.length === 0) {
+            showAlert('Selecteer eerst een Jotify back-uparchief (.tar.gz / .tar.xz) om te herstellen.', 'error');
+            btn.disabled = false;
+            btnText.textContent = 'Database Configureren & Back-up Herstellen';
+            return;
+        }
+        formData.append('backup_file', fileInput.files[0]);
+        formData.append('root_user', document.getElementById('root_user').value.trim());
+        formData.append('root_pass', document.getElementById('root_pass').value);
+    } else if (dbMode === 'create_new') {
         formData.append('root_user', document.getElementById('root_user').value.trim());
         formData.append('root_pass', document.getElementById('root_pass').value);
     }
@@ -235,17 +283,48 @@ async function submitDatabase(e) {
         const data = await fetchJson('install_helper.php', { method: 'POST', body: formData });
 
         if (data.ok) {
-            showAlert('Database en tabellenschema succesvol geconfigureerd!', 'success');
-            setTimeout(() => goToStep(3), 800);
+            if (data.migrated) {
+                window.isMigrated = true;
+                showAlert(data.message || 'Database en mediabestanden succesvol hersteld vanuit back-up!', 'success');
+                
+                // Update Step 3 Admin
+                const cardAdminMigrated = document.getElementById('card-admin-migrated');
+                const desc = document.getElementById('migrated-admin-desc');
+                if (cardAdminMigrated) cardAdminMigrated.classList.remove('hidden');
+                if (desc && data.admin_users && data.admin_users.length > 0) {
+                    desc.textContent = `De accounts uit de back-up zijn hersteld (o.a. Superadmin: ${data.admin_users.map(u => u.gebruikersnaam).join(', ')}). Je kunt hieronder een extra beheerder aanmaken of direct doorgaan naar Stap 4.`;
+                }
+
+                // Make admin form optional
+                ['admin_voornaam', 'admin_achternaam', 'admin_email', 'admin_username', 'admin_password'].forEach(id => {
+                    document.getElementById(id)?.removeAttribute('required');
+                });
+                const btnAdmin = document.getElementById('btn-submit-admin');
+                if (btnAdmin) {
+                    btnAdmin.innerHTML = '<span>Extra Beheerder Opslaan (of Overslaan)</span> <i class="fa-solid fa-arrow-right"></i>';
+                }
+
+                // Update Step 4 Settings
+                const cardSettingsMigrated = document.getElementById('card-settings-migrated');
+                if (cardSettingsMigrated) cardSettingsMigrated.classList.remove('hidden');
+                if (data.settings) {
+                    prefillSettings(data.settings);
+                }
+
+                setTimeout(() => goToStep(3), 1000);
+            } else {
+                showAlert('Database en tabellenschema succesvol geconfigureerd!', 'success');
+                setTimeout(() => goToStep(3), 800);
+            }
         } else {
             showAlert(data.error || 'Database installatie mislukt.', 'error');
             btn.disabled = false;
-            btnText.textContent = (dbMode === 'use_existing') ? 'Schema Importeren in Bestaande Database' : 'Database Installeren & Schema Importeren';
+            btnText.textContent = (dbMode === 'restore_backup') ? 'Database Configureren & Back-up Herstellen' : ((dbMode === 'use_existing') ? 'Schema Importeren in Bestaande Database' : 'Database Installeren & Schema Importeren');
         }
     } catch (err) {
         showAlert('Communicatiefout met de server: ' + err.message, 'error');
         btn.disabled = false;
-        btnText.textContent = (dbMode === 'use_existing') ? 'Schema Importeren in Bestaande Database' : 'Database Installeren & Schema Importeren';
+        btnText.textContent = (dbMode === 'restore_backup') ? 'Database Configureren & Back-up Herstellen' : ((dbMode === 'use_existing') ? 'Schema Importeren in Bestaande Database' : 'Database Installeren & Schema Importeren');
     }
 }
 
@@ -255,6 +334,12 @@ async function submitDatabase(e) {
 async function submitAdmin(e) {
     e.preventDefault();
     hideAlert();
+
+    const username = document.getElementById('admin_username').value.trim();
+    if (window.isMigrated && !username) {
+        goToStep(4);
+        return;
+    }
 
     const btn = document.getElementById('btn-submit-admin');
     btn.disabled = true;

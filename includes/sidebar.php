@@ -79,6 +79,10 @@ $pagelist = array(
     'admin_telegram' => array(
         'active' => null,
         'filename' => 'admin/telegram.php'
+    ),
+    'sa_system' => array(
+        'active' => null,
+        'filename' => 'admin/system.php'
     )
 );
 $pagelist[PAGE_NAME]['active'] = " theme-sidebar-active theme-border-primary text-white";
@@ -97,7 +101,8 @@ $adminpagelist = array(
     'a_serviceaccounts',
     'admin_telegram',
     'sa_settings',
-    'sa_notifications'
+    'sa_notifications',
+    'sa_system'
 );
 if (in_array(PAGE_NAME, $adminpagelist)) {
     $inAdminfolder = "";
@@ -175,6 +180,7 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
     <?php endif; ?>
     <?php if ($privilege > 2): ?>
     <a href="<?=$inAdminfolder?>settings" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['sa_settings']['active']?>"><i class="fas fa-toolbox fa-fw w-5 opacity-70"></i><span>Settings</span></a>
+    <a href="<?=$inAdminfolder?>system" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['sa_system']['active']?>"><i class="fas fa-server fa-fw w-5 opacity-70"></i><span>Systeem</span></a>
     <?php endif; ?>
   </nav>
 </aside>
