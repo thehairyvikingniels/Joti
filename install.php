@@ -5,7 +5,7 @@
 
 $lockFile = __DIR__ . '/.installed';
 if (file_exists($lockFile)) {
-    header('Location: login');
+    header('Location: /login');
     exit();
 }
 ?>
@@ -137,6 +137,35 @@ if (file_exists($lockFile)) {
             </div>
 
             <form id="form-database" class="space-y-6" onsubmit="submitDatabase(event)">
+                <!-- Database Mode Selector -->
+                <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 space-y-3">
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Installatiemodus Database</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="relative flex items-center p-3 rounded-lg border border-blue-500/50 bg-blue-500/10 cursor-pointer transition hover:bg-blue-500/20" id="label_mode_create">
+                            <input type="radio" name="db_mode" value="create_new" checked onchange="toggleDbMode(this.value)" class="text-blue-500 focus:ring-blue-400">
+                            <div class="ml-3">
+                                <span class="block text-sm font-medium text-white">Nieuwe Database Aanmaken</span>
+                                <span class="block text-xs text-slate-400">Maakt database en gebruiker aan (vereist root)</span>
+                            </div>
+                        </label>
+                        <label class="relative flex items-center p-3 rounded-lg border border-slate-700 bg-slate-800/60 cursor-pointer transition hover:bg-slate-800" id="label_mode_existing">
+                            <input type="radio" name="db_mode" value="use_existing" onchange="toggleDbMode(this.value)" class="text-blue-500 focus:ring-blue-400">
+                            <div class="ml-3">
+                                <span class="block text-sm font-medium text-white">Bestaande Database Gebruiken</span>
+                                <span class="block text-xs text-slate-400">Verbindt direct met opgegeven gebruiker (geen root)</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Optional Table Wipe for Existing DB -->
+                    <div id="card-existing-options" class="hidden mt-3 bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg flex items-start gap-2.5 text-xs text-amber-200">
+                        <input type="checkbox" id="drop_existing" class="mt-0.5 rounded text-amber-500 focus:ring-amber-400">
+                        <label for="drop_existing" class="cursor-pointer select-none">
+                            <strong>Bestaande tabellen overschrijven / legen:</strong> Verwijder eventuele bestaande tabellen in deze database voor een schone start. Laat uitgeschakeld om bestaande tabellen te behouden.
+                        </label>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     <!-- App Database Details -->
@@ -146,15 +175,15 @@ if (file_exists($lockFile)) {
                         </h3>
                         <div>
                             <label class="block text-xs text-slate-400 mb-1">Database Host</label>
-                            <input type="text" id="db_host" value="localhost" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                            <input type="text" id="db_host" value="localhost" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono">
                         </div>
                         <div>
                             <label class="block text-xs text-slate-400 mb-1">Database Naam</label>
-                            <input type="text" id="db_name" value="jotihunt" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                            <input type="text" id="db_name" value="jotihunt" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono">
                         </div>
                         <div>
                             <label class="block text-xs text-slate-400 mb-1">Database Gebruikersnaam</label>
-                            <input type="text" id="db_user" value="jotify" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                            <input type="text" id="db_user" value="jotify" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono">
                         </div>
                         <div>
                             <label class="block text-xs text-slate-400 mb-1">Database Wachtwoord</label>
@@ -167,8 +196,8 @@ if (file_exists($lockFile)) {
                         </div>
                     </div>
 
-                    <!-- Root DB Credentials -->
-                    <div class="space-y-4 bg-slate-900/50 p-4 rounded-xl border border-slate-700/60">
+                    <!-- Root DB Credentials (only shown in create_new mode) -->
+                    <div id="card-root-credentials" class="space-y-4 bg-slate-900/50 p-4 rounded-xl border border-slate-700/60">
                         <h3 class="text-sm font-semibold text-purple-400 flex items-center gap-2">
                             <i class="fa-solid fa-key"></i> Database Beheerdersrechten
                         </h3>
@@ -177,7 +206,7 @@ if (file_exists($lockFile)) {
                         </p>
                         <div>
                             <label class="block text-xs text-slate-400 mb-1">Beheerder Gebruikersnaam</label>
-                            <input type="text" id="root_user" value="root" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+                            <input type="text" id="root_user" value="root" required class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500 font-mono">
                         </div>
                         <div>
                             <label class="block text-xs text-slate-400 mb-1">Beheerder Wachtwoord (Leeg laten bij socket auth)</label>

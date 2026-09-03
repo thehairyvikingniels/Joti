@@ -13,7 +13,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 if (!file_exists(__DIR__ . '/dblogin.php') || !file_exists(__DIR__ . '/.installed')) {
     if (file_exists(__DIR__ . '/install.php') || file_exists(__DIR__ . '/install')) {
-        header("Location: install");
+        header("Location: /install");
         exit();
     }
 }

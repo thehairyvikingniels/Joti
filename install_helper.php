@@ -123,12 +123,14 @@ switch ($action) {
     // 2. Setup Database
     // =========================================================================
     case 'setup_database':
-        $dbHost     = trim($_POST['db_host'] ?? 'localhost');
-        $dbName     = trim($_POST['db_name'] ?? 'jotihunt');
-        $dbUser     = trim($_POST['db_user'] ?? 'jotify');
-        $dbPass     = trim($_POST['db_pass'] ?? '');
-        $rootUser   = trim($_POST['root_user'] ?? 'root');
-        $rootPass   = trim($_POST['root_pass'] ?? '');
+        $dbMode       = trim($_POST['db_mode'] ?? 'create_new');
+        $dropExisting = !empty($_POST['drop_existing']);
+        $dbHost       = trim($_POST['db_host'] ?? 'localhost');
+        $dbName       = trim($_POST['db_name'] ?? 'jotihunt');
+        $dbUser       = trim($_POST['db_user'] ?? 'jotify');
+        $dbPass       = trim($_POST['db_pass'] ?? '');
+        $rootUser     = trim($_POST['root_user'] ?? 'root');
+        $rootPass     = trim($_POST['root_pass'] ?? '');
 
         if (empty($dbName) || empty($dbUser) || empty($dbPass)) {
             sendError('Vul alle verplichte databasevelden in.');
@@ -139,40 +141,71 @@ switch ($action) {
             sendError('Database- en gebruikersnamen mogen alleen letters, cijfers en underscores bevatten.');
         }
 
-        // 1. Connect as root
         mysqli_report(MYSQLI_REPORT_OFF);
-        $rootConn = @new mysqli($dbHost, $rootUser, $rootPass);
 
-        if ($rootConn->connect_error) {
-            // Try connecting via 127.0.0.1 if localhost failed
-            $fallbackHost = ($dbHost === 'localhost') ? '127.0.0.1' : 'localhost';
-            $rootConn = @new mysqli($fallbackHost, $rootUser, $rootPass);
+        if ($dbMode === 'create_new') {
+            // 1. Connect as root
+            $rootConn = @new mysqli($dbHost, $rootUser, $rootPass);
+
+            if ($rootConn->connect_error) {
+                // Try connecting via 127.0.0.1 if localhost failed
+                $fallbackHost = ($dbHost === 'localhost') ? '127.0.0.1' : 'localhost';
+                $rootConn = @new mysqli($fallbackHost, $rootUser, $rootPass);
+            }
+
+            if ($rootConn->connect_error) {
+                sendError('Kon geen verbinding maken als database beheerder (' . $rootUser . '): ' . $rootConn->connect_error . '. Gebruik eventueel de modus "Bestaande Database Gebruiken".');
+            }
+
+            $rootConn->set_charset('utf8mb4');
+
+            // 2. Create Clean Database
+            $rootConn->query("DROP DATABASE IF EXISTS `$dbName`;");
+            if (!$rootConn->query("CREATE DATABASE `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;")) {
+                sendError('Fout bij aanmaken database: ' . $rootConn->error);
+            }
+
+            // 3. Create User & Grant Privileges
+            $escapedPass = $rootConn->real_escape_string($dbPass);
+            $rootConn->query("CREATE USER IF NOT EXISTS '$dbUser'@'localhost' IDENTIFIED BY '$escapedPass';");
+            $rootConn->query("ALTER USER '$dbUser'@'localhost' IDENTIFIED BY '$escapedPass';");
+            $rootConn->query("GRANT ALL PRIVILEGES ON `$dbName`.* TO '$dbUser'@'localhost';");
+            
+            // Also grant on 127.0.0.1
+            $rootConn->query("CREATE USER IF NOT EXISTS '$dbUser'@'127.0.0.1' IDENTIFIED BY '$escapedPass';");
+            $rootConn->query("ALTER USER '$dbUser'@'127.0.0.1' IDENTIFIED BY '$escapedPass';");
+            $rootConn->query("GRANT ALL PRIVILEGES ON `$dbName`.* TO '$dbUser'@'127.0.0.1';");
+            $rootConn->query("FLUSH PRIVILEGES;");
+            $rootConn->close();
+        } else {
+            // Mode: use_existing — Connect directly with application credentials
+            $testConn = @new mysqli($dbHost, $dbUser, $dbPass, $dbName);
+            if ($testConn->connect_error) {
+                $fallbackHost = ($dbHost === 'localhost') ? '127.0.0.1' : 'localhost';
+                $testConn = @new mysqli($fallbackHost, $dbUser, $dbPass, $dbName);
+            }
+
+            if ($testConn->connect_error) {
+                sendError('Kon niet verbinden met database "' . $dbName . '" als gebruiker "' . $dbUser . '": ' . $testConn->connect_error);
+            }
+
+            $testConn->set_charset('utf8mb4');
+
+            // Optional: Drop existing tables if requested for a clean slate
+            if ($dropExisting) {
+                $testConn->query("SET FOREIGN_KEY_CHECKS = 0;");
+                $tablesRes = $testConn->query("SHOW TABLES");
+                if ($tablesRes) {
+                    while ($row = $tablesRes->fetch_array()) {
+                        $tbl = $row[0];
+                        $testConn->query("DROP TABLE IF EXISTS `$tbl`");
+                    }
+                    $tablesRes->free();
+                }
+                $testConn->query("SET FOREIGN_KEY_CHECKS = 1;");
+            }
+            $testConn->close();
         }
-
-        if ($rootConn->connect_error) {
-            sendError('Kon geen verbinding maken als database beheerder (' . $rootUser . '): ' . $rootConn->connect_error);
-        }
-
-        $rootConn->set_charset('utf8mb4');
-
-        // 2. Create Clean Database
-        $rootConn->query("DROP DATABASE IF EXISTS `$dbName`;");
-        if (!$rootConn->query("CREATE DATABASE `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;")) {
-            sendError('Fout bij aanmaken database: ' . $rootConn->error);
-        }
-
-        // 3. Create User & Grant Privileges
-        $escapedPass = $rootConn->real_escape_string($dbPass);
-        $rootConn->query("CREATE USER IF NOT EXISTS '$dbUser'@'localhost' IDENTIFIED BY '$escapedPass';");
-        $rootConn->query("ALTER USER '$dbUser'@'localhost' IDENTIFIED BY '$escapedPass';");
-        $rootConn->query("GRANT ALL PRIVILEGES ON `$dbName`.* TO '$dbUser'@'localhost';");
-        
-        // Also grant on 127.0.0.1
-        $rootConn->query("CREATE USER IF NOT EXISTS '$dbUser'@'127.0.0.1' IDENTIFIED BY '$escapedPass';");
-        $rootConn->query("ALTER USER '$dbUser'@'127.0.0.1' IDENTIFIED BY '$escapedPass';");
-        $rootConn->query("GRANT ALL PRIVILEGES ON `$dbName`.* TO '$dbUser'@'127.0.0.1';");
-        $rootConn->query("FLUSH PRIVILEGES;");
-        $rootConn->close();
 
         // 4. Import DB/createDB.sql schema
         $sqlPath = __DIR__ . '/DB/createDB.sql';
@@ -185,17 +218,17 @@ switch ($action) {
         $importCmd = "mariadb -h " . escapeshellarg($cliHost) . " -u " . escapeshellarg($dbUser) . " -p" . escapeshellarg($dbPass) . " " . escapeshellarg($dbName) . " < " . escapeshellarg($sqlPath) . " 2>&1";
         exec($importCmd, $importOut, $importRet);
 
-        // Verify connection and tables as new user
+        // Verify connection and tables as application user
         $userConn = @new mysqli($dbHost, $dbUser, $dbPass, $dbName);
         if ($userConn->connect_error) {
             $userConn = @new mysqli('127.0.0.1', $dbUser, $dbPass, $dbName);
         }
         if ($userConn->connect_error) {
-            sendError('Verbinding met nieuwe databasegebruiker mislukt: ' . $userConn->connect_error);
+            sendError('Verbinding met databasegebruiker mislukt na import: ' . $userConn->connect_error);
         }
         $userConn->set_charset('utf8mb4');
 
-        // Fallback: If CLI import failed or produced no tables, run multi_query
+        // Fallback: If CLI import produced no tables, run multi_query
         $resCheck = $userConn->query("SHOW TABLES LIKE 'Site_Instellingen'");
         if (!$resCheck || $resCheck->num_rows === 0) {
             $sqlContent = file_get_contents($sqlPath);
@@ -666,7 +699,7 @@ switch ($action) {
 
         sendSuccess([
             'message' => 'Jotify installatie is succesvol voltooid!',
-            'redirect' => 'login'
+            'redirect' => '/login'
         ]);
         break;
 

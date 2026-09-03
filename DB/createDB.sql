@@ -24,7 +24,7 @@ SET time_zone = "+00:00";
 -- Tabelstructuur voor tabel `Auto`
 --
 
-CREATE TABLE `Auto` (
+CREATE TABLE IF NOT EXISTS `Auto` (
   `kenteken` char(8) NOT NULL,
   `eigenaar` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -40,7 +40,7 @@ CREATE TABLE `Auto` (
 -- Tabelstructuur voor tabel `Auto_Bijrijders`
 --
 
-CREATE TABLE `Auto_Bijrijders` (
+CREATE TABLE IF NOT EXISTS `Auto_Bijrijders` (
   `auto` char(8) NOT NULL,
   `gebruiker_id` int(11) NOT NULL,
   `boarding_time` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
@@ -57,7 +57,7 @@ CREATE TABLE `Auto_Bijrijders` (
 -- Tabelstructuur voor tabel `Auto_Positie`
 --
 
-CREATE TABLE `Auto_Positie` (
+CREATE TABLE IF NOT EXISTS `Auto_Positie` (
   `auto` char(8) NOT NULL,
   `gebruiker_id` int(11) DEFAULT NULL,
   `datumtijd` datetime NOT NULL,
@@ -75,7 +75,7 @@ CREATE TABLE `Auto_Positie` (
 -- Tabelstructuur voor tabel `Auto_Toewijzingen`
 --
 
-CREATE TABLE `Auto_Toewijzingen` (
+CREATE TABLE IF NOT EXISTS `Auto_Toewijzingen` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `auto` char(8) NOT NULL,
   `type` varchar(32) NOT NULL,
@@ -92,7 +92,7 @@ CREATE TABLE `Auto_Toewijzingen` (
 -- Tabelstructuur voor tabel `Cronjobs`
 --
 
-CREATE TABLE `Cronjobs` (
+CREATE TABLE IF NOT EXISTS `Cronjobs` (
   `name` varchar(16) NOT NULL,
   `enabled` tinyint(1) NOT NULL DEFAULT 0,
   `URL` varchar(1024) NOT NULL,
@@ -107,7 +107,7 @@ CREATE TABLE `Cronjobs` (
 -- Tabelstructuur voor tabel `Cronlogs`
 --
 
-CREATE TABLE `Cronlogs` (
+CREATE TABLE IF NOT EXISTS `Cronlogs` (
   `name` varchar(16) NOT NULL,
   `exec_time` datetime NOT NULL,
   `exec_length` int(11) DEFAULT NULL,
@@ -124,7 +124,7 @@ CREATE TABLE `Cronlogs` (
 -- Tabelstructuur voor tabel `Gebruikers`
 --
 
-CREATE TABLE `Gebruikers` (
+CREATE TABLE IF NOT EXISTS `Gebruikers` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `voornaam` varchar(16) NOT NULL,
   `achternaam` varchar(32) NOT NULL,
@@ -155,7 +155,7 @@ CREATE TABLE `Gebruikers` (
 -- Tabelstructuur voor tabel `Gebruikers_Tokens`
 --
 
-CREATE TABLE `Gebruikers_Tokens` (
+CREATE TABLE IF NOT EXISTS `Gebruikers_Tokens` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `selector` varchar(64) NOT NULL,
@@ -175,7 +175,7 @@ CREATE TABLE `Gebruikers_Tokens` (
 -- Tabelstructuur voor tabel `Groepen`
 --
 
-CREATE TABLE `Groepen` (
+CREATE TABLE IF NOT EXISTS `Groepen` (
   `id` int(11) NOT NULL,
   `naam` varchar(255) NOT NULL,
   `lat` decimal(7,5) NOT NULL,
@@ -196,7 +196,7 @@ CREATE TABLE `Groepen` (
 -- Tabelstructuur voor tabel `Hints`
 --
 
-CREATE TABLE `Hints` (
+CREATE TABLE IF NOT EXISTS `Hints` (
   `id` int(11) NOT NULL,
   `titel` text NOT NULL,
   `inhoud` text NOT NULL,
@@ -210,7 +210,7 @@ CREATE TABLE `Hints` (
 -- Tabelstructuur voor tabel `Kiosk_Accounts`
 --
 
-CREATE TABLE `Kiosk_Accounts` (
+CREATE TABLE IF NOT EXISTS `Kiosk_Accounts` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `auth_token` varchar(64) NOT NULL,
   `naam` varchar(255) NOT NULL,
@@ -230,7 +230,7 @@ CREATE TABLE `Kiosk_Accounts` (
 -- Tabelstructuur voor tabel `Nieuws`
 --
 
-CREATE TABLE `Nieuws` (
+CREATE TABLE IF NOT EXISTS `Nieuws` (
   `id` int(11) NOT NULL,
   `titel` text NOT NULL,
   `inhoud` text NOT NULL,
@@ -244,7 +244,7 @@ CREATE TABLE `Nieuws` (
 -- Tabelstructuur voor tabel `Notification_Backlog`
 --
 
-CREATE TABLE `Notification_Backlog` (
+CREATE TABLE IF NOT EXISTS `Notification_Backlog` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `title` varchar(255) NOT NULL,
@@ -266,7 +266,7 @@ CREATE TABLE `Notification_Backlog` (
 -- Tabelstructuur voor tabel `Notification_Subscriptions`
 --
 
-CREATE TABLE `Notification_Subscriptions` (
+CREATE TABLE IF NOT EXISTS `Notification_Subscriptions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `endpoint` text NOT NULL,
@@ -285,7 +285,7 @@ CREATE TABLE `Notification_Subscriptions` (
 -- Tabelstructuur voor tabel `Opdrachten`
 --
 
-CREATE TABLE `Opdrachten` (
+CREATE TABLE IF NOT EXISTS `Opdrachten` (
   `id` int(11) NOT NULL,
   `titel` text NOT NULL,
   `inhoud` text NOT NULL,
@@ -303,7 +303,7 @@ CREATE TABLE `Opdrachten` (
 -- Tabelstructuur voor tabel `Punten`
 --
 
-CREATE TABLE `Punten` (
+CREATE TABLE IF NOT EXISTS `Punten` (
   `groep_id` int(11) NOT NULL,
   `hunts` int(11) DEFAULT 0,
   `tegenhunts` int(11) DEFAULT NULL,
@@ -322,7 +322,7 @@ CREATE TABLE `Punten` (
 -- Tabelstructuur voor tabel `Site_Instellingen`
 --
 
-CREATE TABLE `Site_Instellingen` (
+CREATE TABLE IF NOT EXISTS `Site_Instellingen` (
   `Instelling` varchar(32) NOT NULL,
   `Waarde` varchar(128) NOT NULL,
   `Omschrijving` varchar(128) NOT NULL,
@@ -335,7 +335,7 @@ CREATE TABLE `Site_Instellingen` (
 -- Tabelstructuur voor tabel `Tegenhunt_Breadcrumbs`
 --
 
-CREATE TABLE `Tegenhunt_Breadcrumbs` (
+CREATE TABLE IF NOT EXISTS `Tegenhunt_Breadcrumbs` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `session_id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
@@ -356,7 +356,7 @@ CREATE TABLE `Tegenhunt_Breadcrumbs` (
 -- Tabelstructuur voor tabel `Tegenhunt_Sessions`
 --
 
-CREATE TABLE `Tegenhunt_Sessions` (
+CREATE TABLE IF NOT EXISTS `Tegenhunt_Sessions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `start_time` datetime NOT NULL,
   `end_time` datetime NOT NULL,
@@ -381,7 +381,7 @@ CREATE TABLE `Tegenhunt_Sessions` (
 -- Tabelstructuur voor tabel `Telegram_Messages`
 --
 
-CREATE TABLE `Telegram_Messages` (
+CREATE TABLE IF NOT EXISTS `Telegram_Messages` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `telegram_message_id` bigint(20) DEFAULT NULL,
   `sender` varchar(64) NOT NULL DEFAULT '@Jotihunt_bot',
@@ -403,7 +403,7 @@ CREATE TABLE `Telegram_Messages` (
 -- Tabelstructuur voor tabel `Toewijzingen`
 --
 
-CREATE TABLE `Toewijzingen` (
+CREATE TABLE IF NOT EXISTS `Toewijzingen` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `gebruiker_id` int(11) NOT NULL,
   `type` varchar(32) NOT NULL,
@@ -420,7 +420,7 @@ CREATE TABLE `Toewijzingen` (
 -- Tabelstructuur voor tabel `Voslocaties`
 --
 
-CREATE TABLE `Voslocaties` (
+CREATE TABLE IF NOT EXISTS `Voslocaties` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `ingestuurd_op` datetime DEFAULT NULL,
   `type` enum('Hint','Hunt','Spot','Voorspelling','Tegenhunt') NOT NULL,
@@ -445,7 +445,7 @@ CREATE TABLE `Voslocaties` (
 -- Tabelstructuur voor tabel `Voslog`
 --
 
-CREATE TABLE `Voslog` (
+CREATE TABLE IF NOT EXISTS `Voslog` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `datumtijd` datetime NOT NULL,
   `vos` varchar(32) NOT NULL,
@@ -460,7 +460,7 @@ CREATE TABLE `Voslog` (
 -- Tabelstructuur voor tabel `Whiteboard_Categorieen`
 --
 
-CREATE TABLE `Whiteboard_Categorieen` (
+CREATE TABLE IF NOT EXISTS `Whiteboard_Categorieen` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `naam` varchar(64) NOT NULL,
   `kleur` varchar(16) NOT NULL DEFAULT '#3B82F6',
@@ -473,7 +473,7 @@ CREATE TABLE `Whiteboard_Categorieen` (
 -- Gegevens voor tabel `Site_Instellingen`
 --
 
-INSERT INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) VALUES
+INSERT IGNORE INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) VALUES
 ('FOX_NAMES', 'Alpha,Bravo,Charlie,Delta,Echo,Foxtrot,Golf,Hotel,Oscar', 'Comma separated list of fox names'),
 ('FOX_COLORS', '#9829FF,#36D12B,#FF8A00,#F5F02C,#FFA12E,#F52E2B,#FF6F6F,#00BFA5,#333333', 'Comma separated list of fox colors'),
 ('API_KEY_FIREBASE', 'jouw_firebase_api_key_hier', 'The API key for the Firebase configuration.'),

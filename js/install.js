@@ -161,6 +161,39 @@ async function runSystemChecks() {
 // =============================================================================
 // 2. Database Setup
 // =============================================================================
+function toggleDbMode(mode) {
+    const cardRoot = document.getElementById('card-root-credentials');
+    const cardExisting = document.getElementById('card-existing-options');
+    const labelCreate = document.getElementById('label_mode_create');
+    const labelExisting = document.getElementById('label_mode_existing');
+    const rootUser = document.getElementById('root_user');
+    const btnText = document.getElementById('db-btn-text');
+
+    if (mode === 'use_existing') {
+        if (cardRoot) cardRoot.classList.add('hidden');
+        if (cardExisting) cardExisting.classList.remove('hidden');
+        if (rootUser) rootUser.removeAttribute('required');
+        if (labelCreate) {
+            labelCreate.className = 'relative flex items-center p-3 rounded-lg border border-slate-700 bg-slate-800/60 cursor-pointer transition hover:bg-slate-800';
+        }
+        if (labelExisting) {
+            labelExisting.className = 'relative flex items-center p-3 rounded-lg border border-blue-500/50 bg-blue-500/10 cursor-pointer transition hover:bg-blue-500/20';
+        }
+        if (btnText) btnText.textContent = 'Schema Importeren in Bestaande Database';
+    } else {
+        if (cardRoot) cardRoot.classList.remove('hidden');
+        if (cardExisting) cardExisting.classList.add('hidden');
+        if (rootUser) rootUser.setAttribute('required', 'required');
+        if (labelCreate) {
+            labelCreate.className = 'relative flex items-center p-3 rounded-lg border border-blue-500/50 bg-blue-500/10 cursor-pointer transition hover:bg-blue-500/20';
+        }
+        if (labelExisting) {
+            labelExisting.className = 'relative flex items-center p-3 rounded-lg border border-slate-700 bg-slate-800/60 cursor-pointer transition hover:bg-slate-800';
+        }
+        if (btnText) btnText.textContent = 'Database Installeren & Schema Importeren';
+    }
+}
+
 function generateRandomDbPass() {
     const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%';
     let pass = '';
@@ -175,35 +208,44 @@ async function submitDatabase(e) {
     e.preventDefault();
     hideAlert();
 
+    const modeInput = document.querySelector('input[name="db_mode"]:checked');
+    const dbMode = modeInput ? modeInput.value : 'create_new';
+    const dropExisting = document.getElementById('drop_existing')?.checked ? 1 : 0;
+
     const btn = document.getElementById('btn-submit-db');
     const btnText = document.getElementById('db-btn-text');
     btn.disabled = true;
-    btnText.textContent = 'Database initialiseren...';
+    btnText.textContent = (dbMode === 'use_existing') ? 'Verbinding testen & tabellen importeren...' : 'Database aanmaken & schema importeren...';
 
     const formData = new FormData();
     formData.append('action', 'setup_database');
-    formData.append('db_host', document.getElementById('db_host').value);
-    formData.append('db_name', document.getElementById('db_name').value);
-    formData.append('db_user', document.getElementById('db_user').value);
+    formData.append('db_mode', dbMode);
+    formData.append('drop_existing', dropExisting);
+    formData.append('db_host', document.getElementById('db_host').value.trim());
+    formData.append('db_name', document.getElementById('db_name').value.trim());
+    formData.append('db_user', document.getElementById('db_user').value.trim());
     formData.append('db_pass', document.getElementById('db_pass').value);
-    formData.append('root_user', document.getElementById('root_user').value);
-    formData.append('root_pass', document.getElementById('root_pass').value);
+
+    if (dbMode === 'create_new') {
+        formData.append('root_user', document.getElementById('root_user').value.trim());
+        formData.append('root_pass', document.getElementById('root_pass').value);
+    }
 
     try {
         const data = await fetchJson('install_helper.php', { method: 'POST', body: formData });
 
         if (data.ok) {
-            showAlert('Database en tabellenschema succesvol geïnstalleerd!', 'success');
+            showAlert('Database en tabellenschema succesvol geconfigureerd!', 'success');
             setTimeout(() => goToStep(3), 800);
         } else {
             showAlert(data.error || 'Database installatie mislukt.', 'error');
             btn.disabled = false;
-            btnText.textContent = 'Database Installeren & Schema Importeren';
+            btnText.textContent = (dbMode === 'use_existing') ? 'Schema Importeren in Bestaande Database' : 'Database Installeren & Schema Importeren';
         }
     } catch (err) {
         showAlert('Communicatiefout met de server: ' + err.message, 'error');
         btn.disabled = false;
-        btnText.textContent = 'Database Installeren & Schema Importeren';
+        btnText.textContent = (dbMode === 'use_existing') ? 'Schema Importeren in Bestaande Database' : 'Database Installeren & Schema Importeren';
     }
 }
 
@@ -581,7 +623,7 @@ async function finalizeInstallation() {
         const data = await fetchJson('install_helper.php', { method: 'POST', body: formData });
 
         if (data.ok) {
-            window.location.href = data.redirect || 'login';
+            window.location.href = data.redirect || '/login';
         } else {
             showAlert(data.error || 'Afronden mislukt.', 'error');
             btn.disabled = false;
