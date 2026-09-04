@@ -10,6 +10,7 @@ $status_code = 200;
 
 require_once(__DIR__ . '/../dblogin.php');
 require_once(__DIR__ . '/../includes/helpers.php');
+require_once(__DIR__ . '/../includes/db.php');
 require_once(__DIR__ . '/../admin/system_helper.php');
 
 $webroot = realpath(__DIR__ . '/..');
@@ -27,6 +28,10 @@ try {
     if (!empty($pruneResult['deleted'])) {
         $output .= " Deleted files: " . implode(', ', $pruneResult['deleted']);
     }
+
+    // 3. Prune old audit logs based on automated retention schedule (3d info, 14d warning, 30d critical/security)
+    $pruneAudit = pruneAuditLogs($conn);
+    $output .= " Audit pruned: {$pruneAudit['total']} logs (Info: {$pruneAudit['info']}, Warn: {$pruneAudit['warning']}, Crit: {$pruneAudit['critical']}).";
 } catch (Throwable $e) {
     $status_code = 500;
     $output = "Error in auto_backup: " . $e->getMessage() . " on line " . $e->getLine();

@@ -474,6 +474,37 @@ CREATE TABLE IF NOT EXISTS `Whiteboard_Categorieen` (
 -- --------------------------------------------------------
 
 --
+-- Tabelstructuur voor tabel `Audit_Logs`
+--
+
+CREATE TABLE IF NOT EXISTS `Audit_Logs` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `severity` enum('info','warning','error','security') NOT NULL DEFAULT 'info',
+  `category` varchar(32) NOT NULL,
+  `action` varchar(64) NOT NULL,
+  `actor_user_id` int(11) DEFAULT NULL,
+  `actor_username` varchar(64) DEFAULT NULL,
+  `subject_user_id` int(11) DEFAULT NULL,
+  `subject_username` varchar(64) DEFAULT NULL,
+  `target_type` varchar(32) DEFAULT NULL,
+  `target_id` varchar(64) DEFAULT NULL,
+  `target_label` varchar(255) DEFAULT NULL,
+  `details` text NOT NULL,
+  `metadata` json DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_audit_created` (`created_at`),
+  KEY `idx_audit_category` (`category`),
+  KEY `idx_audit_action` (`action`),
+  KEY `idx_audit_actor` (`actor_user_id`),
+  KEY `idx_audit_subject` (`subject_user_id`),
+  KEY `idx_audit_target` (`target_type`,`target_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Gegevens voor tabel `Site_Instellingen`
 --
 

@@ -115,6 +115,17 @@ if (isset($_GET['toggleCron'])) {
         $stmt_upd->bind_param("is", $new_enabled, $cron_name);
 
         if ($stmt_upd->execute()) {
+            recordAuditLog($conn, 'cron', 'cron_toggle', [
+                'severity' => 'info',
+                'target_type' => 'cron',
+                'target_id' => $cron_name,
+                'target_label' => ucfirst($cron_name),
+                'details' => "Cronjob {$cron_name} " . ($new_enabled === 1 ? "ingeschakeld" : "uitgeschakeld"),
+                'metadata' => [
+                    'cron_name' => $cron_name,
+                    'enabled' => $new_enabled
+                ]
+            ]);
             echo "Record updated successfully";
         } else {
             echo "Error: " . $stmt_upd->error;

@@ -5,7 +5,17 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once('dblogin.php');
+require_once('includes/db.php');
 require_once('includes/remember_me.php');
+
+if (!empty($_SESSION['id'])) {
+    $uname = $_SESSION['gebruikersnaam'] ?? "Gebruiker #{$_SESSION['id']}";
+    recordAuditLog($conn, 'auth', 'logout', "Gebruiker '{$uname}' is uitgelogd", [
+        'actor_user_id' => (int)$_SESSION['id'],
+        'actor_username' => $uname,
+        'severity' => 'info'
+    ]);
+}
 
 // Clear persistent token for this device from DB and expire cookie
 clearCurrentRememberToken($conn);

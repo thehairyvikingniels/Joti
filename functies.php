@@ -149,6 +149,14 @@ if (isset($_POST['toggle_toewijzing'])) {
         
         send_push_notification($user_id, "Taak gewijzigd", "Je bent van een taak verwijderd.", "/whiteboard", "functies/toewijzing", null, "assignment_changes");
         
+        $typeLabel = ucfirst($type);
+        recordAuditLog($conn, 'assignment', 'unassign_user', "Gebruiker heeft zich afgemeld van {$typeLabel} #{$ref_id}", [
+            'subject_user_id' => $user_id,
+            'target_type' => $type,
+            'target_id' => $ref_id,
+            'target_label' => "{$typeLabel} #{$ref_id}"
+        ]);
+        
         $users = $get_users($conn, $type, $ref_id);
         echo json_encode(["status" => "unassigned", "target_type" => $type, "target_id" => $ref_id, "users" => $users]);
         exit();
@@ -276,6 +284,14 @@ if (isset($_POST['toggle_toewijzing'])) {
     $stmt_ins->close();
     
     send_push_notification($user_id, "Taak gewijzigd", "Je bent aan een taak toegewezen.", "/whiteboard", "functies/toewijzing", null, "assignment_changes");
+    
+    $typeLabel = ucfirst($type);
+    recordAuditLog($conn, 'assignment', 'assign_user', "Gebruiker heeft zich aangemeld voor {$typeLabel} #{$ref_id}", [
+        'subject_user_id' => $user_id,
+        'target_type' => $type,
+        'target_id' => $ref_id,
+        'target_label' => "{$typeLabel} #{$ref_id}"
+    ]);
     
     $users = $get_users($conn, $type, $ref_id);
     

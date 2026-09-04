@@ -68,6 +68,10 @@ $pagelist = array(
         'active' => null,
         'filename' => 'admin/database.php'
     ),
+    'a_audit' => array(
+        'active' => null,
+        'filename' => 'admin/audit.php'
+    ),
     'sa_settings' => array(
         'active' => null,
         'filename' => 'admin/settings.php'
@@ -99,6 +103,7 @@ $adminpagelist = array(
     'a_database',
     'a_cronjobs',
     'a_serviceaccounts',
+    'a_audit',
     'admin_telegram',
     'sa_settings',
     'sa_notifications',
@@ -175,6 +180,7 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
     <a href="<?=$inAdminfolder?>serviceaccounts" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_serviceaccounts']['active']?>"><i class="fas fa-user-tag fa-fw w-5 opacity-70"></i><span>Service Accounts</span></a>
     <a href="<?=$inAdminfolder?>cronjobs" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_cronjobs']['active']?>"><i class="fas fa-stopwatch fa-fw w-5 opacity-70"></i><span>Cronjobs</span></a>
     <a href="<?=$inAdminfolder?>database" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_database']['active']?>"><i class="fas fa-database fa-fw w-5 opacity-70"></i><span>Database</span></a>
+    <a href="<?=$inAdminfolder?>audit" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_audit']['active']?>"><i class="fas fa-history fa-fw w-5 opacity-70"></i><span>Audit Log</span></a>
     <a href="<?=$inAdminfolder?>notifications" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['sa_notifications']['active']?>"><i class="fas fa-bell fa-fw w-5 opacity-70"></i><span>Notifications</span></a>
     <a href="<?=$inAdminfolder?>telegram" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['admin_telegram']['active']?>"><i class="fab fa-telegram-plane fa-fw w-5 opacity-70"></i><span>Telegram</span></a>
     <?php endif; ?>

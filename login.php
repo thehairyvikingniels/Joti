@@ -148,15 +148,36 @@ if (isset($_POST['pswd1'])){
           } else {
             unset($_SESSION['show_welcome_modal']);
           }
+
+          recordAuditLog($conn, 'auth', 'login_success', "Gebruiker '{$row['gebruikersnaam']}' succesvol ingelogd", [
+              'actor_user_id' => (int)$row['id'],
+              'actor_username' => $row['gebruikersnaam'],
+              'severity' => 'info',
+              'metadata' => ['remember_me' => !empty($_POST['remember_me'])]
+          ]);
+
           header("Location: home");
           die();
       } else {
+          recordAuditLog($conn, 'auth', 'login_failed', "Mislukte inlogpoging voor '{$row['gebruikersnaam']}' (onjuist wachtwoord)", [
+              'actor_username' => $row['gebruikersnaam'],
+              'severity' => 'warning',
+              'metadata' => ['reason' => 'invalid_password']
+          ]);
+
           $error = "Gebruikersnaam of wachtwoord onjuist";
           header("Location: index?error=".urlencode($error));
           die();
       }
   } else {
     $stmt_login->close();
+
+    recordAuditLog($conn, 'auth', 'login_failed', "Mislukte inlogpoging voor onbekende gebruiker '{$username}'", [
+        'actor_username' => $username,
+        'severity' => 'security',
+        'metadata' => ['reason' => 'user_not_found', 'input' => $username]
+    ]);
+
     $error = "Gebruikersnaam of wachtwoord onjuist";
     header("Location: index?error=".urlencode($error));
     die();

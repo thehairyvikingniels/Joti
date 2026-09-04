@@ -315,3 +315,157 @@ function recordTegenhuntBreadcrumb(mysqli $conn, int $sessionId, int $userId, fl
     }
     return false;
 }
+
+/**
+ * Record an entry into the centralized audit log.
+ *
+ * @param mysqli $conn
+ * @param string $category   e.g. 'assignment', 'whiteboard', 'hunt', 'auth', 'car', 'admin', 'system', 'telegram'
+ * @param string $action     e.g. 'assign_user', 'unassign_user', 'claim_task', 'move_car', 'login', 'setting_changed', etc.
+ * @param string $details    Human-readable description of what happened
+ * @param array $options     Optional keys:
+ *                           - actor_user_id (int): ID of user who initiated action (defaults to $_SESSION['user_id'])
+ *                           - actor_username (string): Cached username (auto-resolved if omitted)
+ *                           - subject_user_id (int): Affected user ID (e.g. User Y who was assigned)
+ *                           - subject_username (string): Cached username of subject (auto-resolved if omitted)
+ *                           - target_type (string): 'hint', 'opdracht', 'car', 'user', 'setting', 'backup', 'kiosk', 'category'
+ *                           - target_id (string|int): ID of target entity
+ *                           - target_label (string): Display label (e.g. 'Hint 14 (Bravo)', 'Auto 2')
+ *                           - severity (string): 'info', 'warning', 'error', 'security' (default: 'info')
+ *                           - metadata (array): Contextual JSON details (IP, user agent, diffs, coords)
+ *                           - ip_address (string): Client IP (defaults to getClientIP())
+ * @return int|bool Inserted log ID, or false on error
+ */
+function recordAuditLog(
+    mysqli $conn,
+    string $category,
+    string $action,
+    string|array $details = '',
+    array $options = []
+): int|bool {
+    try {
+        if (is_array($details)) {
+            $options = $details;
+            $details = (string)($options['details'] ?? $action);
+        }
+
+        $severity = $options['severity'] ?? 'info';
+        if (!in_array($severity, ['info', 'warning', 'error', 'security'], true)) {
+            $severity = 'info';
+        }
+
+        // 1. Resolve Actor
+        $actorId = $options['actor_user_id'] ?? ($_SESSION['id'] ?? ($_SESSION['user_id'] ?? null));
+        if ($actorId !== null) {
+            $actorId = (int)$actorId;
+        }
+        $actorUsername = $options['actor_username'] ?? null;
+        if (empty($actorUsername) && $actorId !== null) {
+            if (!empty($_SESSION['gebruikersnaam']) && (int)($_SESSION['id'] ?? 0) === $actorId) {
+                $actorUsername = $_SESSION['gebruikersnaam'];
+            } elseif (!empty($_SESSION['username']) && (int)($_SESSION['user_id'] ?? 0) === $actorId) {
+                $actorUsername = $_SESSION['username'];
+            } else {
+                $u = fetchUserById($conn, $actorId);
+                if ($u) {
+                    $actorUsername = $u['gebruikersnaam'] ?? ($u['voornaam'] . ' ' . $u['achternaam']);
+                }
+            }
+        }
+
+        // 2. Resolve Subject (affected user)
+        $subjectId = isset($options['subject_user_id']) ? (int)$options['subject_user_id'] : null;
+        $subjectUsername = $options['subject_username'] ?? null;
+        if (empty($subjectUsername) && $subjectId !== null) {
+            $u = fetchUserById($conn, $subjectId);
+            if ($u) {
+                $subjectUsername = $u['gebruikersnaam'] ?? ($u['voornaam'] . ' ' . $u['achternaam']);
+            }
+        }
+
+        // 3. Resolve Target
+        $targetType = $options['target_type'] ?? null;
+        $targetId = isset($options['target_id']) ? (string)$options['target_id'] : null;
+        $targetLabel = $options['target_label'] ?? null;
+
+        // 4. Resolve IP & Metadata
+        $ip = $options['ip_address'] ?? (function_exists('getClientIP') ? getClientIP() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'));
+        $meta = $options['metadata'] ?? [];
+        if (!isset($meta['user_agent']) && !empty($_SERVER['HTTP_USER_AGENT'])) {
+            $meta['user_agent'] = substr($_SERVER['HTTP_USER_AGENT'], 0, 255);
+        }
+        $metaJson = !empty($meta) ? json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
+
+        $stmt = $conn->prepare(
+            "INSERT INTO Audit_Logs 
+            (severity, category, action, actor_user_id, actor_username, subject_user_id, subject_username, target_type, target_id, target_label, details, metadata, ip_address, created_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+        );
+        if (!$stmt) {
+            return false;
+        }
+
+        $stmt->bind_param(
+            "sssisssssssss",
+            $severity,
+            $category,
+            $action,
+            $actorId,
+            $actorUsername,
+            $subjectId,
+            $subjectUsername,
+            $targetType,
+            $targetId,
+            $targetLabel,
+            $details,
+            $metaJson,
+            $ip
+        );
+
+        $success = $stmt->execute();
+        $insertId = $success ? $stmt->insert_id : false;
+        $stmt->close();
+        return $insertId;
+    } catch (\Throwable $e) {
+        error_log("Failed to record audit log: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Prune old audit logs according to retention policy:
+ * - 'info': older than 3 days
+ * - 'warning': older than 14 days
+ * - 'error', 'security': older than 30 days
+ *
+ * @param mysqli $conn
+ * @return array{info: int, warning: int, critical: int, total: int}
+ */
+function pruneAuditLogs(mysqli $conn): array {
+    try {
+        $stmt1 = $conn->prepare("DELETE FROM Audit_Logs WHERE severity = 'info' AND created_at < NOW() - INTERVAL 3 DAY");
+        $stmt1->execute();
+        $prunedInfo = $stmt1->affected_rows;
+        $stmt1->close();
+
+        $stmt2 = $conn->prepare("DELETE FROM Audit_Logs WHERE severity = 'warning' AND created_at < NOW() - INTERVAL 14 DAY");
+        $stmt2->execute();
+        $prunedWarning = $stmt2->affected_rows;
+        $stmt2->close();
+
+        $stmt3 = $conn->prepare("DELETE FROM Audit_Logs WHERE severity IN ('error', 'security') AND created_at < NOW() - INTERVAL 30 DAY");
+        $stmt3->execute();
+        $prunedCritical = $stmt3->affected_rows;
+        $stmt3->close();
+
+        return [
+            'info' => (int)$prunedInfo,
+            'warning' => (int)$prunedWarning,
+            'critical' => (int)$prunedCritical,
+            'total' => (int)($prunedInfo + $prunedWarning + $prunedCritical)
+        ];
+    } catch (\Throwable $e) {
+        error_log("Failed to prune audit logs: " . $e->getMessage());
+        return ['info' => 0, 'warning' => 0, 'critical' => 0, 'total' => 0];
+    }
+}

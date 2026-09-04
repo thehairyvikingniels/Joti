@@ -163,10 +163,11 @@ foreach ($fox_names as $vosnaam) {
             'a_serviceaccounts' => 'Service Accounts',
             'a_cronjobs' => 'Cronjobs',
             'a_database' => 'Database',
+            'a_audit' => 'Audit Log',
             'sa_notifications' => 'Notificaties',
             'admin_telegram' => 'Telegram',
             'sa_settings' => 'Instellingen',
-            'sa_system' => 'Systeem'
+            'sa_system' => 'System'
         ];
         $displayPageTitle = $topbarTitles[PAGE_NAME] ?? ucfirst(PAGE_NAME);
         ?>
