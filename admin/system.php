@@ -77,7 +77,7 @@ $commitMsg = get_server_git_val('git log -1 --format="%s"', $webroot);
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
             <!-- CPU -->
-            <div class="p-4 rounded-xl border bg-black/5 flex flex-col gap-3" style="border-color: var(--theme-card-border);">
+            <div class="p-4 rounded-xl border bg-black/5 flex flex-col justify-between gap-3 min-w-0" style="border-color: var(--theme-card-border);">
               <div class="flex items-center justify-between">
                 <span class="text-xs uppercase tracking-wider opacity-60 font-semibold flex items-center gap-1.5">
                   <i class="fas fa-microchip opacity-70"></i> CPU
@@ -94,7 +94,7 @@ $commitMsg = get_server_git_val('git log -1 --format="%s"', $webroot);
             </div>
 
             <!-- RAM -->
-            <div class="p-4 rounded-xl border bg-black/5 flex flex-col gap-3" style="border-color: var(--theme-card-border);">
+            <div class="p-4 rounded-xl border bg-black/5 flex flex-col justify-between gap-3 min-w-0" style="border-color: var(--theme-card-border);">
               <div class="flex items-center justify-between">
                 <span class="text-xs uppercase tracking-wider opacity-60 font-semibold flex items-center gap-1.5">
                   <i class="fas fa-memory opacity-70"></i> RAM
@@ -111,41 +111,45 @@ $commitMsg = get_server_git_val('git log -1 --format="%s"', $webroot);
             </div>
 
             <!-- Network -->
-            <div class="p-4 rounded-xl border bg-black/5 flex flex-col gap-3" style="border-color: var(--theme-card-border);">
-              <div class="flex items-center justify-between">
-                <span class="text-xs uppercase tracking-wider opacity-60 font-semibold flex items-center gap-1.5">
+            <div class="p-4 rounded-xl border bg-black/5 flex flex-col justify-between gap-3 min-w-0 overflow-hidden" style="border-color: var(--theme-card-border);">
+              <div class="flex items-center justify-between min-w-0">
+                <span class="text-xs uppercase tracking-wider opacity-60 font-semibold flex items-center gap-1.5 truncate">
                   <i class="fas fa-network-wired opacity-70"></i> Netwerk
                 </span>
-                <span id="net-interface" class="font-mono text-xs opacity-60">eth0</span>
+                <span id="net-interface" class="font-mono text-xs opacity-60 shrink-0">eth0</span>
               </div>
-              <div class="flex gap-2">
-                <div class="flex-1 text-center p-2 rounded-lg bg-black/5 flex flex-col justify-between">
-                  <div>
-                    <div class="text-[11px] opacity-60 mb-0.5"><i class="fas fa-arrow-down text-emerald-500"></i> RX (In)</div>
-                    <div id="net-rx" class="font-mono text-sm font-bold truncate">—</div>
+              <div class="grid grid-cols-2 gap-2 min-w-0">
+                <div class="min-w-0 text-center p-2 rounded-lg bg-black/5 flex flex-col justify-between overflow-hidden">
+                  <div class="min-w-0">
+                    <div class="text-[11px] opacity-70 mb-0.5 truncate flex items-center justify-center gap-1">
+                      <i class="fas fa-arrow-down text-emerald-500 text-[10px]"></i> <span class="font-medium">In (RX)</span>
+                    </div>
+                    <div id="net-rx" class="font-mono text-xs sm:text-sm font-bold truncate leading-tight py-0.5 tracking-tight">—</div>
                   </div>
                   <div class="text-[10px] opacity-60 mt-1 border-t border-black/5 pt-1 truncate">
-                    5m gem: <strong id="net-avg-rx" class="font-mono text-emerald-600 dark:text-emerald-400">—</strong>
+                    <span class="text-[9px] opacity-75">5m:</span> <strong id="net-avg-rx" class="font-mono text-emerald-600 dark:text-emerald-400">—</strong>
                   </div>
                 </div>
-                <div class="flex-1 text-center p-2 rounded-lg bg-black/5 flex flex-col justify-between">
-                  <div>
-                    <div class="text-[11px] opacity-60 mb-0.5"><i class="fas fa-arrow-up text-blue-500"></i> TX (Uit)</div>
-                    <div id="net-tx" class="font-mono text-sm font-bold truncate">—</div>
+                <div class="min-w-0 text-center p-2 rounded-lg bg-black/5 flex flex-col justify-between overflow-hidden">
+                  <div class="min-w-0">
+                    <div class="text-[11px] opacity-70 mb-0.5 truncate flex items-center justify-center gap-1">
+                      <i class="fas fa-arrow-up text-blue-500 text-[10px]"></i> <span class="font-medium">Uit (TX)</span>
+                    </div>
+                    <div id="net-tx" class="font-mono text-xs sm:text-sm font-bold truncate leading-tight py-0.5 tracking-tight">—</div>
                   </div>
                   <div class="text-[10px] opacity-60 mt-1 border-t border-black/5 pt-1 truncate">
-                    5m gem: <strong id="net-avg-tx" class="font-mono text-blue-600 dark:text-blue-400">—</strong>
+                    <span class="text-[9px] opacity-75">5m:</span> <strong id="net-avg-tx" class="font-mono text-blue-600 dark:text-blue-400">—</strong>
                   </div>
                 </div>
               </div>
-              <div class="flex justify-between text-xs opacity-60">
-                <span>Totaal Verkeer</span>
-                <span id="net-total-rate" class="font-mono font-medium">—</span>
+              <div class="flex justify-between items-center text-xs opacity-60 min-w-0">
+                <span class="truncate">Totaal Verkeer</span>
+                <span id="net-total-rate" class="font-mono font-medium shrink-0 ml-1">—</span>
               </div>
             </div>
 
             <!-- Storage -->
-            <div class="p-4 rounded-xl border bg-black/5 flex flex-col gap-3" style="border-color: var(--theme-card-border);">
+            <div class="p-4 rounded-xl border bg-black/5 flex flex-col justify-between gap-3 min-w-0" style="border-color: var(--theme-card-border);">
               <div class="flex items-center justify-between">
                 <span class="text-xs uppercase tracking-wider opacity-60 font-semibold flex items-center gap-1.5">
                   <i class="fas fa-hard-drive opacity-70"></i> Opslag
