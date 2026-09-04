@@ -23,7 +23,7 @@ WHERE
 GROUP BY
   cj.name
 HAVING
-  nextcron IS NULL OR (UNIX_TIMESTAMP(now()) + 7200) >= nextcron - 12"; 
+  nextcron IS NULL OR UNIX_TIMESTAMP(now()) >= nextcron - 12"; 
 
 $stmt_cron = $conn->prepare($sql);
 if ($stmt_cron) {

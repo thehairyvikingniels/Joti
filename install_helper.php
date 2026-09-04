@@ -835,7 +835,7 @@ switch ($action) {
         $defaultJobs = [
             ['areas', 1, 'cron/areas.php', 'Vossen statussen synchroniseren met Jotihunt.nl API', 30],
             ['articles', 1, 'cron/articles.php', 'Nieuws, hints en opdrachten synchroniseren', 60],
-            ['notifications', 1, 'cron/notifications.php', 'Push notificaties en Telegram berichten wachtrij verwerken', 40],
+            ['push_queue', 1, 'cron/notifications.php', 'Push notificaties en Telegram berichten wachtrij verwerken', 35],
             ['subscriptions', 1, 'cron/subscriptions.php', 'Deelnemende scoutinggroepen synchroniseren', 300],
             ['welcome', 0, 'cron/welcome.php', 'Automatisch welkomstbericht bij nadering clubhuis', 60],
             ['jotiPortal', 1, 'cron/scraper_helper.php', 'Punten, hunts en telegram registratiecode scrapen', 180],

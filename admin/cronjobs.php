@@ -115,7 +115,7 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
               echo "<div class='cronTimer p-5 hover:bg-black/5 transition flex flex-col md:flex-row md:items-center justify-between gap-4'>
                       <div class='md:w-1/3 min-w-[250px]'>
                         <h3 class='text-lg font-bold flex items-center gap-2'>
-                          <span id='cron_enabled_".$i."' class='cursor-pointer hover:opacity-80 transition' onclick='toggleCron(\"".htmlspecialchars(strtolower($name))."\")'>".$enabled."</span>
+                          <span id='cron_enabled_".$i."' class='cursor-pointer hover:opacity-80 transition' onclick='toggleCron(\"".htmlspecialchars($row['name'])."\")'>".$enabled."</span>
                           <span id='cron_status_".$i."' class='".$stat_color." text-sm' title='HTML ".htmlspecialchars($exec_status)." code'><i class='fas fa-circle'></i></span>
                           <span id='cron_name_".$i."'>".$name."</span>
                         </h3>
