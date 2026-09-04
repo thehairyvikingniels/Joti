@@ -153,7 +153,10 @@ async function CronRefresh() {
             }
             if (cronName) {
                 cronName.innerHTML = json[i].name;
-                cronName.title = json[i].description;
+            }
+            const cronDesc = document.getElementById(`cron_desc_${i}`);
+            if (cronDesc && json[i].description) {
+                cronDesc.textContent = json[i].description;
             }
             if (cronInterval) cronInterval.innerHTML = json[i].interval;
             if (cronExecTime) cronExecTime.innerHTML = json[i].exec_time;

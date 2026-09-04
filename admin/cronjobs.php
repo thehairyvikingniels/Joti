@@ -119,6 +119,7 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
                           <span id='cron_status_".$i."' class='".$stat_color." text-sm' title='HTML ".htmlspecialchars($exec_status)." code'><i class='fas fa-circle'></i></span>
                           <span id='cron_name_".$i."'>".$name."</span>
                         </h3>
+                        <p id='cron_desc_".$i."' class='text-xs opacity-70 mt-1 leading-relaxed'>".htmlspecialchars($row['description'] ?? '')."</p>
                       </div>
                       
                       <div class='grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1 w-full text-sm'>

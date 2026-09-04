@@ -56,19 +56,6 @@ if (!empty($site_settings['GROUP_ID'])) {
     $stmt_gn->close();
 }
 
-$topbar_profile_picture = null;
-if (isset($_SESSION['id'])) {
-    $stmt_pp = $conn->prepare("SELECT profile_picture FROM Gebruikers WHERE id = ?");
-    $stmt_pp->bind_param("i", $_SESSION['id']);
-    $stmt_pp->execute();
-    $res_pp = $stmt_pp->get_result();
-    if ($res_pp->num_rows > 0) {
-        $row_pp = $res_pp->fetch_assoc();
-        $topbar_profile_picture = $row_pp['profile_picture'];
-    }
-    $stmt_pp->close();
-}
-
 foreach ($fox_names as $vosnaam) {
     $vos[$vosnaam]["Kleur"] = "grey";
     $vos[$vosnaam]["duratie"] = "-";
@@ -212,8 +199,6 @@ foreach ($fox_names as $vosnaam) {
     </div>
 
     <div class="flex items-center space-x-3 sm:space-x-4">
-        
-
         <?php
         $gps_active = (isset($_SESSION['gps']) && $_SESSION['gps'] == "true");
         $gps_color = $gps_active ? "text-green-500 opacity-100" : "opacity-60 hover:opacity-100";
@@ -221,19 +206,5 @@ foreach ($fox_names as $vosnaam) {
         <a href="<?= $notInAdminfolder ?? '' ?>functies.php?gpstoggle=1&return=<?= urlencode($_SERVER['REQUEST_URI']) ?>"
             class="<?= $gps_color ?> transition-colors" title="Location sharing is <?= $gps_active ? 'ON' : 'OFF' ?>"><i
                 class="fas fa-crosshairs text-lg"></i></a>
-        <a href="<?= $notInAdminfolder ?? '' ?>instellingen"
-            class="flex items-center space-x-2 border-l pl-3 sm:pl-4 hover:opacity-80 transition"
-            style="border-color: var(--theme-card-border);">
-            <?php if ($topbar_profile_picture): ?>
-                <img src="<?= $notInAdminfolder ?? '' ?>profile_image.php?hash=<?= urlencode($topbar_profile_picture) ?>&res=low" alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-sm flex-shrink-0">
-            <?php else: ?>
-                <div
-                    class="w-8 h-8 rounded-full theme-bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
-                    <?php echo strtoupper(substr($first_name ?? 'U', 0, 1)); ?>
-                </div>
-            <?php endif; ?>
-            <span
-                class="text-sm font-medium hidden sm:block"><?php echo htmlspecialchars(ucfirst($first_name ?? 'User')); ?></span>
-        </a>
     </div>
 </header>

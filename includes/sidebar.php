@@ -125,20 +125,26 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
   </div>
   
   <div class="px-5 py-4 flex items-center justify-between border-b border-black/10">
-    <div class="flex items-center space-x-3">
-      <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 border shadow-sm" style="border-color: var(--theme-card-border);">
-        <img src="<?= $notInAdminfolder.$site_settings['GROUP_LOGO_SMALL_URL']?>" class="w-full h-full object-contain p-1">
+    <a href="<?=$notInAdminfolder?>instellingen" class="flex items-center space-x-3 min-w-0 group hover:opacity-90 transition" title="Mijn instellingen & profiel">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 border shadow-sm group-hover:border-blue-400 transition" style="border-color: var(--theme-card-border);">
+        <?php if (!empty($profile_picture)): ?>
+          <img src="<?=$notInAdminfolder?>profile_image.php?hash=<?=urlencode($profile_picture)?>&res=low" alt="Profielfoto" class="w-full h-full object-cover">
+        <?php else: ?>
+          <div class="w-full h-full theme-bg-primary text-white flex items-center justify-center font-bold text-base">
+            <?= strtoupper(substr($first_name ?: ($username ?: 'U'), 0, 1)) ?>
+          </div>
+        <?php endif; ?>
       </div>
-      <div>
-          <p class="text-sm font-semibold">Welkom, <strong><?php echo ucfirst($first_name); ?></strong></p>
+      <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold truncate group-hover:underline">Welkom, <strong><?php echo ucfirst($first_name); ?></strong></p>
           <?php
           $roleNames = [0 => 'Gast', 1 => 'Vossenjager', 2 => 'Admin', 3 => 'Superadmin'];
           $userPriv = $_SESSION['priv'] ?? 0;
           ?>
-          <p class="text-xs opacity-70"><?php echo $roleNames[$userPriv] ?? "Onbekend"; ?></p>
+          <p class="text-xs opacity-70 truncate"><?php echo $roleNames[$userPriv] ?? "Onbekend"; ?></p>
       </div>
-    </div>
-    <a href="/logout" class="opacity-70 hover:opacity-100 hover:text-red-500 transition-colors" title="Uitloggen">
+    </a>
+    <a href="/logout" class="opacity-70 hover:opacity-100 hover:text-red-500 transition-colors ml-2 flex-shrink-0" title="Uitloggen">
       <i class="fas fa-sign-out-alt text-xl"></i>
     </a>
   </div>
