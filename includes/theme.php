@@ -109,7 +109,7 @@ $themeConfig = getThemeConfig($theme);
 </script>
 <link rel="manifest" href="/manifest.json">
 <script>window.VAPID_PUBLIC_KEY = '<?= htmlspecialchars($site_settings['VAPID_PUBLIC_KEY'] ?? '') ?>';</script>
-<script src="js/push.js?v=2"></script>
+<script src="/js/push.js?v=2"></script>
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {

@@ -505,6 +505,67 @@ CREATE TABLE IF NOT EXISTS `Audit_Logs` (
 -- --------------------------------------------------------
 
 --
+-- Tabelstructuur voor tabel `Preflight_Checklist`
+--
+
+CREATE TABLE IF NOT EXISTS `Preflight_Checklist` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `category` enum('dispatch','fleet','comms','general') NOT NULL DEFAULT 'general',
+  `title` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `is_checked` tinyint(1) NOT NULL DEFAULT 0,
+  `checked_by` int(11) DEFAULT NULL,
+  `checked_at` datetime DEFAULT NULL,
+  `is_custom` tinyint(1) NOT NULL DEFAULT 0,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_checklist_checked` (`is_checked`),
+  KEY `idx_checklist_category` (`category`),
+  CONSTRAINT `fk_checklist_user` FOREIGN KEY (`checked_by`) REFERENCES `Gebruikers` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Tabelstructuur voor tabel `Archived_Editions`
+--
+
+CREATE TABLE IF NOT EXISTS `Archived_Editions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `edition_name` varchar(100) NOT NULL,
+  `edition_year` int(4) NOT NULL,
+  `backup_filename` varchar(255) NOT NULL,
+  `file_size` bigint(20) NOT NULL,
+  `row_counts` text DEFAULT NULL,
+  `archived_by` int(11) DEFAULT NULL,
+  `archived_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_edition_year` (`edition_year`),
+  CONSTRAINT `fk_edition_user` FOREIGN KEY (`archived_by`) REFERENCES `Gebruikers` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Standaardtaken voor `Preflight_Checklist`
+--
+
+INSERT IGNORE INTO `Preflight_Checklist` (`id`, `category`, `title`, `description`, `sort_order`) VALUES
+(1, 'dispatch', 'Controleer HQ-coördinaten en tegenhuntstraal', 'Verifieer dat de basislocatie nauwkeurig is ingesteld voor de automatische tegenhunt-detectie.', 10),
+(2, 'dispatch', 'Zorg voor analoge reservekaarten op de meldkamer', 'Leg stafkaarten / geplastificeerde kaarten van Gelderland en deelgebieden klaar met watervaste stiften.', 20),
+(3, 'fleet', 'Controleer actieve jagersauto\'s in het vlootbeheer', 'Zorg dat alle deelnemende voertuigen zijn aangemaakt in het Wagenpark overzicht.', 30),
+(4, 'fleet', 'Veiligheidsuitrusting jagersauto\'s controleren', 'Elke auto moet voorzien zijn van EHBO-tas, veiligheidshesjes, zaklampen en geodriehoek.', 40),
+(5, 'fleet', 'Koppel chauffeurs en bijrijders aan voertuigen', 'Deel de beschikbare vossenjagers in per jagersauto in het Wagenpark beheer.', 50),
+(6, 'fleet', 'Test live GPS-locatie streaming op telefoons', 'Laat ten minste één auto een testrit maken om te controleren of de GPS-punten op de live kaart verschijnen.', 60),
+(7, 'comms', 'Verstuur testbericht via de Telegram Bot', 'Controleer of de officiële Jotihunt meldgroep en interne kanalen alerts correct ontvangen.', 70),
+(8, 'comms', 'Verifieer Web Push notificaties op meldkamer', 'Controleer of browsers op de meldkamer laptops geabonneerd zijn op notificaties.', 80),
+(9, 'comms', 'Test mobilofoons / portofoons op vlootkanaal', 'Voer een radio-check uit met jagersauto\'s op het afgesproken kanaal en subtoon.', 90),
+(10, 'general', 'Test Kiosk-schermen op centrale tv-schermen', 'Open de Kiosk-modus op de displays in het scoutinggebouw en controleer de automatische refresh.', 100),
+(11, 'general', 'Controleer proviand, koffie en snacks voor 26 uur', 'Zorg voor voldoende catering, drank en energie om de nachtdienst optimaal scherp te houden.', 110);
+
+-- --------------------------------------------------------
+
+--
 -- Gegevens voor tabel `Site_Instellingen`
 --
 

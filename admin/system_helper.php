@@ -12,7 +12,9 @@ ini_set('display_errors', '0');
 error_reporting(E_ALL & ~E_WARNING & ~E_NOTICE);
 ob_start();
 
-if (php_sapi_name() !== 'cli') {
+$isDirectRequest = basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__);
+
+if ($isDirectRequest && php_sapi_name() !== 'cli') {
     header('Content-Type: application/json; charset=utf-8');
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
@@ -110,7 +112,8 @@ function dump_database_to_file(mysqli $conn, string $filepath): void {
     
     $dump = "-- Jotify Automated Database Backup\n";
     $dump .= "-- Generated: " . date('Y-m-d H:i:s') . "\n";
-    $dump .= "SET FOREIGN_KEY_CHECKS = 0;\n\n";
+    $dump .= "SET FOREIGN_KEY_CHECKS = 0;\n";
+    $dump .= "SET autocommit = 0;\n\n";
     
     foreach ($tables as $table) {
         $createRes = $conn->query("SHOW CREATE TABLE `" . $conn->real_escape_string($table) . "`");
@@ -134,6 +137,8 @@ function dump_database_to_file(mysqli $conn, string $filepath): void {
         }
     }
     
+    $dump .= "COMMIT;\n";
+    $dump .= "SET autocommit = 1;\n";
     $dump .= "SET FOREIGN_KEY_CHECKS = 1;\n";
     $writeRes = @file_put_contents($filepath, $dump);
     if ($writeRes === false || !file_exists($filepath)) {
@@ -203,7 +208,7 @@ function create_full_backup(mysqli $conn, string $webroot, string $backupDir, st
                 escapeshellarg($mysqldump),
                 escapeshellarg($host),
                 escapeshellarg($dbUser),
-                !empty($dbPass) ? '-p' . escapeshellarg($dbPass) : '',
+                !empty($dbPass) ? '--password=' . escapeshellarg($dbPass) : '',
                 escapeshellarg($dbName),
                 escapeshellarg($sqlFile)
             );
@@ -463,7 +468,7 @@ function restore_backup(mysqli $conn, string $webroot, string $backupDir, string
                 escapeshellarg($mysqlBin),
                 escapeshellarg($host),
                 escapeshellarg($dbUser),
-                !empty($dbPass) ? '-p' . escapeshellarg($dbPass) : '',
+                !empty($dbPass) ? '--password=' . escapeshellarg($dbPass) : '',
                 escapeshellarg($dbName),
                 escapeshellarg($sqlFile)
             );
@@ -788,7 +793,7 @@ function prune_backups_tiered(string $backupDir): array {
 
 $action = $_REQUEST['action'] ?? '';
 
-if (php_sapi_name() === 'cli' && empty($action)) {
+if (!$isDirectRequest) {
     return;
 }
 
