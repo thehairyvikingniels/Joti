@@ -84,6 +84,10 @@ $pagelist = array(
         'active' => null,
         'filename' => 'admin/telegram.php'
     ),
+    'a_readiness' => array(
+        'active' => null,
+        'filename' => 'admin/readiness.php'
+    ),
     'sa_system' => array(
         'active' => null,
         'filename' => 'admin/system.php'
@@ -105,6 +109,7 @@ $adminpagelist = array(
     'a_serviceaccounts',
     'a_audit',
     'admin_telegram',
+    'a_readiness',
     'sa_settings',
     'sa_notifications',
     'sa_system'
@@ -189,6 +194,7 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
     <a href="<?=$inAdminfolder?>audit" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_audit']['active']?>"><i class="fas fa-history fa-fw w-5 opacity-70"></i><span>Audit Log</span></a>
     <a href="<?=$inAdminfolder?>notifications" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['sa_notifications']['active']?>"><i class="fas fa-bell fa-fw w-5 opacity-70"></i><span>Notifications</span></a>
     <a href="<?=$inAdminfolder?>telegram" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['admin_telegram']['active']?>"><i class="fab fa-telegram-plane fa-fw w-5 opacity-70"></i><span>Telegram</span></a>
+    <a href="<?=$inAdminfolder?>readiness" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_readiness']['active']?>"><i class="fas fa-clipboard-check fa-fw w-5 opacity-70"></i><span>Readiness Hub</span></a>
     <?php endif; ?>
     <?php if ($privilege > 2): ?>
     <a href="<?=$inAdminfolder?>settings" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['sa_settings']['active']?>"><i class="fas fa-toolbox fa-fw w-5 opacity-70"></i><span>Settings</span></a>
