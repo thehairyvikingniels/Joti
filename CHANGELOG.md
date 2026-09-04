@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v2026.09.0] - 2026-09-04
+
+### Highlights
+- **Operatie Pre-Flight Readiness Hub (`admin/readiness.php`)**: Comprehensive mission-readiness command center with 11 automated diagnostic probes, operational checklist tracking, and non-destructive season archiving.
+- **Background Cron Subsystem Hardening**: Resolved forever-executing cron jobs, fixed foreign key constraint crashes, and eliminated the legacy `+ 7200` timezone offset so background tasks execute cleanly on their scheduled intervals.
+- **Automated LAMP Deployment & Web Setup Wizard**: End-to-end `install.sh` bootstrapper and 6-step interactive web wizard (`install.php`) with automated live validation tests.
+- **System Administration & Self-Healing Maintenance**: Live resource metrics, in-app Git updater with schema migrations, and automated tiered backup pruning (`cron/backup.php`).
+
+### Added
+- **Pre-Flight Readiness Hub (`admin/readiness.php`, `admin/readiness_helper.php`, `js/admin_readiness.js`)**:
+  - 11 real-time integration probes: Official Jotihunt API 2.0, automated portal scraper session & CSRF verification (`cron/scraper.py`), MariaDB schema & charset, background cron status, Telegram bot API & broadcast channel, Mapbox style layers, Web Push VAPID keys, disk storage (>5GB) & directory write permissions, fleet & hunter readiness, scouting group HQ coordinates & counterhunt detection, and network security / HTTPS.
+  - Interactive Pre-Flight operational checklist with categories (`HQ & Meldkamer`, `Vloot & Jagers`, `Communicatie`, `Algemeen`), modal task addition, and state tracking in MariaDB table `Preflight_Checklist`.
+  - Non-destructive Season Archiving and clean slate reset engine: creates a standalone `.tar.gz` bundle of database and uploaded media assets, archives operational tables (including annual scouting groups `Groepen`), registers metadata in `Archived_Editions`, and safeguards user accounts, vehicles, and settings under a Superadmin confirmation keyword lock.
+  - Full theme adaptability across all color palettes and custom user themes.
+- **Automated Installer & Web Setup Wizard (`install.sh`, `install.php`, `install_helper.php`, `js/install.js`)**:
+  - One-click bash bootstrapper for automated Apache, PHP 8.x, MariaDB, Composer, Python3, and Pip package installation.
+  - 6-step interactive web setup wizard with live requirement checks, database connection & schema import, admin account creation, API key validation buttons (Mapbox, Telegram, Firebase, VAPID), crontab generation, and environment summary.
+- **System Dashboard & Maintenance (`admin/system.php`, `admin/system_helper.php`)**:
+  - Live system resource monitoring (CPU cores, RAM usage, storage breakdown, load averages).
+  - One-click in-app Git auto-updater with local modifications stashing and automatic database migrations.
+  - Full-system backup generator and one-click database/media restore.
+  - Automated tiered backup pruning daemon (`cron/backup.php`) with 24-hour hourly, 7-day daily, 4-week weekly, and monthly retention policy.
+- **UI Refinements**:
+  - Moved user profile picture to the sidebar with a direct clickable shortcut to `instellingen.php`.
+  - Streamlined topbar layout.
+
+### Fixed
+- **Stuck Cronjob Execution**:
+  - Fixed orphaned duplicate `'notifications'` entry in `Cronjobs` table by standardizing on `'push_queue'` (35s) across installer, database seeds, and runner scripts.
+  - Fixed fatal crash in `cron/welcome.php` caused by parameter count mismatch in parameterless SQL query and `NAME` foreign key mismatch (`welcome_push` vs `welcome`).
+  - Removed legacy `+ 7200` timezone offset from `cron/index.php`, preventing background cronjobs from being erroneously fired on every 20-second crontab tick.
+  - Fixed casing issue in `admin/cronjobs.php` toggle handler to preserve exact table primary keys.
+
+---
+
 ## [v2026.08.1] - 2026-08-25
 
 ### ???? Highlights
