@@ -69,6 +69,8 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 - `kiosk.php` — Kiosk authentication and status API
 - `install.sh` — Bash bootstrapper for automated LAMP server deployment
 - `install.php` & `install_helper.php` — 6-step interactive web setup wizard & AJAX backend
+- `admin/system.php` & `admin/system_helper.php` — System dashboard, live resource metrics, and in-app Git auto-updater
+- `cron/backup.php` — Automated tiered backup retention pruning
 
 ---
 
@@ -94,6 +96,7 @@ All code you write **must** comply with `CODE_OF_CONDUCT.md` in the project root
 ### 3.3 When Writing JavaScript
 - `const` by default, `let` when needed, never `var`
 - `fetch()` for HTTP requests, never `XMLHttpRequest`
+- Never use browser system dialogs (`alert()`, `confirm()`, `prompt()`) — always use styled in-DOM modals
 - No IE compatibility code
 - Extract scripts > 30 lines into separate modular `.js` files in `js/`
 

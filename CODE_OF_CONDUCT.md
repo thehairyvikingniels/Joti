@@ -195,6 +195,10 @@ Do not include IE6/IE5/IE7 fallbacks. The target browsers are modern evergreen b
 - **Page-specific initialization** may be inline `<script>` at the bottom of the page, but should be minimal (< 30 lines)
 - Larger page-specific scripts (> 30 lines) should be extracted to `js/{page_name}.js`
 
+### 6.4 No Browser System Dialogs (Modals Only)
+- **NEVER** use native browser dialogs (`window.alert()`, `window.confirm()`, or `window.prompt()`). These block execution threads, break automated headless browser testing, and look inconsistent with the application theme.
+- **ALWAYS** use styled, accessible in-DOM modal dialogs or toast banners matching the Tailwind theme (e.g., the custom themed confirmation modal implemented in `js/admin_system.js` or `showAlert()` banners).
+
 ---
 
 ## 7. Comment Rules
