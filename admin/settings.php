@@ -171,9 +171,9 @@ $stmt_groups->close();
       <?php endif; ?>
 
       <!-- Bewerk Bestaande Instellingen -->
-      <div class="theme-card rounded border shadow-sm overflow-hidden">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
-          <h3 class="text-xl font-bold">Bewerk Bestaande Instellingen</h3>
+          <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-sliders-h"></i> <span>Bewerk Bestaande Instellingen</span></h3>
         </div>
         <div class="p-6">
           <form method="POST" action="settings" class="space-y-8">
@@ -191,12 +191,12 @@ $stmt_groups->close();
                     <?php if ($setting['Instelling'] === 'GROUP_ID'): ?>
                         <div class="flex-1 min-w-0">
                             <?php if (empty($groepen_options)): ?>
-                                <select class="w-full border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white text-gray-800" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" required>
+                                <select class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" required>
                                     <option value="0">Placeholder (No Groups Loaded)</option>
                                 </select>
                                 <a href="../cron/subscriptions.php" target="_blank" class="text-blue-500 hover:text-blue-600 text-sm mt-1 inline-block transition"><i class="fas fa-sync mr-1"></i>Haal groepen op</a>
                             <?php else: ?>
-                                <select class="w-full border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white text-gray-800" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" required>
+                                <select class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" required>
                                     <option value="0" <?php echo ($setting['Waarde'] == '0') ? 'selected' : ''; ?>>Placeholder (No Groups Loaded)</option>
                                     <?php foreach ($groepen_options as $groep): ?>
                                         <option value="<?php echo htmlspecialchars($groep['id']); ?>" <?php echo ($setting['Waarde'] == $groep['id']) ? 'selected' : ''; ?>>
@@ -208,7 +208,7 @@ $stmt_groups->close();
                         </div>
                     <?php else: ?>
                         <div class="flex-1 min-w-0">
-                            <input class="w-full border rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm bg-white text-gray-800" type="text" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" value="<?php echo htmlspecialchars($setting['Waarde']); ?>" required>
+                            <input class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" type="text" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" value="<?php echo htmlspecialchars($setting['Waarde']); ?>">
                         </div>
                     <?php endif; ?>
                     
@@ -221,16 +221,16 @@ $stmt_groups->close();
             </div>
             
             <div class="pt-4 border-t" style="border-color: var(--theme-card-border);">
-              <button type="submit" class="theme-bg-primary text-white font-bold py-3 px-8 rounded shadow-sm hover:opacity-90 transition"><i class="fas fa-save mr-2"></i>Instellingen Opslaan</button>
+              <button type="submit" class="theme-bg-primary text-white font-bold py-2.5 px-8 rounded-xl shadow-sm hover:opacity-90 transition"><i class="fas fa-save mr-2"></i>Instellingen Opslaan</button>
             </div>
           </form>
         </div>
       </div>
 
       <!-- Voeg Nieuwe Instelling Toe -->
-      <div class="theme-card rounded border shadow-sm overflow-hidden mt-8">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6 mt-8">
         <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
-          <h3 class="text-xl font-bold">Voeg Nieuwe Instelling Toe</h3>
+          <h3 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-plus-circle"></i> <span>Voeg Nieuwe Instelling Toe</span></h3>
         </div>
         <div class="p-6">
           <form method="POST" action="settings" class="space-y-6">
@@ -239,18 +239,18 @@ $stmt_groups->close();
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Instelling Naam (Uniek)</label>
-                <input class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="text" name="add_setting_name" placeholder="Bijv. joti_startdatum" required>
+                <input class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" type="text" name="add_setting_name" placeholder="Bijv. joti_startdatum" required>
               </div>
               
               <div>
                 <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Waarde</label>
-                <input class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="text" name="add_setting_value" placeholder="Bijv. 2023-10-13 18:00:00" required>
+                <input class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" type="text" name="add_setting_value" placeholder="Bijv. 2023-10-13 18:00:00" required>
               </div>
             </div>
             
             <div>
               <label class="block text-sm font-bold opacity-70 mb-1 uppercase tracking-wide">Omschrijving</label>
-              <input class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="text" name="add_setting_description" placeholder="Korte omschrijving van deze instelling">
+              <input class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" type="text" name="add_setting_description" placeholder="Korte omschrijving van deze instelling">
             </div>
             
             <div class="pt-4 border-t" style="border-color: var(--theme-card-border);">

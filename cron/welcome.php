@@ -1,18 +1,18 @@
 <?php
 // Calculates distances between tracking users and scouting groups to send proximity welcome push notifications.
-define("NAME", "welcome_push");
+define("NAME", "welcome");
 define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');
 $output = "";
 $status_code = 200;
 
 require_once(__DIR__ . "/../dblogin.php");
+require_once(__DIR__ . "/../includes/helpers.php");
+require_once(__DIR__ . "/../includes/db.php");
 
 try {
-    // 1. Fetch active users (geotijd < 5 min)
-    $five_mins_ago = time() - 300;
-    $stmt_users = $conn->prepare("SELECT id, voornaam, lat, lon FROM Gebruikers WHERE CAST(geotijd AS UNSIGNED) > ?");
-    $stmt_users->bind_param("i", $five_mins_ago);
+    // 1. Fetch active users (geotijd >= 15 min ago)
+    $stmt_users = $conn->prepare("SELECT id, voornaam, lat, lon FROM Gebruikers WHERE geotijd >= DATE_SUB(NOW(), INTERVAL 15 MINUTE)");
     $stmt_users->execute();
     $active_users = $stmt_users->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt_users->close();

@@ -1,0 +1,17 @@
+[Unit]
+Description=Jotify Telegram MTProto Ingest Daemon
+After=network.target mysql.service mariadb.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/Joti/services
+ExecStart=/usr/bin/python3 /var/www/Joti/services/telegram_listener.py
+Restart=always
+RestartSec=15
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

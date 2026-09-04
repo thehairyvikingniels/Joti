@@ -91,9 +91,11 @@ if (isset($_POST['carid'])) {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       
       <!-- Auto Aanmaken & Tabel -->
-      <div class="theme-card rounded border shadow-sm p-5 overflow-hidden">
-        <h3 class="text-lg font-bold mb-4">Auto aanmaken</h3>
-        <form method="POST" class="mb-6">    
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold"><i class="fas fa-car mr-2"></i> Auto Aanmaken</h3>
+        </div>
+        <form method="POST" class="p-6">    
           <div class="flex flex-col items-center justify-center">
             <div class="form-control mb-4">
               <div class="car-license shadow-sm">
@@ -130,7 +132,7 @@ if (isset($_POST['carid'])) {
                 </div>
               </div>
             </div>
-            <button id="kentekenKnop" class="bg-green-600 text-white font-bold py-2 px-6 rounded hover:bg-green-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>Aanmaken</button>
+            <button id="kentekenKnop" class="bg-green-600 text-white font-bold py-2.5 px-6 rounded-xl hover:bg-green-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" disabled>Aanmaken</button>
           </div>
         </form>
 
@@ -195,10 +197,12 @@ if (isset($_POST['carid'])) {
       </div>
 
       <!-- Stap in / Uit -->
-      <div class="theme-card rounded border shadow-sm p-5">
-        <h3 class="text-lg font-bold mb-4">Stap in / uit</h3>
-        <form method="POST">
-          <select class="w-full border rounded px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm cursor-pointer mb-4" name="carid">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
+        <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h3 class="text-xl font-bold"><i class="fas fa-user-plus mr-2"></i> Stap in / uit</h3>
+        </div>
+        <form method="POST" class="p-6">
+          <select class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer mb-4" name="carid">
             <option value="geen" selected>Geen (Uitstappen)</option>
             <?php
             $sql_drop = "SELECT a.kenteken, a.eigenaar, b.voornaam FROM Auto as a INNER JOIN Gebruikers as b ON a.eigenaar = b.id ORDER BY b.voornaam ASC";

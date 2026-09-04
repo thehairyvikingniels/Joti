@@ -276,7 +276,7 @@ CREATE TABLE IF NOT EXISTS `Auto_Toewijzingen` (
 CREATE TABLE `Voslocaties` (
   `id` int(11) NOT NULL,
   `ingestuurd_op` datetime DEFAULT NULL,
-  `type` enum('Hint','Hunt','Spot','Voorspelling') NOT NULL,
+  `type` enum('Hint','Hunt','Spot','Voorspelling','Tegenhunt') NOT NULL,
   `deelgebied` varchar(8) NOT NULL,
   `ingeleverd` tinyint(4) NOT NULL DEFAULT 0,
   `ingeleverd_door` int(11) DEFAULT NULL,

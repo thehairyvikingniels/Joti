@@ -9,7 +9,7 @@ function showToken(token, id) {
     if (display) display.value = fullUrl;
     if (regenId) regenId.value = id;
     const modal = document.getElementById("tokenModal");
-    if (modal) modal.classList.remove("hidden");
+    openModal(modal);
 }
 
 function showDeleteModal(id, naam) {
@@ -18,7 +18,7 @@ function showDeleteModal(id, naam) {
     if (delId) delId.value = id;
     if (delName) delName.textContent = naam;
     const modal = document.getElementById("deleteModal");
-    if (modal) modal.classList.remove("hidden");
+    openModal(modal);
 }
 
 function copyToken() {
@@ -38,17 +38,49 @@ function copyToken() {
     });
 }
 
+function openCreateModal() {
+    const title = document.getElementById("modalTitle");
+    if (title) title.textContent = "Nieuw Service Account";
+    const act = document.getElementById("formAction");
+    if (act) act.value = "create";
+    const accId = document.getElementById("formAccountId");
+    if (accId) accId.value = "";
+    const naam = document.getElementById("formNaam");
+    if (naam) naam.value = "";
+    const doel = document.getElementById("formDoel");
+    if (doel) doel.value = "home";
+    const rechten = document.getElementById("formRechten");
+    if (rechten) rechten.value = "0";
+    const ip = document.getElementById("formIp");
+    if (ip) ip.value = "";
+    const refresh = document.getElementById("formRefresh");
+    if (refresh) refresh.value = "0";
+    const modal = document.getElementById("createModal");
+    openModal(modal);
+}
+
 function editAccount(account) {
-    document.getElementById("edit_account_id").value = account.id;
-    document.getElementById("edit_naam").value = account.naam;
-    document.getElementById("edit_doel_pagina").value = account.doel_pagina;
-    document.getElementById("edit_rechten").value = account.rechten;
-    document.getElementById("edit_ip_whitelist").value = account.ip_whitelist || "";
-    document.getElementById("edit_refresh_interval").value = account.refresh_interval || 0;
-    document.getElementById("editModal").classList.remove("hidden");
+    const title = document.getElementById("modalTitle");
+    if (title) title.textContent = "Service Account Bewerken";
+    const act = document.getElementById("formAction");
+    if (act) act.value = "edit";
+    const accId = document.getElementById("formAccountId");
+    if (accId) accId.value = account.id;
+    const naam = document.getElementById("formNaam");
+    if (naam) naam.value = account.naam;
+    const doel = document.getElementById("formDoel");
+    if (doel) doel.value = account.doel_pagina;
+    const rechten = document.getElementById("formRechten");
+    if (rechten) rechten.value = account.rechten;
+    const ip = document.getElementById("formIp");
+    if (ip) ip.value = account.ip_whitelist || "";
+    const refresh = document.getElementById("formRefresh");
+    if (refresh) refresh.value = account.refresh_interval || 0;
+    const modal = document.getElementById("createModal");
+    openModal(modal);
 }
 
 function closeEditModal() {
-    const modal = document.getElementById("editModal");
-    if (modal) modal.classList.add("hidden");
+    const modal = document.getElementById("createModal");
+    closeModal(modal);
 }

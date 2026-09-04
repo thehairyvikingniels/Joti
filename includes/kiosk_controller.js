@@ -1,60 +1,69 @@
-// Polls the kiosk status endpoint to handle remote redirects and automatic page refreshes for idle kiosk devices.
+/**
+ * js/kiosk_controller.js ??? Background client-side daemon for active Kiosk screens.
+ */
+
 (function() {
     console.log("[Kiosk] Kiosk Controller active");
 
+    let consecutiveFailures = 0;
+    let currentRefreshInterval = 0;
     let idleTimer = null;
     let lastActivityTime = Date.now();
-    let currentRefreshInterval = 0;
 
     function getRandomPollingInterval() {
-        // Random between 5000ms (5s) and 15000ms (15s) to spread server load
-        return Math.floor(Math.random() * 10000) + 5000;
+        return Math.floor(Math.random() * (7000 - 4000 + 1)) + 4000;
     }
 
     function checkKioskStatus() {
-        fetch('/kiosk.php?action=status', { credentials: 'same-origin' })
+        fetch('/kiosk.php?action=status', { cache: 'no-store' })
             .then(response => {
+                if (response.status === 401 || response.status === 404) {
+                    console.log("[Kiosk] No active kiosk session or terminated. Ceasing kiosk daemon.");
+                    return null;
+                }
                 if (!response.ok) {
                     throw new Error('Kiosk status request failed: ' + response.status);
                 }
                 return response.json();
             })
             .then(data => {
+                if (!data) return;
+                consecutiveFailures = 0;
+
                 if (data.error) {
                     console.warn("[Kiosk] Status error:", data.error);
                     return;
                 }
 
-                // Check remote redirect
-                if (data.doel_pagina) {
-                    let targetPage = data.doel_pagina.trim();
-                    let currentPath = window.location.pathname;
+                if (data.target_page) {
+                    let currentPath = window.location.pathname.replace(/^\//, '');
+                    let targetPage = data.target_page.replace(/^\//, '');
+                    
+                    let normCurrent = currentPath.replace(/\.php$/, '');
+                    let normTarget = targetPage.replace(/\.php$/, '');
 
-                    // Normalize targetPage and currentPath for comparison
-                    let normalizedTarget = targetPage.startsWith('/') ? targetPage : '/' + targetPage;
-                    let normalizedCurrent = currentPath.endsWith('/') && currentPath.length > 1 ? currentPath.slice(0, -1) : currentPath;
-
-                    // Stripping file extension if any or trailing slashes for clean matching
-                    if (normalizedTarget !== normalizedCurrent && !normalizedCurrent.endsWith(normalizedTarget)) {
+                    if (normCurrent !== normTarget && normTarget !== '') {
                         console.log("[Kiosk] Remote redirecting from", currentPath, "to", targetPage);
-                        window.location.href = targetPage;
+                        window.location.href = '/' + targetPage;
                         return;
                     }
                 }
 
-                // Update idle refresh interval if changed
-                if (typeof data.refresh_interval === 'number') {
-                    setupIdleRefresh(data.refresh_interval);
+                if (typeof data.refresh_interval !== 'undefined') {
+                    setupIdleRefresh(parseInt(data.refresh_interval, 10));
                 }
             })
             .catch(err => {
                 console.warn("[Kiosk] Status check failed:", err.message);
-                if (window.location.pathname !== '/offline.php') {
-                    window.location.href = '/offline.php';
+                consecutiveFailures++;
+                // Only redirect to offline.php if browser is truly offline or 5 consecutive failures occur
+                if (!navigator.onLine && consecutiveFailures >= 3) {
+                    if (window.location.pathname !== '/offline.php') {
+                        window.location.href = '/offline.php';
+                    }
                 }
             })
             .finally(() => {
-                // Schedule next status check with random jitter
                 setTimeout(checkKioskStatus, getRandomPollingInterval());
             });
     }
@@ -72,7 +81,6 @@
 
         if (intervalSeconds <= 0) return;
 
-        // Listen for user interaction events to reset activity timer
         ['mousemove', 'mousedown', 'click', 'touchstart', 'scroll', 'keydown', 'input', 'pointerdown'].forEach(eventType => {
             window.addEventListener(eventType, resetActivity, { passive: true, capture: true });
         });
@@ -90,5 +98,4 @@
 
     // Start initial status check
     setTimeout(checkKioskStatus, getRandomPollingInterval());
-
 })();

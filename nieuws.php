@@ -67,7 +67,7 @@ require_once('includes/auth.php');
         }
 
         echo '
-        <article class="theme-card rounded border shadow-sm overflow-hidden" id="nieuws-'.$row['id'].'">
+        <article class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6" id="nieuws-'.$row['id'].'">
           <header class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h3 class="text-xl font-bold">'.$row['titel'].'</h3>
             <span class="text-sm font-medium opacity-80">'.time2str($row['datum']).'</span>

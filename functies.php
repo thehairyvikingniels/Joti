@@ -149,6 +149,14 @@ if (isset($_POST['toggle_toewijzing'])) {
         
         send_push_notification($user_id, "Taak gewijzigd", "Je bent van een taak verwijderd.", "/whiteboard", "functies/toewijzing", null, "assignment_changes");
         
+        $typeLabel = ucfirst($type);
+        recordAuditLog($conn, 'assignment', 'unassign_user', "Gebruiker heeft zich afgemeld van {$typeLabel} #{$ref_id}", [
+            'subject_user_id' => $user_id,
+            'target_type' => $type,
+            'target_id' => $ref_id,
+            'target_label' => "{$typeLabel} #{$ref_id}"
+        ]);
+        
         $users = $get_users($conn, $type, $ref_id);
         echo json_encode(["status" => "unassigned", "target_type" => $type, "target_id" => $ref_id, "users" => $users]);
         exit();
@@ -277,6 +285,14 @@ if (isset($_POST['toggle_toewijzing'])) {
     
     send_push_notification($user_id, "Taak gewijzigd", "Je bent aan een taak toegewezen.", "/whiteboard", "functies/toewijzing", null, "assignment_changes");
     
+    $typeLabel = ucfirst($type);
+    recordAuditLog($conn, 'assignment', 'assign_user', "Gebruiker heeft zich aangemeld voor {$typeLabel} #{$ref_id}", [
+        'subject_user_id' => $user_id,
+        'target_type' => $type,
+        'target_id' => $ref_id,
+        'target_label' => "{$typeLabel} #{$ref_id}"
+    ]);
+    
     $users = $get_users($conn, $type, $ref_id);
     
     echo json_encode([
@@ -325,6 +341,13 @@ if (isset($_GET['lat']) && isset($_GET['lon'])) {
         echo "Error: " . $stmt_user->error;
     }
     $stmt_user->close();
+
+    // If active Tegenhunt session exists, record breadcrumb
+    $activeTegenhunt = function_exists('getActiveTegenhunt') ? getActiveTegenhunt($conn) : null;
+    if ($activeTegenhunt && function_exists('recordTegenhuntBreadcrumb')) {
+        $accuracy = isset($_GET['accuracy']) ? floatval($_GET['accuracy']) : 10.0;
+        recordTegenhuntBreadcrumb($conn, (int)$activeTegenhunt['id'], (int)$_SESSION['id'], floatval($_GET['lat']), floatval($_GET['lon']), $accuracy);
+    }
 }
 
 // Invulgegevens voor homebase (afvinken)
@@ -362,7 +385,9 @@ if (isset($_GET['invulgegevens'])){
     if (!isset($_SESSION['priv']) || $_SESSION['priv'] < 2) {
         exit();
     }
-    $stmt = $conn->prepare("SELECT * FROM Voslocaties WHERE ingeleverd='0' ORDER BY ingestuurd_op DESC");
+    $stmt = $conn->prepare("
+        SELECT * FROM Voslocaties WHERE ingeleverd = '0' AND type NOT IN ('Voorspelling', 'Spot') ORDER BY ingestuurd_op DESC
+    ");
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -370,22 +395,32 @@ if (isset($_GET['invulgegevens'])){
         echo "<table class='w-full text-sm text-left theme-text'>";
         echo "<thead class='text-xs uppercase theme-card-header opacity-80'>";
         echo "<tr>";
-        echo "  <th class='px-4 py-2'>Code</th>";
-        echo "  <th class='px-4 py-2'>Type</th>";
-        echo "  <th class='px-4 py-2'>Tijd</th>";
-        echo "  <th class='px-4 py-2'></th>";
+        echo "  <th class='px-3 py-2'>Code</th>";
+        echo "  <th class='px-3 py-2'>Type</th>";
+        echo "  <th class='px-3 py-2'>Tijd</th>";
+        echo "  <th class='px-3 py-2 text-center'>Foto</th>";
+        echo "  <th class='px-3 py-2 text-right'></th>";
         echo "</tr></thead><tbody>";
         while($row = $result->fetch_assoc()) {
+            $photo = !empty($row['foto']) ? $row['foto'] : null;
+            $typeClass = $row['type'] === 'Tegenhunt' ? 'bg-red-500/15 text-red-500 font-extrabold px-1.5 py-0.5 rounded text-xs uppercase tracking-wide' : 'font-medium';
             echo "<tr class='border-b hover:opacity-80 transition-opacity' style='border-color: var(--theme-card-border);'>";
-            echo "  <td class='px-4 py-2 font-medium'>".htmlspecialchars($row['code'])."</td>";
-            echo "  <td class='px-4 py-2'>".htmlspecialchars($row['type'])."</td>";
-            echo "  <td class='px-4 py-2'>".date("H:i",strtotime($row['ingestuurd_op']))."</td>";
-            echo "  <td class='px-4 py-2 text-right'><i class=\"fas fa-trash-alt text-red-500 cursor-pointer hover:text-red-700\" onclick=\"document.getElementById('modal01').style.display='block';document.getElementById('opgestuurdurl').href='functies?hunthintgedaan=".$row['id']."';\"></i></td>";
+            echo "  <td class='px-3 py-2 font-mono font-bold'>".htmlspecialchars($row['code'] ?? '')."</td>";
+            echo "  <td class='px-3 py-2'><span class='{$typeClass}'>".htmlspecialchars($row['type'] ?? '')."</span></td>";
+            echo "  <td class='px-3 py-2 font-mono text-xs opacity-75'>".date("H:i",strtotime($row['ingestuurd_op']))."</td>";
+            echo "  <td class='px-3 py-2 text-center'>";
+            if (!empty($photo)) {
+                echo "<a href='".htmlspecialchars($photo)."' download class='inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1 px-2.5 rounded-lg shadow-sm transition' title='Download foto van sticker'><i class='fas fa-download text-xs'></i> <span>Download</span></a>";
+            } else {
+                echo "<span class='opacity-40 text-xs italic'>-</span>";
+            }
+            echo "  </td>";
+            echo "  <td class='px-3 py-2 text-right'><i class=\"fas fa-check-circle text-green-500 hover:text-green-600 text-lg cursor-pointer transition transform hover:scale-110\" title=\"Markeer als ingeleverd op Jotihunt.nl\" onclick=\"document.getElementById('modal01').style.display='flex';document.getElementById('opgestuurdurl').href='functies?hunthintgedaan=".$row['id']."';\"></i></td>";
             echo "</tr>"; 
         }
         echo "</tbody></table>";
     } else {
-        echo "<p class=\"m-4\">Hier verschijnen hunts die ingeleverd moeten worden bij de officiële jotihunt website</p>";
+        echo "<p class=\"m-4 text-xs opacity-70 italic\">Hier verschijnen hunts en tegenhunts die ingeleverd moeten worden bij de offici&euml;le Jotihunt website.</p>";
     }
     $stmt->close();
 }

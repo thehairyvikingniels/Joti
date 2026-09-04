@@ -26,7 +26,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare("INSERT INTO Kiosk_Accounts (auth_token, naam, doel_pagina, rechten, ip_whitelist, refresh_interval) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->bind_param("sssisi", $token, $naam, $target_page, $permissions, $ip_whitelist, $refresh_interval);
             if ($stmt->execute()) {
+                $newKioskId = $stmt->insert_id;
                 $stmt->close();
+
+                recordAuditLog($conn, 'security', 'kiosk_created', [
+                    'severity' => 'warning',
+                    'target_type' => 'kiosk',
+                    'target_id' => (string)$newKioskId,
+                    'target_label' => $naam,
+                    'details' => "Kiosk service account '{$naam}' aangemaakt",
+                    'metadata' => ['naam' => $naam, 'doel_pagina' => $target_page, 'rechten' => $permissions]
+                ]);
+
                 header("Location: serviceaccounts?msg=success");
                 exit();
             } else {
@@ -49,6 +60,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("ssisii", $naam, $target_page, $permissions, $ip_whitelist, $refresh_interval, $id);
         if ($stmt->execute()) {
             $stmt->close();
+
+            recordAuditLog($conn, 'security', 'kiosk_updated', [
+                'severity' => 'info',
+                'target_type' => 'kiosk',
+                'target_id' => (string)$id,
+                'target_label' => $naam,
+                'details' => "Kiosk service account '{$naam}' gewijzigd",
+                'metadata' => ['id' => $id, 'naam' => $naam, 'doel_pagina' => $target_page, 'rechten' => $permissions]
+            ]);
+
             header("Location: serviceaccounts?msg=success");
             exit();
         } else {
@@ -63,6 +84,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("i", $id);
         if ($stmt->execute()) {
             $stmt->close();
+
+            recordAuditLog($conn, 'security', 'kiosk_deleted', [
+                'severity' => 'warning',
+                'target_type' => 'kiosk',
+                'target_id' => (string)$id,
+                'target_label' => "Kiosk #{$id}",
+                'details' => "Kiosk service account #{$id} verwijderd",
+                'metadata' => ['id' => $id]
+            ]);
+
             header("Location: serviceaccounts?msg=success");
             exit();
         } else {
@@ -78,6 +109,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("si", $token, $id);
         if ($stmt->execute()) {
             $stmt->close();
+
+            recordAuditLog($conn, 'security', 'kiosk_token_regenerated', [
+                'severity' => 'warning',
+                'target_type' => 'kiosk',
+                'target_id' => (string)$id,
+                'target_label' => "Kiosk #{$id}",
+                'details' => "Auth token voor kiosk service account #{$id} opnieuw gegenereerd",
+                'metadata' => ['id' => $id]
+            ]);
+
             header("Location: serviceaccounts?msg=success");
             exit();
         } else {

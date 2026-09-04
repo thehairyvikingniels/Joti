@@ -68,6 +68,10 @@ $pagelist = array(
         'active' => null,
         'filename' => 'admin/database.php'
     ),
+    'a_audit' => array(
+        'active' => null,
+        'filename' => 'admin/audit.php'
+    ),
     'sa_settings' => array(
         'active' => null,
         'filename' => 'admin/settings.php'
@@ -75,6 +79,18 @@ $pagelist = array(
     'sa_notifications' => array(
         'active' => null,
         'filename' => 'admin/notifications.php'
+    ),
+    'admin_telegram' => array(
+        'active' => null,
+        'filename' => 'admin/telegram.php'
+    ),
+    'a_readiness' => array(
+        'active' => null,
+        'filename' => 'admin/readiness.php'
+    ),
+    'sa_system' => array(
+        'active' => null,
+        'filename' => 'admin/system.php'
     )
 );
 $pagelist[PAGE_NAME]['active'] = " theme-sidebar-active theme-border-primary text-white";
@@ -91,8 +107,12 @@ $adminpagelist = array(
     'a_database',
     'a_cronjobs',
     'a_serviceaccounts',
+    'a_audit',
+    'admin_telegram',
+    'a_readiness',
     'sa_settings',
-    'sa_notifications'
+    'sa_notifications',
+    'sa_system'
 );
 if (in_array(PAGE_NAME, $adminpagelist)) {
     $inAdminfolder = "";
@@ -110,20 +130,26 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
   </div>
   
   <div class="px-5 py-4 flex items-center justify-between border-b border-black/10">
-    <div class="flex items-center space-x-3">
-      <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 border shadow-sm" style="border-color: var(--theme-card-border);">
-        <img src="<?= $notInAdminfolder.$site_settings['GROUP_LOGO_SMALL_URL']?>" class="w-full h-full object-contain p-1">
+    <a href="<?=$notInAdminfolder?>instellingen" class="flex items-center space-x-3 min-w-0 group hover:opacity-90 transition" title="Mijn instellingen & profiel">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 border shadow-sm group-hover:border-blue-400 transition" style="border-color: var(--theme-card-border);">
+        <?php if (!empty($profile_picture)): ?>
+          <img src="<?=$notInAdminfolder?>profile_image.php?hash=<?=urlencode($profile_picture)?>&res=low" alt="Profielfoto" class="w-full h-full object-cover">
+        <?php else: ?>
+          <div class="w-full h-full theme-bg-primary text-white flex items-center justify-center font-bold text-base">
+            <?= strtoupper(substr($first_name ?: ($username ?: 'U'), 0, 1)) ?>
+          </div>
+        <?php endif; ?>
       </div>
-      <div>
-          <p class="text-sm font-semibold">Welkom, <strong><?php echo ucfirst($first_name); ?></strong></p>
+      <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold truncate group-hover:underline">Welkom, <strong><?php echo ucfirst($first_name); ?></strong></p>
           <?php
           $roleNames = [0 => 'Gast', 1 => 'Vossenjager', 2 => 'Admin', 3 => 'Superadmin'];
           $userPriv = $_SESSION['priv'] ?? 0;
           ?>
-          <p class="text-xs opacity-70"><?php echo $roleNames[$userPriv] ?? "Onbekend"; ?></p>
+          <p class="text-xs opacity-70 truncate"><?php echo $roleNames[$userPriv] ?? "Onbekend"; ?></p>
       </div>
-    </div>
-    <a href="/logout" class="opacity-70 hover:opacity-100 hover:text-red-500 transition-colors" title="Uitloggen">
+    </a>
+    <a href="/logout" class="opacity-70 hover:opacity-100 hover:text-red-500 transition-colors ml-2 flex-shrink-0" title="Uitloggen">
       <i class="fas fa-sign-out-alt text-xl"></i>
     </a>
   </div>
@@ -132,6 +158,18 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
     <a href="<?=$notInAdminfolder?>home" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['home']['active']?>"><i class="fa fa-users fa-fw w-5 opacity-70"></i><span>Overzicht</span></a>
     <?php if ($privilege > 0): ?>
     <a href="<?=$notInAdminfolder?>kaarten" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['kaarten']['active']?>"><i class="fas fa-map-marked-alt fa-fw w-5 opacity-70"></i><span>Kaarten</span></a>
+    <?php 
+    $activeTegenhunt = function_exists('getActiveTegenhunt') ? getActiveTegenhunt($conn) : null;
+    if ($activeTegenhunt !== null || ($privilege ?? 0) >= 2): 
+        $isTegenhuntActive = ($activeTegenhunt !== null);
+    ?>
+    <a href="<?=$notInAdminfolder?>tegenhunt" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['tegenhunt']['active'] ?? $inactive_classes ?> <?= $isTegenhuntActive ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' : '' ?>">
+      <i class="fas <?= $isTegenhuntActive ? 'fa-bullseye text-red-500 animate-pulse' : 'fa-bullseye' ?> fa-fw w-5 opacity-80"></i>
+      <span class="<?= $isTegenhuntActive ? 'font-bold text-red-500' : '' ?>">
+        <?= $isTegenhuntActive ? '<span class="text-red-500 mr-1 font-extrabold text-base animate-ping">!</span>' : '' ?>Tegenhunt
+      </span>
+    </a>
+    <?php endif; ?>
     <a href="<?=$notInAdminfolder?>vossen" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['vossen']['active']?>"><i class="fas fa-bullseye fa-fw w-5 opacity-70"></i><span>Vossen</span></a>
     <a href="<?=$notInAdminfolder?>voslocaties" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['voslocaties']['active']?>"><i class="fas fa-circle-nodes fa-fw w-5 opacity-70"></i><span>Voslocaties</span></a>
     <?php endif; ?>
@@ -153,10 +191,14 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
     <a href="<?=$inAdminfolder?>serviceaccounts" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_serviceaccounts']['active']?>"><i class="fas fa-user-tag fa-fw w-5 opacity-70"></i><span>Service Accounts</span></a>
     <a href="<?=$inAdminfolder?>cronjobs" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_cronjobs']['active']?>"><i class="fas fa-stopwatch fa-fw w-5 opacity-70"></i><span>Cronjobs</span></a>
     <a href="<?=$inAdminfolder?>database" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_database']['active']?>"><i class="fas fa-database fa-fw w-5 opacity-70"></i><span>Database</span></a>
+    <a href="<?=$inAdminfolder?>audit" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_audit']['active']?>"><i class="fas fa-history fa-fw w-5 opacity-70"></i><span>Audit Log</span></a>
     <a href="<?=$inAdminfolder?>notifications" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['sa_notifications']['active']?>"><i class="fas fa-bell fa-fw w-5 opacity-70"></i><span>Notifications</span></a>
+    <a href="<?=$inAdminfolder?>telegram" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['admin_telegram']['active']?>"><i class="fab fa-telegram-plane fa-fw w-5 opacity-70"></i><span>Telegram</span></a>
+    <a href="<?=$inAdminfolder?>readiness" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['a_readiness']['active']?>"><i class="fas fa-clipboard-check fa-fw w-5 opacity-70"></i><span>Readiness Hub</span></a>
     <?php endif; ?>
     <?php if ($privilege > 2): ?>
     <a href="<?=$inAdminfolder?>settings" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['sa_settings']['active']?>"><i class="fas fa-toolbox fa-fw w-5 opacity-70"></i><span>Settings</span></a>
+    <a href="<?=$inAdminfolder?>system" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['sa_system']['active']?>"><i class="fas fa-server fa-fw w-5 opacity-70"></i><span>System</span></a>
     <?php endif; ?>
   </nav>
 </aside>
@@ -164,4 +206,4 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
 <!-- Overlay effect when opening sidebar on small screens -->
 <div id="myOverlay" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden transition-opacity" onclick="w3_close()"></div>
 
-<script src="<?= $inAdminfolder ?? '' ?>js/app.js"></script>
+<script src="/js/app.js"></script>

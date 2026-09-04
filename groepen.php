@@ -54,7 +54,7 @@ require_once('includes/auth.php');
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
-      echo '<div class="theme-card rounded border shadow-sm overflow-hidden">';
+      echo '<div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">';
       echo '<ul id="tableSearchTable" class="divide-y" style="border-color: var(--theme-card-border);">';
       while($row = $result->fetch_assoc()) {
         $color = getFoxColor(ucfirst($row['deelgebied']));

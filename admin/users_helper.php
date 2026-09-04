@@ -43,6 +43,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user']) && isset($_PO
 
         if ($stmt_update->execute()) {
             $stmt_update->close();
+            if ($new_priv >= 2 && $current_priv < 2) {
+                clearAllRememberTokensForUser($conn, $target_user_id);
+            }
+
+            $roleNames = [0 => 'Gast', 1 => 'Vossenjager', 2 => 'Admin', 3 => 'Superadmin'];
+            if ($new_priv === 4) {
+                recordAuditLog($conn, 'admin', 'delete_user', "Admin heeft gebruiker #{$target_user_id} verwijderd", [
+                    'subject_user_id' => $target_user_id,
+                    'severity' => 'warning'
+                ]);
+            } else {
+                $oldRole = $roleNames[$current_priv] ?? "Priv $current_priv";
+                $newRole = $roleNames[$new_priv] ?? "Priv $new_priv";
+                recordAuditLog($conn, 'admin', 'role_changed', "Rechten gewijzigd voor gebruiker #{$target_user_id}: {$oldRole} → {$newRole}", [
+                    'subject_user_id' => $target_user_id,
+                    'severity' => 'security',
+                    'metadata' => ['old_priv' => $current_priv, 'new_priv' => $new_priv]
+                ]);
+            }
+
             header("Location: users?msg=success");
             exit();
         } else {
@@ -83,8 +103,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_password_user_i
             $stmt_reset = $conn->prepare("UPDATE Gebruikers SET wachtwoord=? WHERE id=?");
             $stmt_reset->bind_param("si", $hashed, $target_user_id);
             if ($stmt_reset->execute()) {
+                clearAllRememberTokensForUser($conn, $target_user_id);
                 $stmt_reset->close();
                 $stmt_target->close();
+
+                recordAuditLog($conn, 'admin', 'password_reset', "Admin heeft wachtwoord gereset voor gebruiker #{$target_user_id}", [
+                    'subject_user_id' => $target_user_id,
+                    'severity' => 'security'
+                ]);
+
                 header("Location: users?msg=password_reset");
                 exit();
             } else {
@@ -105,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_password_user_i
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['impersonate_user_id'])) {
     $target_user_id = intval($_POST['impersonate_user_id']);
     
-    $stmt_target = $conn->prepare("SELECT id, priv FROM Gebruikers WHERE id=?");
+    $stmt_target = $conn->prepare("SELECT id, priv, gebruikersnaam FROM Gebruikers WHERE id=?");
     $stmt_target->bind_param("i", $target_user_id);
     $stmt_target->execute();
     $result_target = $stmt_target->get_result();
@@ -122,6 +149,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['impersonate_user_id']
         }
         
         if ($allowed) {
+            $impersonatedName = $row_target['gebruikersnaam'] ?? "Gebruiker #{$target_user_id}";
+            recordAuditLog($conn, 'admin', 'impersonate', "Admin heeft sessie overgenomen van {$impersonatedName}", [
+                'subject_user_id' => $target_user_id,
+                'subject_username' => $impersonatedName,
+                'severity' => 'security'
+            ]);
+
             $_SESSION['original_id'] = $_SESSION['id'];
             $_SESSION['id'] = (int)$row_target['id'];
             $_SESSION['priv'] = (int)$row_target['priv'];

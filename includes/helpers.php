@@ -8,67 +8,114 @@ declare(strict_types=1);
  */
 
 /**
- * Convert a timestamp into a relative human-readable English string (e.g. 'just now', '5 minutes ago', 'Yesterday').
+ * Parse an incoming timestamp or datetime string into a valid Unix epoch timestamp.
+ * Treats standard MySQL datetime strings (without timezone offset) as UTC.
  *
- * @param int|string $ts Unix timestamp or parseable datetime string.
+ * @param int|string|null $ts Unix timestamp or parseable datetime string.
+ * @return int|null
+ */
+if (!function_exists('parseToTimestamp')) {
+    function parseToTimestamp(int|string|null $ts): ?int {
+        if ($ts === null || $ts === '' || $ts === 0 || $ts === '0' || $ts === '0000-00-00 00:00:00') {
+            return null;
+        }
+        if (is_numeric($ts)) {
+            return (int)$ts;
+        }
+        $str = trim((string)$ts);
+        // If standard MySQL datetime without timezone offset (e.g. '2026-09-01 10:12:39'), treat as UTC
+        if (preg_match('/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/', $str)) {
+            $str .= ' UTC';
+        }
+        $parsed = strtotime($str);
+        return $parsed !== false ? $parsed : null;
+    }
+}
+
+/**
+ * Convert a timestamp into a relative human-readable Dutch string (e.g. 'Zojuist', '5 minuten geleden', 'Gisteren').
+ *
+ * @param int|string|null $ts Unix timestamp or parseable datetime string.
  * @return string
  */
 if (!function_exists('time2str')) {
     function time2str(int|string|null $ts): string {
-        if ($ts === null || $ts === '' || $ts === 0 || $ts === '0') {
+        $timestamp = parseToTimestamp($ts);
+        if ($timestamp === null) {
             return 'Nooit';
         }
-        if (!is_numeric($ts)) {
-            $ts = strtotime((string)$ts);
-        } else {
-            $ts = (int)$ts;
-        }
 
-        $diff = time() - $ts;
-        if ($diff === 0) {
-            return 'now';
-        } elseif ($diff > 0) {
+        $diff = time() - $timestamp;
+
+        if ($diff >= 0) {
+            if ($diff < 60) return 'Zojuist';
+            if ($diff < 120) return '1 minuut geleden';
+            if ($diff < 3600) return floor($diff / 60) . ' minuten geleden';
+            if ($diff < 7200) return '1 uur geleden';
+            if ($diff < 86400) return floor($diff / 3600) . ' uur geleden';
+
             $dayDiff = (int)floor($diff / 86400);
-            if ($dayDiff === 0) {
-                if ($diff < 60) return 'just now';
-                if ($diff < 120) return '1 minute ago';
-                if ($diff < 3600) return floor($diff / 60) . ' minutes ago';
-                if ($diff < 7200) return '1 hour ago';
-                if ($diff < 86400) return floor($diff / 3600) . ' hours ago';
+            if ($dayDiff === 1) return 'Gisteren';
+            if ($dayDiff < 7) return $dayDiff . ' dagen geleden';
+            if ($dayDiff < 31) {
+                $weeks = (int)ceil($dayDiff / 7);
+                return $weeks === 1 ? '1 week geleden' : $weeks . ' weken geleden';
             }
-            if ($dayDiff === 1) return 'Yesterday';
-            if ($dayDiff < 7) return $dayDiff . ' days ago';
-            if ($dayDiff < 31) return ceil($dayDiff / 7) . ' weeks ago';
-            if ($dayDiff < 60) return 'last month';
-            return date('F Y', $ts);
+            if ($dayDiff < 60) return 'Vorige maand';
+
+            $dt = (new DateTimeImmutable())->setTimestamp($timestamp)->setTimezone(new DateTimeZone('Europe/Amsterdam'));
+            $months = [1 => 'jan', 2 => 'feb', 3 => 'mrt', 4 => 'apr', 5 => 'mei', 6 => 'jun', 7 => 'jul', 8 => 'aug', 9 => 'sep', 10 => 'okt', 11 => 'nov', 12 => 'dec'];
+            $m = (int)$dt->format('n');
+            return $dt->format('j') . ' ' . ($months[$m] ?? $dt->format('M')) . ' ' . $dt->format('Y');
         } else {
-            $diff = abs($diff);
-            $dayDiff = (int)floor($diff / 86400);
-            if ($dayDiff === 0) {
-                if ($diff < 120) return 'in a minute';
-                if ($diff < 3600) return 'in ' . floor($diff / 60) . ' minutes';
-                if ($diff < 7200) return 'in an hour';
-                if ($diff < 86400) return 'in ' . floor($diff / 3600) . ' hours';
+            $absDiff = abs($diff);
+            if ($absDiff < 60) return 'Binnenkort';
+            if ($absDiff < 120) return 'Over 1 minuut';
+            if ($absDiff < 3600) return 'Over ' . floor($absDiff / 60) . ' minuten';
+            if ($absDiff < 7200) return 'Over 1 uur';
+            if ($absDiff < 86400) return 'Over ' . floor($absDiff / 3600) . ' uur';
+
+            $dayDiff = (int)floor($absDiff / 86400);
+            if ($dayDiff === 1) return 'Morgen';
+            if ($dayDiff < 7) return 'Over ' . $dayDiff . ' dagen';
+            if ($dayDiff < 31) {
+                $weeks = (int)ceil($dayDiff / 7);
+                return $weeks === 1 ? 'Over 1 week' : 'Over ' . $weeks . ' weken';
             }
-            if ($dayDiff === 1) return 'Tomorrow';
-            if ($dayDiff < 4) return date('l', $ts);
-            if ($dayDiff < 7 + (7 - (int)date('w'))) return 'next week';
-            if (ceil($dayDiff / 7) < 4) return 'in ' . ceil($dayDiff / 7) . ' weeks';
-            if ((int)date('n', $ts) === (int)date('n') + 1) return 'next month';
-            return date('F Y', $ts);
+            if ($dayDiff < 60) return 'Volgende maand';
+
+            $dt = (new DateTimeImmutable())->setTimestamp($timestamp)->setTimezone(new DateTimeZone('Europe/Amsterdam'));
+            return $dt->format('d-m-Y H:i');
         }
+    }
+}
+
+/**
+ * Format a timestamp or UTC datetime string into a Dutch Europe/Amsterdam datetime format.
+ *
+ * @param int|string|null $ts Unix timestamp or UTC datetime string
+ * @param string $format DateTime format (default: 'd-m-Y H:i:s')
+ * @return string Formatted date or 'Nooit'
+ */
+if (!function_exists('formatAmsterdamDateTime')) {
+    function formatAmsterdamDateTime(int|string|null $ts, string $format = 'd-m-Y H:i:s'): string {
+        $timestamp = parseToTimestamp($ts);
+        if ($timestamp === null) {
+            return 'Nooit';
+        }
+        $dt = (new DateTimeImmutable())->setTimestamp($timestamp)->setTimezone(new DateTimeZone('Europe/Amsterdam'));
+        return $dt->format($format);
     }
 }
 
 /**
  * Backward compatibility alias for time2str.
  *
- * @param int|string $ts
+ * @param int|string|null $ts
  * @return string
  */
 if (!function_exists('timeToString')) {
     function timeToString(int|string|null $ts): string {
-        return time2str($ts);
         return time2str($ts);
     }
 }
@@ -133,11 +180,20 @@ if (!function_exists('convertRdToWgs')) {
  */
 if (!function_exists('getClientIP')) {
     function getClientIP(): string {
+        if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+            return trim((string)$_SERVER['HTTP_CF_CONNECTING_IP']);
+        }
         if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
             $ipList = explode(',', (string)$_SERVER['HTTP_X_FORWARDED_FOR']);
-            return trim($ipList[0]);
+            $firstIp = trim($ipList[0]);
+            if (!empty($firstIp) && strcasecmp($firstIp, 'unknown') !== 0) {
+                return $firstIp;
+            }
         }
-        return (string)($_SERVER['REMOTE_ADDR'] ?? '');
+        if (!empty($_SERVER['HTTP_X_REAL_IP'])) {
+            return trim((string)$_SERVER['HTTP_X_REAL_IP']);
+        }
+        return (string)($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
     }
 }
 
@@ -404,3 +460,45 @@ if (!function_exists('recordCronLog')) {
         }
     }
 }
+
+/**
+ * Format bytes or bits into a human-readable string with custom 800-unit threshold.
+ *
+ * Threshold rule: value stays in current unit until hitting 800, then shifts to next unit:
+ *   799 KB stays 799 KB
+ *   900 KB -> 0.9 MB
+ *   1,000,000 KB -> 1 GB
+ *
+ * @param float|int $bytes Number of bytes.
+ * @param bool $asBits If true, converts bytes to bits (x8) and outputs (b, Kb, Mb, Gb, Tb).
+ * @param int $precision Number of decimals (default 1).
+ * @param bool $perSecond If true, appends '/s' (e.g. 'Kb/s', 'MB/s').
+ * @return string
+ */
+if (!function_exists('bitbyte2string')) {
+    function bitbyte2string(float|int $bytes, bool $asBits = false, int $precision = 1, bool $perSecond = false): string {
+        $units = $asBits
+            ? ['b', 'Kb', 'Mb', 'Gb', 'Tb']
+            : ['B', 'KB', 'MB', 'GB', 'TB'];
+
+        $val = $asBits ? ($bytes * 8.0) : (float)$bytes;
+
+        if ($val <= 0) {
+            return '0 ' . $units[0] . ($perSecond ? '/s' : '');
+        }
+
+        $idx = 0;
+        $maxIdx = count($units) - 1;
+
+        while ($val >= 800.0 && $idx < $maxIdx) {
+            $val /= 1024.0;
+            $idx++;
+        }
+
+        $rounded = round($val, $precision);
+        $numStr = (fmod($rounded, 1.0) == 0.0) ? (string)(int)$rounded : number_format($rounded, $precision, '.', '');
+
+        return $numStr . ' ' . $units[$idx] . ($perSecond ? '/s' : '');
+    }
+}
+

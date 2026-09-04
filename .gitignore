@@ -1,5 +1,31 @@
 
 .continue/rules
 dblogin.php
+.installed
 checklist.txt
 media/profiles/
+
+media/tegenhunt/*
+!media/tegenhunt/.gitkeep
+
+media/hunts/*
+!media/hunts/.gitkeep
+
+# Telegram session files
+*.session
+*.session-journal
+services/*.session
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+services/__pycache__/
+
+
+
+# Database backups
+DB/backups/
+*.sql.gz
+DB/*.sql
+!DB/createDB.sql

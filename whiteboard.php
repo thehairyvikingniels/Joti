@@ -64,8 +64,9 @@ $stmt = $conn->prepare("SELECT * FROM Auto_Bijrijders");
 $stmt->execute();
 $res = $stmt->get_result();
 while($row = $res->fetch_assoc()) {
+    $is_driver = !empty($row['is_driver']) || !empty($row['is_bestuurder']);
     if (isset($cars[$row['auto']])) {
-        if ($row['is_bestuurder']) {
+        if ($is_driver) {
             $cars[$row['auto']]['bestuurder'] = $row['gebruiker_id'];
         } else {
             $cars[$row['auto']]['bijrijders'][] = $row['gebruiker_id'];

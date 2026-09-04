@@ -27,6 +27,7 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
         $stmt->bind_param("si", $hashed_password, $_SESSION['id']);
 
         if ($stmt->execute()) {
+            clearAllRememberTokensForUser($conn, (int)$_SESSION['id']);
             $e = "Succesvol gewijzigd";
             header("Location: instellingen.php?e=" . urlencode($e) . "&t=wachtwoord#wachtwoord");
         } else {
@@ -137,6 +138,7 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
     
     $prefs = [
         'welkomsberichten' => isset($_POST['notif_welkomsberichten']),
+        'tegenhunt' => isset($_POST['notif_tegenhunt']),
         'assignment_changes' => isset($_POST['notif_assignment_changes']),
         'vosstatus' => isset($_POST['notif_vosstatus']),
         'locatiestatus' => isset($_POST['notif_locatiestatus']),
@@ -173,6 +175,62 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
     }
     $stmt->close();
     header("Location: instellingen.php?e=" . urlencode($e) . "&t=notificaties");
+    die();
+} elseif (isset($_POST['revoke_all_sessions'])) {
+    clearAllRememberTokensForUser($conn, (int)$_SESSION['id']);
+    $e = "Alle overige actieve sessies zijn succesvol beëindigd.";
+    header("Location: instellingen.php?e=" . urlencode($e) . "&t=sessies#sessies");
+    die();
+} elseif (isset($_POST['action']) && $_POST['action'] === 'update_telegram_toggle') {
+    if ($privilege >= 1) {
+        $tg_enabled = isset($_POST['telegram_enabled']) ? 1 : 0;
+        $stmt = $conn->prepare("UPDATE Gebruikers SET telegram_enabled = ? WHERE id = ?");
+        $stmt->bind_param("ii", $tg_enabled, $_SESSION['id']);
+        $stmt->execute();
+        $stmt->close();
+        $e = $tg_enabled ? "Telegram meldingen ingeschakeld." : "Telegram meldingen uitgeschakeld.";
+    } else {
+        $e = "Geen bevoegdheid om Telegram instellingen aan te passen.";
+    }
+    header("Location: instellingen.php?e=" . urlencode($e) . "&t=telegram#telegram");
+    die();
+} elseif (isset($_POST['action']) && $_POST['action'] === 'reset_telegram') {
+    if ($privilege >= 1) {
+        // Generate new link code and clear chat_id
+        $codeChars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $newCode = substr(str_shuffle(str_repeat($codeChars, 4)), 0, 6);
+        $stmt = $conn->prepare("UPDATE Gebruikers SET telegram_chat_id = NULL, telegram_enabled = 0, telegram_link_code = ? WHERE id = ?");
+        $stmt->bind_param("si", $newCode, $_SESSION['id']);
+        $stmt->execute();
+        $stmt->close();
+        $e = "Telegram koppeling is verbroken. Gebruik je nieuwe code om opnieuw te koppelen.";
+    } else {
+        $e = "Geen bevoegdheid om Telegram instellingen aan te passen.";
+    }
+    header("Location: instellingen.php?e=" . urlencode($e) . "&t=telegram#telegram");
+    die();
+} elseif (isset($_POST['action']) && $_POST['action'] === 'update_telegram') {
+    if ($privilege >= 1) {
+        $tg_chat_id = trim($_POST['telegram_chat_id'] ?? '');
+        $tg_enabled = isset($_POST['telegram_enabled']) ? 1 : 0;
+        
+        $warning = '';
+        if ($tg_enabled && str_starts_with($tg_chat_id, '@')) {
+            $warning = ' (Let op: Telegram bots vereisen je numerieke Chat ID via @userinfobot om berichten te kunnen bezorgen)';
+        }
+        
+        $stmt = $conn->prepare("UPDATE Gebruikers SET telegram_chat_id = ?, telegram_enabled = ? WHERE id = ?");
+        $stmt->bind_param("sii", $tg_chat_id, $tg_enabled, $_SESSION['id']);
+        if ($stmt->execute()) {
+            $e = "Telegram instellingen succesvol opgeslagen!" . $warning;
+        } else {
+            $e = "Database fout: " . $stmt->error;
+        }
+        $stmt->close();
+    } else {
+        $e = "Geen bevoegdheid om Telegram instellingen aan te passen.";
+    }
+    header("Location: instellingen.php?e=" . urlencode($e) . "&t=telegram#telegram");
     die();
 }
 ?>

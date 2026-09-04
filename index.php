@@ -1,12 +1,39 @@
 <?php
-// redirect if user is logged in
-session_start();
-if (isset($_SESSION['id']) && !empty($_SESSION['id'])) {
+// Defensive session start & redirect if user is logged in
+ini_set('session.cookie_httponly', '1');
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+if ($isHttps) {
+    ini_set('session.cookie_secure', '1');
+}
+ini_set('session.cookie_samesite', 'Lax');
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (!file_exists(__DIR__ . '/dblogin.php') || !file_exists(__DIR__ . '/.installed')) {
+    if (file_exists(__DIR__ . '/install.php') || file_exists(__DIR__ . '/install')) {
+        header("Location: /install");
+        exit();
+    }
+}
+
+require_once('dblogin.php');
+require_once('includes/remember_me.php');
+
+if (!empty($_SESSION['id'])) {
     header("Location: home");
     exit();
 }
 
-require_once('dblogin.php');
+// Check persistent remember-me cookie
+$rememberUserId = validateRememberToken($conn);
+if ($rememberUserId !== null) {
+    $_SESSION['id'] = $rememberUserId;
+    session_regenerate_id(true);
+    header("Location: home");
+    exit();
+}
 
 $groupName = 'Jotify';
 $stmt = $conn->prepare("SELECT Waarde FROM Site_Instellingen WHERE Instelling = 'GROUP_ID'");
@@ -99,6 +126,13 @@ $stmt->close();
                     </div>
                     <input class="w-full border rounded-lg pl-10 pr-3 py-2.5 text-gray-800 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" id="pswd" type="password" name="pswd" placeholder="Wachtwoord">
                   </div>
+                </div>
+
+                <div class="flex items-center justify-between text-sm pt-1">
+                  <label class="flex items-center space-x-2 cursor-pointer select-none opacity-85 hover:opacity-100 transition">
+                    <input type="checkbox" name="remember_me" value="1" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300">
+                    <span class="text-xs sm:text-sm font-semibold">Ingelogd blijven</span>
+                  </label>
                 </div>
                 
                 <div class="pt-2">

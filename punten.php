@@ -17,35 +17,44 @@ if ($result->num_rows > 0) {
 }
 $stmt->close();
 
-// Get score from points table for 'Geuzen'
-$stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = (SELECT id FROM Groepen WHERE naam LIKE '%geuzen%')");
-$stmt->execute();
-$result = $stmt->get_result();
-
-if ($result->num_rows > 0) {
-  while($row = $result->fetch_assoc()) {
-      $rank = $row['plaats'] ?? '?';
-      $hunts = $row['hunts'] ?? 0;
-      $tegenhunts = $row['tegenhunts'] ?? 0;
-      $opdrachten = $row['opdrachten'] ?? 0;
-      $fotoopdrachten = $row['foto_opdrachten'] ?? 0;
-      $hints = $row['hints'] ?? 0;
-      $bonus = $row['bonus'] ?? 0;
-      $penalties = $row['strafpunten'] ?? 0;
-      $total_points = $hunts + $tegenhunts + $opdrachten + $fotoopdrachten + $hints + $bonus - $penalties;
-  }
+// Get score from points table for own team
+$my_group_id = (int)($site_settings['GROUP_ID'] ?? 0);
+if ($my_group_id > 0) {
+    $stmt = $conn->prepare("SELECT * FROM Punten WHERE groep_id = ?");
+    $stmt->bind_param("i", $my_group_id);
 } else {
-  $rank = 0;
-  $hunts = 0;
-  $tegenhunts = 0;
-  $opdrachten = 0;
-  $fotoopdrachten = 0;
-  $hints = 0;
-  $bonus = 0;
-  $penalties = 0;
-  $total_points = 0;
+    $stmt = $conn->prepare("SELECT * FROM Punten ORDER BY (COALESCE(hunts,0) + COALESCE(tegenhunts,0) + COALESCE(opdrachten,0) + COALESCE(foto_opdrachten,0) + COALESCE(hints,0) + COALESCE(bonus,0) - COALESCE(strafpunten,0)) DESC LIMIT 1");
 }
-$stmt->close();
+
+$rank = '?';
+$hunts = 0;
+$tegenhunts = 0;
+$opdrachten = 0;
+$fotoopdrachten = 0;
+$hints = 0;
+$bonus = 0;
+$penalties = 0;
+$total_points = 0;
+
+if ($stmt) {
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result && $result->num_rows > 0) {
+      while($row = $result->fetch_assoc()) {
+          $rank = $row['plaats'] ?? '?';
+          $hunts = $row['hunts'] ?? 0;
+          $tegenhunts = $row['tegenhunts'] ?? 0;
+          $opdrachten = $row['opdrachten'] ?? 0;
+          $fotoopdrachten = $row['foto_opdrachten'] ?? 0;
+          $hints = $row['hints'] ?? 0;
+          $bonus = $row['bonus'] ?? 0;
+          $penalties = $row['strafpunten'] ?? 0;
+          $total_points = $hunts + $tegenhunts + $opdrachten + $fotoopdrachten + $hints + $bonus - $penalties;
+      }
+    }
+    $stmt->close();
+}
 
 ?>
 
@@ -76,7 +85,7 @@ $stmt->close();
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
       <!-- Your Team Score Card -->
-      <div class="theme-card rounded border shadow-sm overflow-hidden lg:col-span-1 h-fit">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden lg:col-span-1 h-fit mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold flex items-center">
               <span class="text-2xl mr-2 font-black"><?php echo $rank;?>e</span> Plaats
@@ -123,7 +132,7 @@ $stmt->close();
       </div>
 
       <!-- Scoreboard Card -->
-      <div class="theme-card rounded border shadow-sm overflow-hidden lg:col-span-2">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden lg:col-span-2 mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold">Scorelijst</h5>
         </div>
@@ -164,7 +173,7 @@ $stmt->close();
               }
               $stmt2->close();
               
-              $isUs = (stripos($teamName, 'geuzen') !== false);
+              $isUs = ($row['groep_id'] == $my_group_id) || ($my_group_id == 0 && stripos($teamName, 'geuzen') !== false);
               $rowClass = $isUs ? 'bg-blue-500/10 font-bold' : 'hover:bg-black/5 transition';
 
               echo '

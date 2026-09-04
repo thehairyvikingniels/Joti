@@ -12,6 +12,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['
     $all_updates_successful = true;
     $error_message = '';
 
+    // Fetch existing settings to detect changes
+    $existing = [];
+    $res = $conn->query("SELECT Instelling, Waarde FROM Site_Instellingen");
+    if ($res) {
+        while ($r = $res->fetch_assoc()) {
+            $existing[$r['Instelling']] = $r['Waarde'];
+        }
+    }
+
     $stmt_upd = $conn->prepare("UPDATE Site_Instellingen SET Waarde = ? WHERE Instelling = ?");
     if ($stmt_upd) {
         $uitzonderingen = ['action', 'add_setting_name', 'add_setting_value', 'add_setting_description'];
@@ -19,11 +28,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['
             if (!in_array($instelling, $uitzonderingen, true)) {
                 $inst_clean = trim($instelling);
                 $waarde_clean = trim($waarde);
+                $old_val = $existing[$inst_clean] ?? null;
+
                 $stmt_upd->bind_param("ss", $waarde_clean, $inst_clean);
                 if (!$stmt_upd->execute()) {
                     $all_updates_successful = false;
                     $error_message = "Fout bij bijwerken: " . htmlspecialchars($inst_clean);
                     break;
+                }
+
+                if ($old_val !== null && $old_val !== $waarde_clean) {
+                    recordAuditLog($conn, 'settings', 'setting_updated', [
+                        'severity' => 'warning',
+                        'target_type' => 'setting',
+                        'target_id' => $inst_clean,
+                        'target_label' => $inst_clean,
+                        'details' => "Instelling '{$inst_clean}' gewijzigd",
+                        'metadata' => [
+                            'setting' => $inst_clean,
+                            'old_value' => $old_val,
+                            'new_value' => $waarde_clean
+                        ]
+                    ]);
                 }
             }
         }
@@ -62,6 +88,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['action']) && $_POST['
                 $insert_stmt->bind_param("sss", $newName, $newValue, $newDescription);
                 if ($insert_stmt->execute()) {
                     $insert_stmt->close();
+
+                    recordAuditLog($conn, 'settings', 'setting_added', [
+                        'severity' => 'info',
+                        'target_type' => 'setting',
+                        'target_id' => $newName,
+                        'target_label' => $newName,
+                        'details' => "Nieuwe instelling '{$newName}' toegevoegd",
+                        'metadata' => [
+                            'setting' => $newName,
+                            'value' => $newValue,
+                            'description' => $newDescription
+                        ]
+                    ]);
+
                     header("Location: settings?msg=" . urlencode("Nieuwe instelling '" . $newName . "' is succesvol toegevoegd!"));
                     exit();
                 } else {
@@ -87,6 +127,18 @@ if (isset($_GET['delete_setting'])) {
             $delete_stmt->bind_param("s", $setting_to_delete);
             if ($delete_stmt->execute()) {
                 $delete_stmt->close();
+
+                recordAuditLog($conn, 'settings', 'setting_deleted', [
+                    'severity' => 'warning',
+                    'target_type' => 'setting',
+                    'target_id' => $setting_to_delete,
+                    'target_label' => $setting_to_delete,
+                    'details' => "Instelling '{$setting_to_delete}' verwijderd",
+                    'metadata' => [
+                        'setting' => $setting_to_delete
+                    ]
+                ]);
+
                 header("Location: settings?msg=" . urlencode("Instelling '" . $setting_to_delete . "' is succesvol verwijderd!"));
                 exit();
             } else {

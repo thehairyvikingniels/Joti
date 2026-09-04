@@ -3,6 +3,9 @@ Options -MultiViews
 
 RewriteEngine On
 
+# Pass Authorization header to PHP
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 ##------Forceer HTTPS verbinding geheel domein------##
 RewriteCond %{HTTPS} !=on
 RewriteRule ^/?(.*) https://%{SERVER_NAME}/$1 [R,L]

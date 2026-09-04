@@ -5,8 +5,9 @@ define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');
 $output = "";
 
-require_once('../dblogin.php');
-require_once("../functies.php");
+require_once(__DIR__ . '/../dblogin.php');
+require_once(__DIR__ . '/../includes/db.php');
+require_once(__DIR__ . '/../includes/helpers.php');
 
 $datumtijd = date('Y-m-d H:i:s');
 $status_code = 200;
@@ -155,6 +156,17 @@ if ($json_start !== false && $json_end !== false && $status_code === 200) {
                 $stmt_update->close();
             }
         }
+
+        // UPDATE TELEGRAM REGISTRATION CODE
+        if (!empty($data['telegram_code'])) {
+            $stmt_tg = $conn->prepare("INSERT INTO Site_Instellingen (Instelling, Waarde, Omschrijving) VALUES ('TELEGRAM_REGISTRATION_CODE', ?, 'Telegram bot registratiecode') ON DUPLICATE KEY UPDATE Waarde = VALUES(Waarde)");
+            if ($stmt_tg) {
+                $stmt_tg->bind_param("s", $data['telegram_code']);
+                $stmt_tg->execute();
+                $stmt_tg->close();
+                $output .= "\n[PHP] Telegram registratiecode bijgewerkt: " . $data['telegram_code'];
+            }
+        }
         
         $output .= "\n\n[PHP] Data succesvol geparsed en bijgewerkt.";
     } else {
@@ -164,21 +176,6 @@ if ($json_start !== false && $json_end !== false && $status_code === 200) {
 }
 
 // Log the execution details into Cronlogs
-define("END_TIME", microtime(true));
-$duration = intval((END_TIME - START_TIME) * 1000);
-$output_escaped = addslashes($output);
-
-$stmt = $conn->prepare("INSERT INTO Cronlogs (name, exec_time, exec_length, exec_stat, exec_output) VALUES (?, ?, ?, ?, ?)");
-if ($stmt) {
-    $stmt->bind_param("ssiis", $p1, $p2, $p3, $p4, $p5);
-    $p1 = NAME;
-    $p2 = $datumtijd;
-    $p3 = $duration;
-    $p4 = $status_code;
-    $p5 = $output_escaped;
-    $stmt->execute();
-    $stmt->close();
-}
-
+recordCronLog($conn, NAME, START_TIME, $output, $status_code);
 $conn->close();
 ?>

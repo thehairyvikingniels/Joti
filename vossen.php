@@ -39,8 +39,8 @@ if ($total_duration_seconds <= 0) {
 $stmt = $conn->prepare("SELECT * FROM Voslog WHERE datumtijd >= ? AND datumtijd <= ? ORDER BY datumtijd ASC");
 
 // Assign the method outputs to variables first
-$start_fmt = $game_start_time->format('Y-m-d H-i-s');
-$end_fmt = $game_end_time->format('Y-m-d H-i-s');
+$start_fmt = $game_start_time->format('Y-m-d H:i:s');
+$end_fmt = $game_end_time->format('Y-m-d H:i:s');
 
 // Pass the variables to bind_param
 $stmt->bind_param("ss", $start_fmt, $end_fmt);
@@ -50,7 +50,7 @@ $result = $stmt->get_result();
 
 $voslog_data_assoc = [];
 
-if ($result->num_rows > 0) {
+if ($result && $result->num_rows > 0) {
     while($row = $result->fetch_assoc()) {
         $dt = $row['datumtijd'];
         if (!isset($voslog_data_assoc[$dt])) {
@@ -63,22 +63,24 @@ $voslog_data = array_values($voslog_data_assoc);
 $stmt->close();
 
 // --- FETCH HUNTS DATA ---
-$stmt_hunts = $conn->prepare("SELECT ingestuurd_op, deelgebied FROM Voslocaties WHERE type = 'Hunt' AND status IN ('Correct', 'HAPPY HOUR !') AND ingestuurd_op >= ? AND ingestuurd_op <= ?");
-$stmt_hunts->bind_param("ss", $start_fmt, $end_fmt);
-$stmt_hunts->execute();
-$result_hunts = $stmt_hunts->get_result();
-
 $hunts_data = [];
-if ($result_hunts->num_rows > 0) {
-    while($row = $result_hunts->fetch_assoc()) {
-        $hunt_team = strtolower($row['deelgebied']);
-        if (!isset($hunts_data[$hunt_team])) {
-            $hunts_data[$hunt_team] = [];
+$stmt_hunts = $conn->prepare("SELECT ingestuurd_op, deelgebied FROM Voslocaties WHERE type = 'Hunt' AND (status IN ('Correct', 'HAPPY HOUR !') OR status IS NULL) AND ingestuurd_op >= ? AND ingestuurd_op <= ?");
+if ($stmt_hunts) {
+    $stmt_hunts->bind_param("ss", $start_fmt, $end_fmt);
+    $stmt_hunts->execute();
+    $result_hunts = $stmt_hunts->get_result();
+
+    if ($result_hunts && $result_hunts->num_rows > 0) {
+        while($row = $result_hunts->fetch_assoc()) {
+            $hunt_team = strtolower($row['deelgebied']);
+            if (!isset($hunts_data[$hunt_team])) {
+                $hunts_data[$hunt_team] = [];
+            }
+            $hunts_data[$hunt_team][] = $row['ingestuurd_op'];
         }
-        $hunts_data[$hunt_team][] = $row['ingestuurd_op'];
     }
+    $stmt_hunts->close();
 }
-$stmt_hunts->close();
 // ------------------------
 
 $fox_teams = $fox_names;
@@ -339,7 +341,7 @@ foreach ($fox_teams as $team) {
     <div class="space-y-6">
       
       <!-- Timeline Card -->
-      <div class="theme-card rounded border shadow-sm overflow-hidden">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold">Vossen Status Tijdlijn</h5>
         </div>
@@ -445,7 +447,7 @@ foreach ($fox_teams as $team) {
       </div>
 
       <!-- Statistics Card -->
-      <div class="theme-card rounded border shadow-sm overflow-hidden">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
             <h5 class="text-lg font-bold">Vossen Statistieken</h5>
         </div>

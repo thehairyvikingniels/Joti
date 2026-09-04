@@ -45,7 +45,7 @@ $result_voslocaties = $stmt_vos->get_result();
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
     <div class="space-y-6 mb-24">
-      <div class="theme-card rounded border shadow-sm overflow-hidden w-full">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden w-full mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
           <h3 class="text-xl font-bold">Ingestuurde Locaties (Hints, Hunts, etc.)</h3>
         </div>
@@ -98,82 +98,77 @@ $result_voslocaties = $stmt_vos->get_result();
   </main>
 
   <!-- Edit Modal -->
-  <div id="editModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen px-4 text-center">
-      <div class="relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
-        <header class="theme-bg-primary px-4 py-3 sm:px-6 flex justify-between items-center text-white">
-            <h4 class="text-lg font-bold"><i class="fas fa-pencil-alt mr-2"></i>Bewerk Locatie</h4>
-            <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')" class="hover:text-gray-200 transition"><i class="fas fa-times text-xl"></i></button>
-        </header>
-        <form id="editForm" action="../functies.php" method="POST">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 space-y-4 text-gray-800">
-                <input type="hidden" id="edit_id" name="voslocatie_id">
-                
-                <div>
-                    <label class="block text-sm font-bold opacity-70 mb-1">Type</label>
-                    <select class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" id="edit_type" name="type" required>
-                        <option value="Hint">Hint</option>
-                        <option value="Hunt">Hunt</option>
-                        <option value="Spot">Spot</option>
-                        <option value="Voorspelling">Voorspelling</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold opacity-70 mb-1">Deelgebied</label>
-                    <select class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" id="edit_deelgebied" name="deelgebied" required>
-                        <?php
-                        foreach ($fox_names as $fox) {
-                            echo "<option value=\"" . htmlspecialchars($fox) . "\">" . htmlspecialchars($fox) . "</option>\n";
-                        }
-                        ?>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold opacity-70 mb-1">Ingestuurd Op</label>
-                    <input class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="datetime-local" id="edit_ingestuurd_op" name="ingestuurd_op" required>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                      <label class="block text-sm font-bold opacity-70 mb-1">Latitude (X)</label>
-                      <input class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="text" id="edit_coord_x" name="coordinaat_x" required>
-                  </div>
-                  <div>
-                      <label class="block text-sm font-bold opacity-70 mb-1">Longitude (Y)</label>
-                      <input class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="text" id="edit_coord_y" name="coordinaat_y" required>
-                  </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold opacity-70 mb-1">Code (max. 8 tekens, verplicht bij Hunt)</label>
-                    <input class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="text" id="edit_code" name="code" maxlength="8">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold opacity-70 mb-1">Opmerking (max. 128 tekens)</label>
-                    <input class="w-full border rounded-lg px-3 py-2 text-gray-800 outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" type="text" id="edit_opmerking" name="opmerking" maxlength="128">
-                </div>
+  <div id="editModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm modal-backdrop flex items-center justify-center p-4" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="relative inline-block theme-card border rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-lg w-full" onclick="event.stopPropagation()">
+      <header class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+          <h4 class="text-lg font-bold flex items-center gap-2"><i class="fas fa-pencil-alt"></i> <span>Bewerk Locatie</span></h4>
+          <button type="button" onclick="closeModal(this)" class="text-white opacity-70 hover:opacity-100 transition"><i class="fas fa-times text-xl"></i></button>
+      </header>
+      <form id="editForm" action="../functies.php" method="POST" class="p-6 space-y-4">
+          <input type="hidden" id="edit_id" name="voslocatie_id">
+          
+          <div>
+              <label class="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">Type</label>
+              <select class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" id="edit_type" name="type" required>
+                  <option value="Hint">Hint</option>
+                  <option value="Hunt">Hunt</option>
+                  <option value="Spot">Spot</option>
+                  <option value="Voorspelling">Voorspelling</option>
+              </select>
+          </div>
+          <div>
+              <label class="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">Deelgebied</label>
+              <select class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" id="edit_deelgebied" name="deelgebied" required>
+                  <?php
+                  foreach ($fox_names as $fox) {
+                      echo "<option value=\"" . htmlspecialchars($fox) . "\">" . htmlspecialchars($fox) . "</option>\n";
+                  }
+                  ?>
+              </select>
+          </div>
+          <div>
+              <label class="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">Ingestuurd Op</label>
+              <input class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" type="datetime-local" id="edit_ingestuurd_op" name="ingestuurd_op" required>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">Latitude (X)</label>
+                <input class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" type="text" id="edit_coord_x" name="coordinaat_x" required>
             </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-row-reverse gap-3 border-t">
-                <button type="submit" name="update_voslocatie" class="theme-bg-primary hover:opacity-80 text-white font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto">Opslaan</button>
-                <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto">Annuleren</button>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">Longitude (Y)</label>
+                <input class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" type="text" id="edit_coord_y" name="coordinaat_y" required>
             </div>
-        </form>
-      </div>
+          </div>
+          <div>
+              <label class="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">Code (max. 8 tekens, verplicht bij Hunt)</label>
+              <input class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" type="text" id="edit_code" name="code" maxlength="8">
+          </div>
+          <div>
+              <label class="block text-xs font-bold uppercase tracking-wider mb-1 opacity-80">Opmerking (max. 128 tekens)</label>
+              <input class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" type="text" id="edit_opmerking" name="opmerking" maxlength="128">
+          </div>
+          
+          <div class="mt-6 pt-4 border-t flex justify-end gap-3" style="border-color: var(--theme-card-border);">
+              <button type="button" onclick="closeModal(this)" class="theme-card border hover:bg-black/5 dark:hover:bg-white/5 py-2.5 px-5 rounded-xl font-bold text-sm transition">Annuleren</button>
+              <button type="submit" name="update_voslocatie" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition shadow">Opslaan</button>
+          </div>
+      </form>
     </div>
   </div>
 
   <!-- Delete Modal -->
-  <div id="deleteModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-center justify-center min-h-screen px-4 text-center">
-        <div class="relative inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full">
-            <div class="bg-red-600 px-4 py-3 sm:px-6 flex justify-between items-center text-white">
-                <h4 class="text-lg font-bold"><i class="fas fa-exclamation-triangle mr-2"></i>Verwijder Locatie</h4>
-                <button type="button" onclick="document.getElementById('deleteModal').classList.add('hidden')" class="hover:text-gray-200 transition"><i class="fas fa-times text-xl"></i></button>
-            </div>
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 text-gray-800">
-                <p>Weet je zeker dat je dit item wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.</p>
-            </div>
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 flex flex-row-reverse gap-3 border-t">
-                <a id="deleteLink" href="#" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto text-center">Verwijderen</a>
-                <button type="button" onclick="document.getElementById('deleteModal').classList.add('hidden')" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto">Annuleren</button>
+  <div id="deleteModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm modal-backdrop flex items-center justify-center p-4" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="relative inline-block theme-card border rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-md w-full" onclick="event.stopPropagation()">
+        <header class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h4 class="text-lg font-bold flex items-center gap-2"><i class="fas fa-trash-alt"></i> <span>Verwijder Locatie</span></h4>
+            <button type="button" onclick="closeModal(this)" class="text-white opacity-70 hover:opacity-100 transition"><i class="fas fa-times text-xl"></i></button>
+        </header>
+        <div class="p-6">
+            <p class="text-sm opacity-90 leading-relaxed">Weet je zeker dat je dit item wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.</p>
+            <div class="mt-6 flex justify-end gap-3">
+                <button type="button" onclick="closeModal(this)" class="theme-card border hover:bg-black/5 dark:hover:bg-white/5 py-2.5 px-5 rounded-xl font-bold text-sm transition">Annuleren</button>
+                <a id="deleteLink" href="#" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-xl transition shadow text-center">Verwijderen</a>
             </div>
         </div>
     </div>

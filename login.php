@@ -1,7 +1,26 @@
 <?php
 // Handles user authentication and registration, validates credentials, upgrades password hashes, and initializes sessions.
-session_start();
+ini_set('session.cookie_httponly', '1');
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+if ($isHttps) {
+    ini_set('session.cookie_secure', '1');
+}
+ini_set('session.cookie_samesite', 'Lax');
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (!file_exists(__DIR__ . '/dblogin.php') || !file_exists(__DIR__ . '/.installed')) {
+    if (file_exists(__DIR__ . '/install.php') || file_exists(__DIR__ . '/install')) {
+        header("Location: /install");
+        exit();
+    }
+}
+
 require_once('dblogin.php');
+require_once('includes/remember_me.php');
+require_once('includes/db.php');
 
 if (isset($_POST['pswd1'])){
   if ((empty($_POST['voornaam'])) OR (empty($_POST['achternaam'])) OR (empty($_POST['email'])) OR (empty($_POST['gebruikersnaam'])) OR (empty($_POST['pswd0'])) OR (empty($_POST['pswd1']))){
@@ -38,7 +57,7 @@ if (isset($_POST['pswd1'])){
       
       $hashed_password = password_hash($pswd0, PASSWORD_DEFAULT);
       
-      $stmt_insert = $conn->prepare("INSERT INTO Gebruikers (gebruikersnaam, wachtwoord, api, voornaam, achternaam, email, priv, telefoon) VALUES (?, ?, ?, ?, ?, ?, 0, ?)");
+      $stmt_insert = $conn->prepare("INSERT INTO Gebruikers (gebruikersnaam, wachtwoord, api, voornaam, achternaam, email, priv, phone) VALUES (?, ?, ?, ?, ?, ?, 0, ?)");
       $stmt_insert->bind_param("sssssss", $reg_username, $hashed_password, $api, $first_name, $last_name, $email, $telnum);
       
       if ($stmt_insert->execute()) {
@@ -62,7 +81,7 @@ if (isset($_POST['pswd1'])){
   $username = $_POST['username'];
   $pswd = $_POST['pswd'];
 
-  $stmt_login = $conn->prepare("SELECT id, priv, wachtwoord, theme FROM Gebruikers WHERE gebruikersnaam = ? OR email = ?");
+  $stmt_login = $conn->prepare("SELECT id, priv, wachtwoord, theme, voornaam, achternaam, gebruikersnaam FROM Gebruikers WHERE gebruikersnaam = ? OR email = ?");
   $stmt_login->bind_param("ss", $username, $username);
   $stmt_login->execute();
   $result = $stmt_login->get_result();
@@ -104,11 +123,24 @@ if (isset($_POST['pswd1'])){
           $stmt_login_time->execute();
           $stmt_login_time->close();
 
-          // Setup user session
+          // Setup user session & prevent session fixation
+          session_regenerate_id(true);
+          unset($_SESSION['kiosk_id'], $_SESSION['kiosk_priv'], $_SESSION['kiosk_naam']);
           $_SESSION['id'] = $row['id'];
           $_SESSION['priv'] = $row['priv'];
+          $_SESSION['voornaam'] = $row['voornaam'] ?? '';
+          $_SESSION['achternaam'] = $row['achternaam'] ?? '';
+          $_SESSION['gebruikersnaam'] = $row['gebruikersnaam'] ?? '';
           $_SESSION['gps'] = "false";
           $_SESSION['theme'] = $row['theme'] ?? 'light';
+
+          // Handle "Ingelogd Blijven" (Remember Me) persistent cookie
+          if (!empty($_POST['remember_me'])) {
+              $siteSettings = fetchSiteSettings($conn);
+              generateRememberToken($conn, (int)$row['id'], (int)$row['priv'], $siteSettings, $_SERVER['HTTP_USER_AGENT'] ?? null);
+          } else {
+              clearCurrentRememberToken($conn);
+          }
           
           // show welcome modal on next page load for new users (priv == 0)
           if ($row['priv'] == 0) {
@@ -116,15 +148,36 @@ if (isset($_POST['pswd1'])){
           } else {
             unset($_SESSION['show_welcome_modal']);
           }
+
+          recordAuditLog($conn, 'auth', 'login_success', "Gebruiker '{$row['gebruikersnaam']}' succesvol ingelogd", [
+              'actor_user_id' => (int)$row['id'],
+              'actor_username' => $row['gebruikersnaam'],
+              'severity' => 'info',
+              'metadata' => ['remember_me' => !empty($_POST['remember_me'])]
+          ]);
+
           header("Location: home");
           die();
       } else {
+          recordAuditLog($conn, 'auth', 'login_failed', "Mislukte inlogpoging voor '{$row['gebruikersnaam']}' (onjuist wachtwoord)", [
+              'actor_username' => $row['gebruikersnaam'],
+              'severity' => 'warning',
+              'metadata' => ['reason' => 'invalid_password']
+          ]);
+
           $error = "Gebruikersnaam of wachtwoord onjuist";
           header("Location: index?error=".urlencode($error));
           die();
       }
   } else {
     $stmt_login->close();
+
+    recordAuditLog($conn, 'auth', 'login_failed', "Mislukte inlogpoging voor onbekende gebruiker '{$username}'", [
+        'actor_username' => $username,
+        'severity' => 'security',
+        'metadata' => ['reason' => 'user_not_found', 'input' => $username]
+    ]);
+
     $error = "Gebruikersnaam of wachtwoord onjuist";
     header("Location: index?error=".urlencode($error));
     die();

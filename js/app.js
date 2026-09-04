@@ -43,7 +43,24 @@ function updateImmuneCountdowns() {
     });
 }
 
+function updateTegenhuntCountdowns() {
+    const now = Math.floor(Date.now() / 1000);
+    document.querySelectorAll("#topbar-tegenhunt-timer, #banner-tegenhunt-timer").forEach((el) => {
+        const end = parseInt(el.getAttribute("data-end"), 10);
+        if (!end) return;
+        const remaining = Math.max(0, end - now);
+        const m = Math.floor(remaining / 60);
+        const s = remaining % 60;
+        el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        if (remaining <= 0) {
+            el.textContent = "00:00";
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     updateImmuneCountdowns();
     setInterval(updateImmuneCountdowns, 1000);
+    updateTegenhuntCountdowns();
+    setInterval(updateTegenhuntCountdowns, 1000);
 });

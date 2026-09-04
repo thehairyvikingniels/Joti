@@ -46,7 +46,7 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
     <div class="space-y-6 mb-24">
-      <div class="theme-card rounded border shadow-sm overflow-hidden w-full max-w-5xl">
+      <div class="theme-card rounded-xl border shadow-sm overflow-hidden w-full mb-6">
         <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
           <h3 class="text-xl font-bold">Cronjobs</h3>
         </div>
@@ -115,10 +115,11 @@ if (isset($_POST["user"]) && isset($_POST['priv'])){
               echo "<div class='cronTimer p-5 hover:bg-black/5 transition flex flex-col md:flex-row md:items-center justify-between gap-4'>
                       <div class='md:w-1/3 min-w-[250px]'>
                         <h3 class='text-lg font-bold flex items-center gap-2'>
-                          <span id='cron_enabled_".$i."' class='cursor-pointer hover:opacity-80 transition' onclick='toggleCron(\"".htmlspecialchars(strtolower($name))."\")'>".$enabled."</span>
+                          <span id='cron_enabled_".$i."' class='cursor-pointer hover:opacity-80 transition' onclick='toggleCron(\"".htmlspecialchars($row['name'])."\")'>".$enabled."</span>
                           <span id='cron_status_".$i."' class='".$stat_color." text-sm' title='HTML ".htmlspecialchars($exec_status)." code'><i class='fas fa-circle'></i></span>
                           <span id='cron_name_".$i."'>".$name."</span>
                         </h3>
+                        <p id='cron_desc_".$i."' class='text-xs opacity-70 mt-1 leading-relaxed'>".htmlspecialchars($row['description'] ?? '')."</p>
                       </div>
                       
                       <div class='grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1 w-full text-sm'>

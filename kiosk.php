@@ -73,7 +73,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'status') {
         exit();
     }
 
-    $stmt = $conn->prepare("SELECT id, auth_token, doel_pagina, refresh_interval, updated_at FROM Kiosk_Accounts WHERE id = ?");
+    $stmt = $conn->prepare("SELECT id, auth_token, doel_pagina, refresh_interval, laatst_gezien FROM Kiosk_Accounts WHERE id = ?");
     $stmt->bind_param("i", $_SESSION['kiosk_id']);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -89,7 +89,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'status') {
             "status" => "active",
             "target_page" => $row['doel_pagina'] ?: "whiteboard.php",
             "refresh_interval" => (int)$row['refresh_interval'],
-            "config_version" => strtotime($row['updated_at'] ?? 'now')
+            "config_version" => strtotime($row['laatst_gezien'] ?? 'now')
         ]);
         exit();
     } else {
@@ -98,3 +98,39 @@ if (isset($_GET['action']) && $_GET['action'] === 'status') {
         exit();
     }
 }
+
+// Mode 3: Direct access without auth token — render friendly token input UI
+?>
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jotify Kiosk - Aanmelden</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://kit.fontawesome.com/870ab34ea3.js" crossorigin="anonymous"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl text-center">
+        <div class="w-16 h-16 bg-blue-600/20 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl border border-blue-500/30">
+            <i class="fa-solid fa-tv"></i>
+        </div>
+        <h1 class="text-xl font-bold text-white mb-2">Jotify Kiosk</h1>
+        <p class="text-sm text-slate-400 mb-6">Voer de Kiosk Token in om dit scherm te koppelen aan het commandocentrum.</p>
+        <form method="GET" action="kiosk" class="space-y-4">
+            <div>
+                <input type="text" name="auth" required placeholder="Voer token in (bijv. a1b2c3d4)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 text-center font-mono">
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                <span>Start Kiosk Modus</span>
+            </button>
+        </form>
+        <div class="mt-6 pt-4 border-t border-slate-800">
+            <a href="login" class="text-xs text-slate-500 hover:text-slate-400 inline-flex items-center gap-1.5">
+                <i class="fa-solid fa-arrow-left"></i> Terug naar Login
+            </a>
+        </div>
+    </div>
+</body>
+</html>
