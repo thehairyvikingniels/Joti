@@ -180,11 +180,20 @@ if (!function_exists('convertRdToWgs')) {
  */
 if (!function_exists('getClientIP')) {
     function getClientIP(): string {
+        if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+            return trim((string)$_SERVER['HTTP_CF_CONNECTING_IP']);
+        }
         if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
             $ipList = explode(',', (string)$_SERVER['HTTP_X_FORWARDED_FOR']);
-            return trim($ipList[0]);
+            $firstIp = trim($ipList[0]);
+            if (!empty($firstIp) && strcasecmp($firstIp, 'unknown') !== 0) {
+                return $firstIp;
+            }
         }
-        return (string)($_SERVER['REMOTE_ADDR'] ?? '');
+        if (!empty($_SERVER['HTTP_X_REAL_IP'])) {
+            return trim((string)$_SERVER['HTTP_X_REAL_IP']);
+        }
+        return (string)($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1');
     }
 }
 
