@@ -194,6 +194,13 @@ if (isset($_POST['toggle_toewijzing'])) {
                 $r = $s->get_result();
                 if ($r->num_rows > 0) $c_name = "Opdracht: " . $r->fetch_assoc()['titel'];
                 $s->close();
+            } else if ($c_type == 'fotoopdracht') {
+                $s = $conn->prepare("SELECT titel FROM Fotoopdrachten WHERE id = ?");
+                $s->bind_param("i", $c_ref);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $c_name = "Foto-opdracht: " . $r->fetch_assoc()['titel'];
+                $s->close();
             } else if ($c_type == 'hint') {
                 $s = $conn->prepare("SELECT titel FROM Hints WHERE id = ?");
                 $s->bind_param("i", $c_ref);
@@ -228,6 +235,13 @@ if (isset($_POST['toggle_toewijzing'])) {
                 $s->execute();
                 $r = $s->get_result();
                 if ($r->num_rows > 0) $t_name = "Opdracht: " . $r->fetch_assoc()['titel'];
+                $s->close();
+            } else if ($type == 'fotoopdracht') {
+                $s = $conn->prepare("SELECT titel FROM Fotoopdrachten WHERE id = ?");
+                $s->bind_param("i", $ref_id);
+                $s->execute();
+                $r = $s->get_result();
+                if ($r->num_rows > 0) $t_name = "Foto-opdracht: " . $r->fetch_assoc()['titel'];
                 $s->close();
             } else if ($type == 'hint') {
                 $s = $conn->prepare("SELECT titel FROM Hints WHERE id = ?");

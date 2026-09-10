@@ -116,8 +116,8 @@ if (isset($_POST['pswd1'])){
               $update_stmt->close();
           }
 
-          // Update login timestamps in UTC
-          $login_time = gmdate('Y-m-d H:i:s');
+          // Update login timestamps in local Europe/Amsterdam time
+          $login_time = date('Y-m-d H:i:s');
           $stmt_login_time = $conn->prepare("UPDATE Gebruikers SET last_login = ?, first_login = COALESCE(first_login, ?) WHERE id = ?");
           $stmt_login_time->bind_param("ssi", $login_time, $login_time, $row['id']);
           $stmt_login_time->execute();

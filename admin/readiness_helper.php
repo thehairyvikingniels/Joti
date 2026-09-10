@@ -24,6 +24,7 @@ const OPERATIONAL_TABLES = [
     'Groepen' => 'Scoutinggroepen & IDs',
     'Hints' => 'Hints & Coördinaten',
     'Opdrachten' => 'Opdrachten & Inzendingen',
+    'Fotoopdrachten' => 'Foto-opdrachten & Inzendingen',
     'Nieuws' => 'Nieuwsberichten',
     'Punten' => 'Scores & Klassement',
     'Voslocaties' => 'Vossenlocaties & Coördinaten',
@@ -308,7 +309,7 @@ function handle_run_diagnostics(mysqli $conn, string $webroot): void {
     $latencyDb = round((microtime(true) - $start) * 1000);
 
     $missingTables = [];
-    foreach (['Gebruikers', 'Groepen', 'Hints', 'Opdrachten', 'Punten', 'Voslocaties', 'Voslog', 'Site_Instellingen', 'Auto', 'Auto_Positie', 'Preflight_Checklist'] as $t) {
+    foreach (['Gebruikers', 'Groepen', 'Hints', 'Opdrachten', 'Fotoopdrachten', 'Punten', 'Voslocaties', 'Voslog', 'Site_Instellingen', 'Auto', 'Auto_Positie', 'Preflight_Checklist'] as $t) {
         $chk = $conn->query("SHOW TABLES LIKE '{$t}'");
         if (!$chk || $chk->num_rows === 0) {
             $missingTables[] = $t;

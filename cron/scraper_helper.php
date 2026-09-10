@@ -108,6 +108,36 @@ if ($json_start !== false && $json_end !== false && $status_code === 200) {
             }
         }
 
+        // UPDATE FOTO OPDRACHTEN
+        if (isset($data['foto_opdrachten']) && is_array($data['foto_opdrachten'])) {
+            $stmt_fo_id = $conn->prepare("UPDATE Fotoopdrachten SET ingestuurd_op = COALESCE(ingestuurd_op, NOW()), toegekende_punten = ?, opmerkingen = COALESCE(?, opmerkingen) WHERE external_id = ?");
+            $stmt_fo_title = $conn->prepare("UPDATE Fotoopdrachten SET ingestuurd_op = COALESCE(ingestuurd_op, NOW()), toegekende_punten = ?, opmerkingen = COALESCE(?, opmerkingen), external_id = COALESCE(external_id, ?) WHERE titel = ?");
+
+            foreach ($data['foto_opdrachten'] as $fo) {
+                $fTitle = trim($fo['titel'] ?? '');
+                $fId = isset($fo['id']) && $fo['id'] !== null ? (int)$fo['id'] : null;
+                $fPts = isset($fo['punten']) ? (int)$fo['punten'] : 0;
+                $fOpmerking = !empty($fo['opmerkingen']) ? trim($fo['opmerkingen']) : null;
+
+                $matched = false;
+                if ($fId && $stmt_fo_id) {
+                    $stmt_fo_id->bind_param("isi", $fPts, $fOpmerking, $fId);
+                    $stmt_fo_id->execute();
+                    if ($stmt_fo_id->affected_rows > 0) {
+                        $matched = true;
+                    }
+                }
+
+                if (!$matched && !empty($fTitle) && $stmt_fo_title) {
+                    $stmt_fo_title->bind_param("isis", $fPts, $fOpmerking, $fId, $fTitle);
+                    $stmt_fo_title->execute();
+                }
+            }
+
+            if ($stmt_fo_id) $stmt_fo_id->close();
+            if ($stmt_fo_title) $stmt_fo_title->close();
+        }
+
         // UPDATE OR INSERT HUNTS
         if (isset($data['hunts']) && is_array($data['hunts'])) {
             $stmt_check = $conn->prepare("SELECT id, status FROM Voslocaties WHERE code = ? AND type = 'Hunt'");

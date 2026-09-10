@@ -72,7 +72,7 @@ if ($action === 'move_user') {
             'metadata' => ['is_driver' => $is_bestuurder]
         ]);
         
-    } elseif ($target_type === 'hint' || $target_type === 'opdracht' || $target_type === 'custom' || $target_type === 'hunt') {
+    } elseif ($target_type === 'hint' || $target_type === 'opdracht' || $target_type === 'fotoopdracht' || $target_type === 'custom' || $target_type === 'hunt') {
         $ref_int = intval($target_ref);
         $stmt = $conn->prepare("INSERT INTO Toewijzingen (gebruiker_id, type, referentie_id) VALUES (?, ?, ?)");
         $stmt->bind_param("isi", $user_id, $target_type, $ref_int);

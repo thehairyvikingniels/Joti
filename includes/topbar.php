@@ -140,6 +140,7 @@ foreach ($fox_names as $vosnaam) {
             'voslocaties' => 'Voslocaties',
             'nieuws' => 'Nieuws',
             'opdrachten' => 'Opdrachten',
+            'fotoopdrachten' => 'Foto-opdrachten',
             'hints' => 'Hints',
             'punten' => 'Punten',
             'groepen' => 'Groepen',

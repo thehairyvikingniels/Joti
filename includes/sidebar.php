@@ -28,6 +28,10 @@ $pagelist = array(
         'active' => null,
         'filename' => 'opdrachten.php'
     ),
+    'fotoopdrachten' => array(
+        'active' => null,
+        'filename' => 'fotoopdrachten.php'
+    ),
     'hints' => array(
         'active' => null,
         'filename' => 'hints.php'
@@ -175,6 +179,7 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
     <?php endif; ?>
     <a href="<?=$notInAdminfolder?>nieuws" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['nieuws']['active']?>"><i class="far fa-newspaper fa-fw w-5 opacity-70"></i><span>Nieuws</span></a>
     <a href="<?=$notInAdminfolder?>opdrachten" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['opdrachten']['active']?>"><i class="far fa-bell fa-fw w-5 opacity-70"></i><span>Opdrachten</span></a>
+    <a href="<?=$notInAdminfolder?>fotoopdrachten" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['fotoopdrachten']['active']?>"><i class="fas fa-camera fa-fw w-5 opacity-70"></i><span>Foto-opdrachten</span></a>
     <a href="<?=$notInAdminfolder?>hints" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['hints']['active']?>"><i class="fas fa-question-circle fa-fw w-5 opacity-70"></i><span>Hints</span></a>
     <?php if ($privilege > 0): ?>
     <a href="<?=$notInAdminfolder?>punten" class="flex items-center space-x-3 px-5 py-2.5 font-semibold border-l-4 <?= $pagelist['punten']['active']?>"><i class="fas fa-trophy fa-fw w-5 opacity-70"></i><span>Punten</span></a>

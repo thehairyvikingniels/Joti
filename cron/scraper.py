@@ -212,11 +212,20 @@ def main():
                 titel = a_tag.text.strip()
                 opdracht_id = a_tag['href'].split('/')[-1]
                 punten_str = row.contents[-1].strip().replace("pt.", "").strip()
-                
+
+                # Extract remarks/opmerkingen if present in child tags or title attributes
+                opmerkingen = None
+                remark_elem = row.find(['p', 'span', 'small', 'i', 'div'], class_=re.compile("text-muted|text-gray|italic|comment|remark|opmerking|feedback", re.IGNORECASE))
+                if remark_elem and remark_elem != a_tag:
+                    opmerkingen = remark_elem.text.strip()
+                elif row.get('title'):
+                    opmerkingen = row.get('title', '').strip()
+
                 scraped_data["foto_opdrachten"].append({
                     "id": int(opdracht_id) if opdracht_id.isdigit() else None,
                     "titel": titel,
-                    "punten": int(punten_str) if punten_str.isdigit() else 0
+                    "punten": int(punten_str) if punten_str.isdigit() else 0,
+                    "opmerkingen": opmerkingen
                 })
 
         hunts_table = hunts_soup.find('tbody')

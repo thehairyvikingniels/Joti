@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS `Cronjobs` (
 INSERT INTO `Cronjobs` (`name`, `enabled`, `URL`, `description`, `interval`) VALUES
 ('areas', 1, 'cron/areas.php', 'Vossen statussen synchroniseren met Jotihunt.nl API', 30),
 ('articles', 1, 'cron/articles.php', 'Nieuws, hints en opdrachten synchroniseren', 60),
+('photoAssign', 1, 'cron/fotoopdrachten.php', 'Foto-opdrachten synchroniseren met Jotihunt.nl API', 90),
 ('push_queue', 1, 'cron/notifications.php', 'Push notificaties en Telegram berichten wachtrij verwerken', 35),
 ('subscriptions', 1, 'cron/subscriptions.php', 'Deelnemende scoutinggroepen synchroniseren', 300),
 ('welcome', 0, 'cron/welcome.php', 'Automatisch welkomstbericht bij nadering clubhuis', 60),
@@ -178,6 +179,32 @@ CREATE TABLE IF NOT EXISTS `Gebruikers_Tokens` (
   KEY `fk_gebruikers_tokens_user` (`user_id`),
   CONSTRAINT `fk_gebruikers_tokens_user` FOREIGN KEY (`user_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Tabelstructuur voor tabel `Fotoopdrachten`
+--
+
+CREATE TABLE IF NOT EXISTS `Fotoopdrachten` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `external_id` int(11) DEFAULT NULL,
+  `titel` varchar(255) NOT NULL,
+  `omschrijving` longtext NOT NULL,
+  `start_at` datetime NOT NULL,
+  `end_at` datetime NOT NULL,
+  `max_punten` int(11) NOT NULL DEFAULT 5,
+  `ingestuurd_op` datetime DEFAULT NULL,
+  `ingestuurd_door` int(11) DEFAULT NULL,
+  `toegekende_punten` int(11) DEFAULT NULL,
+  `opmerkingen` text DEFAULT NULL,
+  `afbeelding_url` varchar(512) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_fotoopdracht_unique` (`titel`(191), `start_at`),
+  KEY `fk_fotoopdrachten_user` (`ingestuurd_door`),
+  CONSTRAINT `fk_fotoopdrachten_user` FOREIGN KEY (`ingestuurd_door`) REFERENCES `Gebruikers` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 

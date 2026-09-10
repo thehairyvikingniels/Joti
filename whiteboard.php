@@ -156,6 +156,31 @@ while($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
+// Fetch Active Fotoopdrachten
+$active_fotoopdrachten = [];
+$stmt = $conn->prepare("SELECT id, titel, start_at, end_at FROM Fotoopdrachten ORDER BY end_at ASC");
+if ($stmt) {
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while($row = $res->fetch_assoc()) {
+        $is_active = false;
+        $endTime = strtotime($row['end_at']);
+        if ($endTime > $now) { // Active if not expired
+            $is_active = true;
+        } else {
+            foreach($user_assignments as $uid => $ass) {
+                if ($ass['type'] === 'fotoopdracht' && $ass['ref_id'] == $row['id']) {
+                    $is_active = true; break;
+                }
+            }
+        }
+        if ($is_active) {
+            $active_fotoopdrachten[$row['id']] = $row;
+        }
+    }
+    $stmt->close();
+}
+
 // Fetch latest hunt times for foxes
 $fox_hunts = [];
 foreach ($fox_names as $k => $v) {
@@ -184,6 +209,7 @@ foreach ($car_assignments as $k => $ass) {
     $valid = false;
     if ($ass['type'] === 'hint' && isset($active_hints[$ass['ref_id']])) $valid = true;
     if ($ass['type'] === 'opdracht' && isset($active_opdrachten[$ass['ref_id']])) $valid = true;
+    if ($ass['type'] === 'fotoopdracht' && isset($active_fotoopdrachten[$ass['ref_id']])) $valid = true;
     if ($ass['type'] === 'custom' && array_search($ass['ref_id'], array_column($categories, 'id')) !== false) $valid = true;
     if ($ass['type'] === 'hunt' && isset($fox_hunts[$ass['ref_id']])) $valid = true;
     if (!$valid) unset($car_assignments[$k]);
@@ -194,6 +220,7 @@ foreach ($user_assignments as $uid => $ass) {
     if ($ass['type'] === 'auto' && isset($cars[$ass['ref_id']])) $valid = true;
     if ($ass['type'] === 'hint' && isset($active_hints[$ass['ref_id']])) $valid = true;
     if ($ass['type'] === 'opdracht' && isset($active_opdrachten[$ass['ref_id']])) $valid = true;
+    if ($ass['type'] === 'fotoopdracht' && isset($active_fotoopdrachten[$ass['ref_id']])) $valid = true;
     if ($ass['type'] === 'custom' && array_search($ass['ref_id'], array_column($categories, 'id')) !== false) $valid = true;
     if ($ass['type'] === 'hunt' && isset($fox_hunts[$ass['ref_id']])) $valid = true;
     if (!$valid) unset($user_assignments[$uid]);
@@ -426,6 +453,31 @@ require_once('includes/whiteboard_components.php');
                                     }
                                     foreach ($user_assignments as $uid => $ass) {
                                         if ($ass['type'] === 'opdracht' && $ass['ref_id'] == $oid) {
+                                            echo renderUser($users[$uid]);
+                                        }
+                                    }
+                                    ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Foto-opdrachten -->
+            <div class="col-span-full mt-4">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2" style="border-color: var(--theme-card-border);"><i class="fas fa-camera mr-2"></i>Foto-opdrachten</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <?php if (empty($active_fotoopdrachten)): ?>
+                        <div class="col-span-full opacity-60 italic text-sm">Er zijn momenteel geen actieve foto-opdrachten.</div>
+                    <?php else: ?>
+                        <?php foreach ($active_fotoopdrachten as $fid => $fo): ?>
+                            <div class="theme-card rounded border shadow-sm p-4">
+                                <h3 class="font-bold mb-2 truncate" title="<?php echo htmlspecialchars($fo['titel']); ?>"><?php echo htmlspecialchars($fo['titel']); ?></h3>
+                                <div class="wb-zone flex flex-wrap gap-2 min-h-[60px]" id="zone_fotoopdracht_<?php echo $fid; ?>" data-type="fotoopdracht" data-ref="<?php echo $fid; ?>" ondrop="drop(event)" ondragover="allowDrop(event)">
+                                    <?php
+                                    foreach ($user_assignments as $uid => $ass) {
+                                        if ($ass['type'] === 'fotoopdracht' && $ass['ref_id'] == $fid) {
                                             echo renderUser($users[$uid]);
                                         }
                                     }
