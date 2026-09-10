@@ -44,11 +44,24 @@ if ($catId > 0) {
 $fotoopdrachten = [];
 $counts = ['all' => 0, 'active' => 0, 'submitted' => 0, 'expired' => 0];
 
-$stmt_fo = $conn->prepare("SELECT * FROM Fotoopdrachten ORDER BY start_at DESC, id DESC");
+$stmt_fo = $conn->prepare("
+    SELECT fo.*, g.voornaam AS submitter_voornaam, g.achternaam AS submitter_achternaam, g.gebruikersnaam AS submitter_gebruikersnaam 
+    FROM Fotoopdrachten fo
+    LEFT JOIN Gebruikers g ON fo.ingestuurd_door = g.id
+    ORDER BY fo.start_at DESC, fo.id DESC
+");
 if ($stmt_fo) {
     $stmt_fo->execute();
     $res_fo = $stmt_fo->get_result();
     while ($row = $res_fo->fetch_assoc()) {
+        $submitterName = '';
+        if (!empty($row['submitter_voornaam'])) {
+            $submitterName = ucfirst($row['submitter_voornaam']);
+        } elseif (!empty($row['submitter_gebruikersnaam'])) {
+            $submitterName = ucfirst($row['submitter_gebruikersnaam']);
+        }
+        $row['submitter_name'] = $submitterName;
+
         $startTs = strtotime($row['start_at']);
         $endTs = strtotime($row['end_at']);
 
@@ -334,8 +347,12 @@ if ($stmt_fo) {
                                                     <h4 class="font-bold text-sm text-green-600 dark:text-green-400">
                                                         Jurybeoordeling: <?= (int)$item['toegekende_punten'] ?> / <?= (int)$item['max_punten'] ?> punten
                                                     </h4>
-                                                    <?php if (!empty($item['ingestuurd_op'])): ?>
-                                                        <span class="text-xs opacity-60">(Ingezonden: <?= date('H:i', strtotime($item['ingestuurd_op'])) ?>)</span>
+                                                    <?php if (!empty($item['ingestuurd_op'])): 
+                                                        $juryInzendTijd = (date('Y-m-d', strtotime($item['ingestuurd_op'])) === date('Y-m-d'))
+                                                            ? date('H:i', strtotime($item['ingestuurd_op']))
+                                                            : date('d-m H:i', strtotime($item['ingestuurd_op']));
+                                                    ?>
+                                                        <span class="text-xs opacity-60">(Ingezonden: <?= $juryInzendTijd ?><?= !empty($item['submitter_name']) ? ' door ' . htmlspecialchars($item['submitter_name']) : '' ?>)</span>
                                                     <?php endif; ?>
                                                 </div>
                                                 <?php if (!empty($item['opmerkingen'])): ?>
@@ -357,7 +374,7 @@ if ($stmt_fo) {
                                             <i class="fas fa-paper-plane"></i>
                                         </div>
                                         <div class="text-xs">
-                                            <span class="font-bold text-blue-600 dark:text-blue-400">Ingezonden <?= $inzendTijdstip ?></span>
+                                            <span class="font-bold text-blue-600 dark:text-blue-400">Ingezonden <?= $inzendTijdstip ?><?= !empty($item['submitter_name']) ? ' door ' . htmlspecialchars($item['submitter_name']) : '' ?></span>
                                             <span class="opacity-75 ml-1">(<?= time2str($item['ingestuurd_op']) ?>) &mdash; In afwachting van jurering en punten.</span>
                                         </div>
                                     </div>
