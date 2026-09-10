@@ -27,6 +27,18 @@ function parseAndDispatchTelegramMessage(
     $details = [];
     $push_sent = false;
 
+    // Ignore outbound broadcasts from Jotify itself to prevent echo loops
+    if (str_starts_with($text, '📢') || stripos($sender, 'jotify') !== false) {
+        return [
+            'success' => true,
+            'type' => 'ignored_self_broadcast',
+            'summary' => 'Ignored outgoing Jotify broadcast loop',
+            'details' => ['raw_text' => $text],
+            'push_sent' => false,
+            'message_id' => null
+        ];
+    }
+
     // 1. FOX STATUS CHANGE
     // Example: "Status van Charlie is gewijzigd in orange"
     if (preg_match('/Status van\s+([A-Za-z]+)\s+is gewijzigd in\s+(green|orange|red)/i', $text, $matches)) {
