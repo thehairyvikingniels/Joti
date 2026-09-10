@@ -347,14 +347,18 @@ if ($stmt_fo) {
                                             </div>
                                         </div>
                                     </div>
-                                <?php elseif ($item['is_submitted']): ?>
+                                <?php elseif ($item['is_submitted']): 
+                                    $inzendTijdstip = (date('Y-m-d', strtotime($item['ingestuurd_op'])) === date('Y-m-d'))
+                                        ? 'om ' . date('H:i', strtotime($item['ingestuurd_op']))
+                                        : 'op ' . date('d-m H:i', strtotime($item['ingestuurd_op']));
+                                ?>
                                     <div class="mx-6 mb-4 p-3.5 rounded-xl border flex items-center gap-3 shadow-sm" style="background-color: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.35); color: var(--theme-text);">
                                         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-sm bg-blue-500 text-white shadow-sm">
                                             <i class="fas fa-paper-plane"></i>
                                         </div>
                                         <div class="text-xs">
-                                            <span class="font-bold text-blue-600 dark:text-blue-400">Ingezonden</span>
-                                            <span class="opacity-70 ml-1">op <?= time2str($item['ingestuurd_op']) ?>. In afwachting van jurering en punten.</span>
+                                            <span class="font-bold text-blue-600 dark:text-blue-400">Ingezonden <?= $inzendTijdstip ?></span>
+                                            <span class="opacity-75 ml-1">(<?= time2str($item['ingestuurd_op']) ?>) &mdash; In afwachting van jurering en punten.</span>
                                         </div>
                                     </div>
                                 <?php endif; ?>
