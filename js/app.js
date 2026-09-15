@@ -28,15 +28,29 @@ function updateImmuneCountdowns() {
     const now = Math.floor(Date.now() / 1000);
     document.querySelectorAll(".immune-countdown").forEach((el) => {
         const until = parseInt(el.getAttribute("data-until"), 10);
+        if (!until) return;
         const diff = until - now;
         if (diff > 0) {
             const m = Math.floor(diff / 60);
             const s = diff % 60;
             el.textContent = `${m}m ${s}s`;
         } else {
-            el.textContent = el.getAttribute("data-duratie") || "";
-            if (el.parentElement) {
-                el.parentElement.style.backgroundImage = "";
+            const duratie = el.getAttribute("data-duratie") || "";
+            const container = el.closest(".fox-badge-container");
+            if (container) {
+                const initial = container.getAttribute("data-initial") || "";
+                const color = container.getAttribute("data-color") || "gray";
+                const isMobile = container.getAttribute("data-mobile") === "1";
+                const baseClass = isMobile 
+                    ? "rounded py-2 px-3 flex items-center justify-center font-bold text-sm shadow-sm"
+                    : "px-2 py-1 rounded text-xs font-bold flex items-center shadow-sm";
+                const twColor = color === "green" ? "bg-green-500 text-white" :
+                               (color === "orange" ? "bg-orange-500 text-white" :
+                               (color === "red" ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700"));
+                container.className = `${baseClass} ${twColor} whitespace-nowrap`;
+                container.innerHTML = `<span class="${isMobile ? 'mr-2' : 'mr-1'}">${initial}</span><span>${duratie}</span>`;
+            } else {
+                el.textContent = duratie;
             }
             el.classList.remove("immune-countdown");
         }

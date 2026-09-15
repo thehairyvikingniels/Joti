@@ -23,6 +23,10 @@ if (!function_exists('parseToTimestamp')) {
             return (int)$ts;
         }
         $str = trim((string)$ts);
+        // If standard MySQL datetime without timezone offset (e.g. '2026-09-01 10:12:39'), treat as UTC
+        if (preg_match('/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/', $str)) {
+            $str .= ' UTC';
+        }
         $parsed = strtotime($str);
         return $parsed !== false ? $parsed : null;
     }
@@ -497,4 +501,63 @@ if (!function_exists('bitbyte2string')) {
         return $numStr . ' ' . $units[$idx] . ($perSecond ? '/s' : '');
     }
 }
+
+/**
+ * Render HTML for a fox badge with high-contrast hunt immunity styling (Option 1: Modern Split Pill).
+ *
+ * @param string $fox_name e.g. "Alpha"
+ * @param array $vos_info Array containing 'Kleur', 'duratie', and optional 'immune_until'
+ * @param bool $is_mobile True if rendered for mobile grid
+ * @return string HTML output
+ */
+if (!function_exists('renderFoxBadge')) {
+    function renderFoxBadge(string $fox_name, array $vos_info, bool $is_mobile = false): string {
+        $color = $vos_info['Kleur'] ?? 'gray';
+        $duratie = $vos_info['duratie'] ?? '';
+        $initial = substr($fox_name, 0, 1);
+        $immune_until = $vos_info['immune_until'] ?? null;
+        $is_immune = ($immune_until !== null && $immune_until > time());
+
+        $tw_color = match ($color) {
+            'red' => 'bg-red-500 text-white',
+            'orange' => 'bg-orange-500 text-white',
+            'green' => 'bg-green-500 text-white',
+            default => 'bg-gray-200 text-gray-700',
+        };
+
+        $base_class = $is_mobile ? 'rounded py-2 px-3 flex items-center justify-center font-bold text-sm shadow-sm' : 'px-2 py-1 rounded text-xs font-bold flex items-center shadow-sm';
+
+        if (!$is_immune) {
+            return '<div class="' . $base_class . ' ' . $tw_color . ' whitespace-nowrap">'
+                . '<span class="' . ($is_mobile ? 'mr-2' : 'mr-1') . '">' . htmlspecialchars($initial) . '</span>'
+                . '<span>' . htmlspecialchars($duratie) . '</span>'
+                . '</div>';
+        }
+
+        $diff = $immune_until - time();
+        $m = floor($diff / 60);
+        $s = $diff % 60;
+        $timer_text = ($diff > 0) ? "{$m}m {$s}s" : '0m 0s';
+
+        $pad = $is_mobile ? 'py-1.5 px-2.5 gap-2 text-sm' : 'py-0.5 px-1.5 gap-1.5 text-xs';
+        $pod_pad = $is_mobile ? 'px-2 py-0.5 text-xs' : 'px-1.5 py-0.5 text-[11px]';
+        $lock_size = $is_mobile ? 'text-[11px]' : 'text-[9px]';
+
+        return '<div class="fox-badge-container rounded-md font-bold flex items-center justify-center shadow-sm ' . $tw_color . ' whitespace-nowrap ' . $pad . ' border border-black/10" '
+            . 'data-fox="' . htmlspecialchars($fox_name) . '" '
+            . 'data-color="' . htmlspecialchars($color) . '" '
+            . 'data-initial="' . htmlspecialchars($initial) . '" '
+            . 'data-duratie="' . htmlspecialchars($duratie) . '" '
+            . 'data-until="' . $immune_until . '" '
+            . 'data-mobile="' . ($is_mobile ? '1' : '0') . '">'
+            . '<span class="font-extrabold tracking-wide select-none drop-shadow-sm">' . htmlspecialchars($initial) . '</span>'
+            . '<div class="bg-slate-950/90 text-amber-300 ring-1 ring-amber-400/50 ' . $pod_pad . ' rounded font-mono font-bold flex items-center shadow-inner tracking-tight">'
+            . '<i class="fas fa-lock ' . $lock_size . ' text-amber-400 mr-1.5 opacity-90"></i>'
+            . '<span class="immune-countdown" data-until="' . $immune_until . '" data-duratie="' . htmlspecialchars($duratie) . '">' . $timer_text . '</span>'
+            . '</div>'
+            . '</div>';
+    }
+}
+
+
 

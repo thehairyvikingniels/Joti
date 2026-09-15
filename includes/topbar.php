@@ -126,8 +126,9 @@ foreach ($fox_names as $vosnaam) {
 }
 ?>
 
+
 <header
-    class="h-14 theme-card flex items-center justify-between px-6 sticky top-0 z-30 border-b shadow-sm flex-shrink-0">
+    class="m-4 md:m-6 border h-14 theme-card flex items-center justify-between px-6 sticky top-4 md:top-6 z-30 shadow-sm flex-shrink-0">
     <div class="flex items-center">
         <button class="md:hidden opacity-60 hover:opacity-100 mr-3 transition" onclick="w3_open()"><i
                 class="fas fa-bars"></i></button>
@@ -138,30 +139,23 @@ foreach ($fox_names as $vosnaam) {
             'tegenhunt' => 'Tegenhunt',
             'vossen' => 'Vossen',
             'voslocaties' => 'Voslocaties',
-            'nieuws' => 'Nieuws',
-            'opdrachten' => 'Opdrachten',
-            'fotoopdrachten' => 'Foto-opdrachten',
-            'hints' => 'Hints',
-            'punten' => 'Punten',
             'groepen' => 'Groepen',
-            'instellingen' => 'Instellingen',
-            'autos' => "Auto's",
+            'gebruikers' => 'Gebruikers',
+            'auto' => 'Auto Beheer',
+            'nieuws' => 'Nieuws',
+            'hints' => 'Hints',
+            'opdrachten' => 'Opdrachten',
+            'fotoopdrachten' => 'Foto Opdrachten',
             'whiteboard' => 'Whiteboard',
-            'a_users' => 'Gebruikers',
-            'a_serviceaccounts' => 'Service Accounts',
-            'a_cronjobs' => 'Cronjobs',
-            'a_database' => 'Database',
-            'a_audit' => 'Audit Log',
-            'sa_notifications' => 'Notificaties',
-            'admin_telegram' => 'Telegram',
-            'sa_settings' => 'Instellingen',
-            'sa_system' => 'System',
-            'a_readiness' => 'Readiness Hub'
+            'site' => 'Site Instellingen',
+            'database' => 'Database Beheer',
+            'kiosk' => 'Kiosk',
+            'audit_log' => 'Audit Log'
         ];
-        $displayPageTitle = $topbarTitles[PAGE_NAME] ?? ucfirst(PAGE_NAME);
+        $currentPage = basename($_SERVER['PHP_SELF'], '.php');
+        $topbarTitle = $topbarTitles[$currentPage] ?? ucfirst($currentPage);
         ?>
-        <h2 class="text-base sm:text-lg font-semibold whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer md:cursor-auto"
-            onclick="if(window.innerWidth < 768) w3_open()"><?= htmlspecialchars($displayPageTitle) ?></h2>
+        <h1 class="text-base sm:text-lg font-bold"><?= htmlspecialchars($topbarTitle) ?></h1>
         <span
             class="ml-2 sm:ml-4 text-xs sm:text-sm font-medium opacity-60 border-l pl-2 sm:pl-4 whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px] sm:max-w-none"
             style="border-color: var(--theme-card-border);"><?= htmlspecialchars($topbarGroupName) ?></span>
@@ -172,29 +166,7 @@ foreach ($fox_names as $vosnaam) {
         <?php
         if (isset($fox_names)) {
             foreach ($fox_names as $n) {
-                $tw_color = 'bg-gray-200 text-gray-700';
-                if ($vos[$n]['Kleur'] == 'red')
-                    $tw_color = 'bg-red-500 text-white';
-                elseif ($vos[$n]['Kleur'] == 'orange')
-                    $tw_color = 'bg-orange-500 text-white';
-                elseif ($vos[$n]['Kleur'] == 'green')
-                    $tw_color = 'bg-green-500 text-white';
-
-                echo '<div class="px-2 py-1 rounded text-xs font-bold flex items-center shadow-sm ' . $tw_color . ' whitespace-nowrap"';
-                if (isset($vos[$n]["immune_until"])) {
-                    echo ' style="background-image: repeating-linear-gradient(45deg, rgba(100, 116, 139, 0.4), rgba(100, 116, 139, 0.4) 8px, rgba(100, 116, 139, 0.1) 8px, rgba(100, 116, 139, 0.1) 16px);"';
-                }
-                echo '>';
-
-                echo '<span class="mr-1">' . htmlspecialchars(substr($n, 0, 1)) . '</span>';
-                if (isset($vos[$n]["immune_until"])) {
-                    $diff = $vos[$n]["immune_until"] - time();
-                    $initial_text = ($diff > 0) ? floor($diff / 60) . 'm ' . ($diff % 60) . 's' : '0m 0s';
-                    echo '<span class="immune-countdown" data-until="' . $vos[$n]["immune_until"] . '" data-duratie="' . htmlspecialchars($vos[$n]["duratie"]) . '">' . $initial_text . '</span>';
-                } else {
-                    echo '<span>' . htmlspecialchars($vos[$n]["duratie"]) . '</span>';
-                }
-                echo '</div>';
+                echo renderFoxBadge($n, $vos[$n], false);
             }
         }
         ?>
