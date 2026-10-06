@@ -27,10 +27,19 @@ SET time_zone = "+00:00";
 CREATE TABLE IF NOT EXISTS `Auto` (
   `kenteken` char(8) NOT NULL,
   `eigenaar` int(11) NOT NULL,
+  `hunter_type` enum('car','motorcycle','scooter','bike','foot','other') NOT NULL DEFAULT 'car',
+  `rdw_kleur` varchar(32) DEFAULT NULL,
+  `aantal_zitplaatsen` int(3) DEFAULT NULL,
+  `naam` varchar(64) DEFAULT NULL,
+  `telefoon` varchar(32) DEFAULT NULL,
+  `hunter_code` varchar(16) DEFAULT NULL,
+  `hunter_portal_id` int(11) DEFAULT NULL,
+  `pdf_path` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `aangemaakt_op` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`kenteken`),
   KEY `eigenaar` (`eigenaar`),
+  KEY `hunter_portal_id` (`hunter_portal_id`),
   CONSTRAINT `Auto_ibfk_1` FOREIGN KEY (`eigenaar`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -239,6 +248,26 @@ CREATE TABLE IF NOT EXISTS `Hints` (
   `inhoud` text NOT NULL,
   `datum` datetime NOT NULL,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Tabelstructuur voor tabel `Jotihunt_Hunters`
+--
+
+CREATE TABLE IF NOT EXISTS `Jotihunt_Hunters` (
+  `portal_id` int(11) NOT NULL,
+  `type` varchar(32) NOT NULL DEFAULT 'car',
+  `naam` varchar(255) NOT NULL,
+  `telefoon` varchar(32) NOT NULL,
+  `code` varchar(16) NOT NULL,
+  `kenteken` varchar(16) DEFAULT NULL,
+  `pdf_file` varchar(255) DEFAULT NULL,
+  `last_scraped_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`portal_id`),
+  KEY `idx_kenteken` (`kenteken`),
+  KEY `idx_code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -625,7 +654,8 @@ INSERT IGNORE INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) 
 ('TELEGRAM_FORWARD_MODE', 'forward', 'Delivery mode for subscriber messages: forward (keeps bot header) or relay (clean text).'),
 ('TELEGRAM_INGEST_SECRET', 'placeholder_secret', 'Shared secret token required to authorize incoming Webhook and MTProto ingest requests.'),
 ('TELEGRAM_REGISTRATION_CODE', 'placeholder_code', 'Latest registration token scraped from the Jotihunt portal used to pair with @Jotihunt_bot.'),
-('TELEGRAM_BOT_TOKEN', '123456789:ABCdefGHIjklMNOpqrSTUvwxYZ', 'Optional Telegram Bot API token from @BotFather used for sending outbound broadcast notifications.');
+('TELEGRAM_BOT_TOKEN', '123456789:ABCdefGHIjklMNOpqrSTUvwxYZ', 'Optional Telegram Bot API token from @BotFather used for sending outbound broadcast notifications.'),
+('RDW_LOOKUP_ENABLED', '1', 'Schakel automatische RDW kenteken validatie en merk/model opvraging in (0 of 1)');
 
 --
 -- Standaardgroep voor schone installatie
