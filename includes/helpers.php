@@ -559,5 +559,71 @@ if (!function_exists('renderFoxBadge')) {
     }
 }
 
+/**
+ * Return FontAwesome icon class for vehicle/hunter type.
+ */
+if (!function_exists('getVehicleIcon')) {
+    function getVehicleIcon(?string $type): string {
+        switch ($type) {
+            case 'motorcycle': return 'fa-motorcycle';
+            case 'scooter': return 'fa-motorcycle';
+            case 'bike': return 'fa-bicycle';
+            case 'foot': return 'fa-walking';
+            case 'other': return 'fa-helicopter';
+            default: return 'fa-car';
+        }
+    }
+}
+
+/**
+ * Return Dutch label for vehicle/hunter type.
+ */
+if (!function_exists('getVehicleLabel')) {
+    function getVehicleLabel(?string $type): string {
+        switch ($type) {
+            case 'motorcycle': return 'Motor';
+            case 'scooter': return 'Scooter';
+            case 'bike': return 'Fiets';
+            case 'foot': return 'Lopend';
+            case 'other': return 'Overig';
+            default: return 'Auto';
+        }
+    }
+}
+
+/**
+ * Return hex color code for RDW color name or custom hex string.
+ */
+if (!function_exists('getRdwColorHex')) {
+    function getRdwColorHex(?string $colorName): string {
+        if (empty($colorName)) return '#64748b';
+        $c = strtoupper(trim($colorName));
+        if (preg_match('/^#[0-9A-F]{6}$/i', $c)) {
+            return $c;
+        }
+        switch ($c) {
+            case 'ZWART': return '#18181b';
+            case 'WIT': return '#cbd5e1';
+            case 'GRIJS': return '#64748b';
+            case 'ZILVER': return '#94a3b8';
+            case 'BLAUW': return '#2563eb';
+            case 'ROOD': return '#dc2626';
+            case 'GROEN': return '#16a34a';
+            case 'GEEL': return '#eab308';
+            case 'ORANJE': return '#ea580c';
+            case 'BRUIN': return '#78350f';
+            case 'PAARS': return '#9333ea';
+            case 'ROSE':
+            case 'ROZE': return '#ec4899';
+            case 'BEIGE': return '#d4b896';
+            case 'CREME': return '#fde047';
+            case 'GOUD': return '#d97706';
+            case 'DIVERSEN':
+            case 'MEERKLEURIG': return '#6366f1';
+            default: return '#64748b';
+        }
+    }
+}
+
 
 

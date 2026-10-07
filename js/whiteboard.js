@@ -59,6 +59,25 @@ function dragCar(ev) {
     ev.dataTransfer.effectAllowed = "move";
 }
 
+function showWhiteboardToast(message, type = "info") {
+    const container = document.getElementById("wb-toast-container");
+    if (!container) return;
+    const toast = document.createElement("div");
+    const isError = type === "error" || type === "warning";
+    const bgClass = isError ? "bg-red-600 text-white" : "bg-emerald-600 text-white";
+    const icon = isError ? "fa-exclamation-triangle" : "fa-check-circle";
+    toast.className = `${bgClass} px-4 py-2.5 rounded-lg shadow-xl text-sm font-semibold flex items-center gap-2 pointer-events-auto transition-all duration-300 opacity-0 translate-y-2`;
+    toast.innerHTML = `<i class="fas ${icon}"></i> <span>${message}</span>`;
+    container.appendChild(toast);
+    requestAnimationFrame(() => {
+        toast.classList.remove("opacity-0", "translate-y-2");
+    });
+    setTimeout(() => {
+        toast.classList.add("opacity-0", "translate-y-2");
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
 function dropDriver(ev) {
     ev.preventDefault();
     ev.stopPropagation();
@@ -69,6 +88,19 @@ function dropDriver(ev) {
 
     const userId = draggedElement.getAttribute("data-userid");
     const targetRef = zone.getAttribute("data-ref");
+
+    const carEl = document.getElementById(`car_${targetRef}`);
+    const maxOccupancy = carEl && carEl.hasAttribute("data-max-occupancy") ? parseInt(carEl.getAttribute("data-max-occupancy"), 10) : null;
+    if (maxOccupancy && !isNaN(maxOccupancy)) {
+        const isAlreadyInCar = carEl && carEl.contains(draggedElement);
+        if (!isAlreadyInCar) {
+            const currentUsers = Array.from(carEl.querySelectorAll(".wb-user")).filter((u) => u !== draggedElement);
+            if (currentUsers.length >= maxOccupancy) {
+                showWhiteboardToast(`Deze auto heeft het maximale aantal zitplaatsen bereikt (${maxOccupancy})!`, "warning");
+                return;
+            }
+        }
+    }
 
     const oldZone = draggedElement.parentElement;
     const wasDriverZone = oldZone && oldZone.hasAttribute("data-driver") && oldZone.getAttribute("data-driver") === "1";
@@ -107,7 +139,8 @@ function dropDriver(ev) {
         .then((r) => r.json())
         .then((res) => {
             if (res.status !== "success") {
-                window.location.reload();
+                showWhiteboardToast(res.message || "Fout bij toewijzen bestuurder", "error");
+                setTimeout(() => window.location.reload(), 1200);
             }
         })
         .catch(() => window.location.reload());
@@ -125,6 +158,21 @@ function drop(ev) {
         const userId = draggedElement.getAttribute("data-userid");
         const targetType = zone.getAttribute("data-type");
         const targetRef = zone.getAttribute("data-ref");
+
+        if (targetType === "auto") {
+            const carEl = document.getElementById(`car_${targetRef}`);
+            const maxOccupancy = carEl && carEl.hasAttribute("data-max-occupancy") ? parseInt(carEl.getAttribute("data-max-occupancy"), 10) : null;
+            if (maxOccupancy && !isNaN(maxOccupancy)) {
+                const isAlreadyInCar = carEl && carEl.contains(draggedElement);
+                if (!isAlreadyInCar) {
+                    const currentUsers = Array.from(carEl.querySelectorAll(".wb-user")).filter((u) => u !== draggedElement);
+                    if (currentUsers.length >= maxOccupancy) {
+                        showWhiteboardToast(`Deze auto heeft het maximale aantal zitplaatsen bereikt (${maxOccupancy})!`, "warning");
+                        return;
+                    }
+                }
+            }
+        }
 
         const oldZone = draggedElement.parentElement;
         const wasDriverZone = oldZone && oldZone.hasAttribute("data-driver") && oldZone.getAttribute("data-driver") === "1";
@@ -163,8 +211,8 @@ function drop(ev) {
             .then((r) => r.json())
             .then((res) => {
                 if (res.status !== "success") {
-                    alert(`Fout: ${res.message || "Onbekend"}`);
-                    window.location.reload();
+                    showWhiteboardToast(res.message || "Fout bij verplaatsen", "error");
+                    setTimeout(() => window.location.reload(), 1200);
                 }
             })
             .catch(() => {

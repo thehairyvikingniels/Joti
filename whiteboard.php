@@ -10,6 +10,7 @@ if ($is_guest) {
 }
 
 require_once('includes/globals.php');
+require_once('includes/helpers.php');
 
 // Fetch data
 $users = [];
@@ -47,12 +48,15 @@ while($row = $res->fetch_assoc()) {
 }
 $stmt->close();
 
-// Fetch Cars
+// Fetch Cars (uitsluitend auto's)
 $cars = [];
-$stmt = $conn->prepare("SELECT a.kenteken, g.voornaam as eigenaar_naam FROM Auto a JOIN Gebruikers g ON a.eigenaar = g.id");
+$stmt = $conn->prepare("SELECT a.kenteken, a.hunter_type, a.rdw_kleur, a.aantal_zitplaatsen, g.voornaam as eigenaar_naam FROM Auto a JOIN Gebruikers g ON a.eigenaar = g.id WHERE a.hunter_type = 'car' OR a.hunter_type IS NULL OR a.hunter_type = '' ORDER BY a.kenteken ASC");
 $stmt->execute();
 $res = $stmt->get_result();
 while($row = $res->fetch_assoc()) {
+    if (!empty($row['hunter_type']) && $row['hunter_type'] !== 'car') {
+        continue;
+    }
     $row['bijrijders'] = [];
     $row['bestuurder'] = null;
     $cars[$row['kenteken']] = $row;
@@ -71,11 +75,11 @@ while($row = $res->fetch_assoc()) {
         } else {
             $cars[$row['auto']]['bijrijders'][] = $row['gebruiker_id'];
         }
+        $user_assignments[$row['gebruiker_id']] = [
+            'type' => 'auto',
+            'ref_id' => $row['auto']
+        ];
     }
-    $user_assignments[$row['gebruiker_id']] = [
-        'type' => 'auto',
-        'ref_id' => $row['auto']
-    ];
 }
 $stmt->close();
 
@@ -85,10 +89,12 @@ $stmt = $conn->prepare("SELECT * FROM Auto_Toewijzingen");
 $stmt->execute();
 $res = $stmt->get_result();
 while($row = $res->fetch_assoc()) {
-    $car_assignments[$row['auto']] = [
-        'type' => $row['type'],
-        'ref_id' => $row['referentie_id']
-    ];
+    if (isset($cars[$row['auto']])) {
+        $car_assignments[$row['auto']] = [
+            'type' => $row['type'],
+            'ref_id' => $row['referentie_id']
+        ];
+    }
 }
 $stmt->close();
 
@@ -257,7 +263,12 @@ require_once('includes/whiteboard_components.php');
 .wb-user { 
     transition: transform 0.2s; 
     justify-self: center;
-    min-width: 48px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    margin: 2px !important;
 }
 .wb-user:hover { transform: scale(1.1); }
 .car-draggable .user-name { color: #ffffff !important; }
@@ -266,8 +277,8 @@ require_once('includes/whiteboard_components.php');
 }
 .passenger-zone {
     display: grid;
-    grid-template-columns: 32px 32px 32px;
-    grid-auto-rows: 70px;
+    grid-template-columns: 36px 36px 36px;
+    grid-auto-rows: 68px;
     justify-content: center;
     justify-items: center;
     width: 100%;
@@ -288,7 +299,7 @@ require_once('includes/whiteboard_components.php');
 .compact-car:hover { transform: scale(1.05); }
 .driver-seat {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     min-height: auto !important;
 }
@@ -300,7 +311,22 @@ require_once('includes/whiteboard_components.php');
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 4px;
+    margin: 2px auto;
+}
+.driver-seat:has(.wb-user) .steering-wheel-placeholder {
+    display: none !important;
+}
+
+/* Vehicle card contrast & typography */
+.vehicle-card .user-name {
+    color: #ffffff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95), 0 0 4px rgba(0, 0, 0, 0.8) !important;
+}
+.vehicle-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.vehicle-card:hover {
+    transform: translateY(-2px);
 }
 </style>
 </head>
@@ -545,6 +571,9 @@ require_once('includes/whiteboard_components.php');
         </div>
     </div>
   </div>
+
+  <!-- Whiteboard Toast Notifications -->
+  <div id="wb-toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <?php require_once('includes/footer.php') ?>
 </div>

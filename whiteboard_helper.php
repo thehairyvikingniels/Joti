@@ -22,6 +22,31 @@ if ($action === 'move_user') {
         exit();
     }
     
+    // Check max occupancy if target is a car with RDW data
+    if ($target_type === 'auto') {
+        $stmt_seats = $conn->prepare("SELECT aantal_zitplaatsen FROM Auto WHERE kenteken = ?");
+        $stmt_seats->bind_param("s", $target_ref);
+        $stmt_seats->execute();
+        $res_seats = $stmt_seats->get_result()->fetch_assoc();
+        $stmt_seats->close();
+
+        $max_occupancy = !empty($res_seats['aantal_zitplaatsen']) ? (int)$res_seats['aantal_zitplaatsen'] : null;
+
+        if ($max_occupancy !== null) {
+            $sCnt = $conn->prepare("SELECT COUNT(*) as cnt FROM Auto_Bijrijders WHERE auto = ? AND gebruiker_id != ?");
+            $sCnt->bind_param("si", $target_ref, $user_id);
+            $sCnt->execute();
+            $cntRow = $sCnt->get_result()->fetch_assoc();
+            $sCnt->close();
+            $current_occupants = (int)($cntRow['cnt'] ?? 0);
+
+            if ($current_occupants >= $max_occupancy) {
+                echo json_encode(["status" => "error", "message" => "Deze auto heeft het maximale aantal zitplaatsen bereikt ({$max_occupancy})!"]);
+                exit();
+            }
+        }
+    }
+
     // 1. Unassign from cars
     $stmt = $conn->prepare("DELETE FROM Auto_Bijrijders WHERE gebruiker_id = ?");
     $stmt->bind_param("i", $user_id);
@@ -43,14 +68,14 @@ if ($action === 'move_user') {
     if ($target_type === 'auto') {
         $is_bestuurder = (isset($_POST['is_bestuurder']) && $_POST['is_bestuurder'] == '1') ? 1 : 0;
         
-        // If becoming driver, remove previous driver of this car
+        // If becoming driver, demote previous driver of this car to passenger
         if ($is_bestuurder) {
             $s = $conn->prepare("UPDATE Auto_Bijrijders SET is_driver = 0 WHERE auto = ?");
             $s->bind_param("s", $target_ref);
             $s->execute();
             $s->close();
         }
-        
+
         $stmt = $conn->prepare("INSERT INTO Auto_Bijrijders (auto, gebruiker_id, is_driver) VALUES (?, ?, ?)");
         $stmt->bind_param("sii", $target_ref, $user_id, $is_bestuurder);
         $stmt->execute();
