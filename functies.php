@@ -46,63 +46,6 @@ if (isset($_GET['save_map_settings'])) {
 }
 
 
-// Delete a fox location
-if (isset($_GET['verwijder_voslocatie'])) {
-    // Check user privilege
-    $stmt_priv = $conn->prepare("SELECT priv FROM Gebruikers WHERE id=?");
-    $stmt_priv->bind_param("i", $_SESSION['id']);
-    $stmt_priv->execute();
-    $result_priv = $stmt_priv->get_result();
-    $user = $result_priv->fetch_assoc();
-    $stmt_priv->close();
-
-    if ($user && $user['priv'] > 1) {
-        $id_to_delete = intval($_GET['verwijder_voslocatie']);
-        $stmt_del = $conn->prepare("DELETE FROM Voslocaties WHERE id = ?");
-        $stmt_del->bind_param("i", $id_to_delete);
-        
-        if (!$stmt_del->execute()) {
-            error_log("Error deleting record: " . $stmt_del->error);
-        }
-        $stmt_del->close();
-    }
-    header("Location: admin/database");
-    exit();
-}
-
-// Update een Voslocatie
-if (isset($_POST['update_voslocatie'])) {
-    // Check user privilege
-    $stmt_priv = $conn->prepare("SELECT priv FROM Gebruikers WHERE id=?");
-    $stmt_priv->bind_param("i", $_SESSION['id']);
-    $stmt_priv->execute();
-    $result_priv = $stmt_priv->get_result();
-    $user = $result_priv->fetch_assoc();
-    $stmt_priv->close();
-
-    if ($user && $user['priv'] > 1) {
-        $id = intval($_POST['voslocatie_id']);
-        $type = $_POST['type'];
-        $deelgebied = $_POST['deelgebied'];
-        $ingestuurd_op = date('Y-m-d H:i:s', strtotime($_POST['ingestuurd_op']));
-        $coord_x = $_POST['coordinaat_x'];
-        $coord_y = $_POST['coordinaat_y'];
-        $code = $_POST['code'];
-        $opmerking = $_POST['opmerking'];
-
-        // Code is optional for Hunt locations
-
-        $stmt_upd = $conn->prepare("UPDATE Voslocaties SET type=?, deelgebied=?, ingestuurd_op=?, coordinaat_x=?, coordinaat_y=?, code=?, opmerking=? WHERE id=?");
-        $stmt_upd->bind_param("sssssssi", $type, $deelgebied, $ingestuurd_op, $coord_x, $coord_y, $code, $opmerking, $id);
-        
-        if (!$stmt_upd->execute()) {
-            error_log("Error updating record: " . $stmt_upd->error);
-        }
-        $stmt_upd->close();
-    }
-    header("Location: admin/database");
-    exit();
-}
 
 // Toggle toewijzing
 if (isset($_POST['toggle_toewijzing'])) {
