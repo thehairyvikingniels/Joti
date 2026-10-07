@@ -2,7 +2,7 @@
 // Standalone cron job for automated database and media backups with tiered retention.
 // Executed headless by cron/index.php. Do NOT include includes/auth.php or functies.php.
 
-define('NAME', 'auto_backup');
+define('NAME', 'MAINT_Backup');
 define('START_TIME', microtime(true));
 date_default_timezone_set('Europe/Amsterdam');
 $output = '';

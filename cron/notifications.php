@@ -1,6 +1,6 @@
 <?php
 // cron/notifications.php ??? Processes pending Web Push notification backlog and dispatches payloads to subscriber browser endpoints.
-define("NAME", "push_queue");
+define("NAME", "PUSH_Queue");
 define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');
 $output = "";

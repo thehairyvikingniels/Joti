@@ -1,6 +1,6 @@
 <?php
 // Fetches fox area status updates from the Jotihunt API, logs changes, and sends push notifications on status updates.
-define("NAME", "areas");
+define("NAME", "API_Areas");
 define("JOTI_URL", "https://jotihunt.nl");
 define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');

@@ -14,7 +14,7 @@ $rdw_enabled = (!empty($GLOBALS['site_settings']['RDW_LOOKUP_ENABLED']) && $GLOB
 // Controleer of de hunter cronjob actief is en bereken de interval in minuten
 $cron_portal_enabled = false;
 $cron_portal_minutes = 3;
-$stmt_cj = $conn->prepare("SELECT enabled, `interval` FROM Cronjobs WHERE name = 'jotiPortal' LIMIT 1");
+$stmt_cj = $conn->prepare("SELECT enabled, `interval` FROM Cronjobs WHERE name IN ('SCRAPE_Portal', 'jotiPortal') ORDER BY (name = 'SCRAPE_Portal') DESC LIMIT 1");
 if ($stmt_cj) {
   $stmt_cj->execute();
   if ($cj_row = $stmt_cj->get_result()->fetch_assoc()) {

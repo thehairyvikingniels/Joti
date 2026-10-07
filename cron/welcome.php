@@ -1,6 +1,6 @@
 <?php
 // Calculates distances between tracking users and scouting groups to send proximity welcome push notifications.
-define("NAME", "welcome");
+define("NAME", "GEO_Welcome");
 define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');
 $output = "";

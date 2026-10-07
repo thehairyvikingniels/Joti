@@ -1,6 +1,6 @@
 <?php
 // Fetches participating scouting group locations and details from the Jotihunt API and updates them in the database.
-define("NAME", "subscriptions");
+define("NAME", "API_Subscriptions");
 define("JOTI_URL", "https://jotihunt.nl");
 define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');

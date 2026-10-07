@@ -1,6 +1,6 @@
 <?php
 // Syncs photo assignments from the Jotihunt API into the database and triggers push notifications.
-define("NAME", "photoAssign");
+define("NAME", "API_PhotoAssign");
 define("JOTI_URL", "https://jotihunt.nl");
 define("START_TIME", microtime(true));
 date_default_timezone_set('Europe/Amsterdam');

@@ -336,7 +336,13 @@ function handle_run_diagnostics(mysqli $conn, string $webroot): void {
     }
 
     // 3. Essentiële Cronjobs
-    $keyCrons = ['areas', 'articles', 'auto_backup', 'subscriptions', 'push_queue'];
+    $keyCronPairs = [
+        ['API_Areas', 'areas'],
+        ['API_Articles', 'articles'],
+        ['MAINT_Backup', 'auto_backup'],
+        ['API_Subscriptions', 'subscriptions'],
+        ['PUSH_Queue', 'push_queue']
+    ];
     $cronRes = $conn->query("SELECT name, enabled, `interval` FROM Cronjobs");
     $activeCrons = [];
     if ($cronRes) {
@@ -346,7 +352,19 @@ function handle_run_diagnostics(mysqli $conn, string $webroot): void {
             }
         }
     }
-    $missingCrons = array_diff($keyCrons, array_keys($activeCrons));
+    $missingCrons = [];
+    foreach ($keyCronPairs as $pair) {
+        $found = false;
+        foreach ($pair as $nameCandidate) {
+            if (isset($activeCrons[$nameCandidate])) {
+                $found = true;
+                break;
+            }
+        }
+        if (!$found) {
+            $missingCrons[] = $pair[0];
+        }
+    }
 
     // Check last run from Cronlogs
     $lastLogRes = $conn->query("SELECT MAX(exec_time) as last_run FROM Cronlogs");
