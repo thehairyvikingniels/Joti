@@ -43,25 +43,81 @@ try {
     curl_close($ch_html);
 
     if ($html) {
-        $dom = new DOMDocument();
-        @$dom->loadHTML($html);
-        $xpath = new DOMXPath($dom);
-        $rows = $xpath->query('//table//tbody//tr');
-        foreach ($rows as $row) {
-            $imgs = $xpath->query('.//img', $row);
-            $img_src = ($imgs->length > 0) ? $imgs->item(0)->getAttribute('src') : '';
-            $tds = $xpath->query('.//td', $row);
-            if ($tds->length >= 3) {
-                $row_name = trim($tds->item(2)->textContent);
-                $coords = ($tds->length >= 6) ? trim($tds->item(5)->textContent) : '';
-                if ($row_name && $img_src) {
-                    $scraped_logos[mb_strtolower($row_name)] = $img_src;
+        if (class_exists('DOMDocument')) {
+            $dom = new DOMDocument();
+            @$dom->loadHTML($html);
+            $xpath = new DOMXPath($dom);
+
+            // Strategy 1: Modern card layout <li class="group ..."> with <p class="... text-jh-primary ..."> and <img ...>
+            $cards = $xpath->query('//li[contains(@class, "group")] | //ul[@role="list"]/li');
+            foreach ($cards as $card) {
+                $img_nodes = $xpath->query('.//img', $card);
+                $name_nodes = $xpath->query('.//p[contains(@class, "text-jh-primary")] | .//h3 | .//p[1]', $card);
+
+                $img_src = ($img_nodes->length > 0) ? trim($img_nodes->item(0)->getAttribute('src')) : '';
+                $card_name = ($name_nodes->length > 0) ? trim($name_nodes->item(0)->textContent) : '';
+
+                if ($card_name && $img_src) {
+                    $key = function_exists('mb_strtolower') ? mb_strtolower($card_name) : strtolower($card_name);
+                    $scraped_logos[$key] = $img_src;
                 }
-                if ($coords && $img_src) {
-                    $parts = explode(',', $coords);
-                    if (count($parts) === 2) {
-                        $c_key = round((float)trim($parts[0]), 4) . ',' . round((float)trim($parts[1]), 4);
-                        $scraped_logos['coord_' . $c_key] = $img_src;
+            }
+
+            // Strategy 2: Directly inspect <img> tags with alt starting with "Logo van "
+            $logo_imgs = $xpath->query('//img[starts-with(@alt, "Logo van ")]');
+            foreach ($logo_imgs as $img) {
+                $alt = trim($img->getAttribute('alt'));
+                $src = trim($img->getAttribute('src'));
+                $name = trim(preg_replace('/^Logo van\s+/i', '', $alt));
+                $key = function_exists('mb_strtolower') ? mb_strtolower($name) : strtolower($name);
+                if ($key && $src && !isset($scraped_logos[$key])) {
+                    $scraped_logos[$key] = $src;
+                }
+            }
+
+            // Strategy 3: Legacy table layout fallback
+            $rows = $xpath->query('//table//tbody//tr');
+            foreach ($rows as $row) {
+                $imgs = $xpath->query('.//img', $row);
+                $img_src = ($imgs->length > 0) ? $imgs->item(0)->getAttribute('src') : '';
+                $tds = $xpath->query('.//td', $row);
+                if ($tds->length >= 3) {
+                    $row_name = trim($tds->item(2)->textContent);
+                    $coords = ($tds->length >= 6) ? trim($tds->item(5)->textContent) : '';
+                    $key = function_exists('mb_strtolower') ? mb_strtolower($row_name) : strtolower($row_name);
+                    if ($key && $img_src && !isset($scraped_logos[$key])) {
+                        $scraped_logos[$key] = $img_src;
+                    }
+                    if ($coords && $img_src) {
+                        $parts = explode(',', $coords);
+                        if (count($parts) === 2) {
+                            $c_key = round((float)trim($parts[0]), 4) . ',' . round((float)trim($parts[1]), 4);
+                            $scraped_logos['coord_' . $c_key] = $img_src;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Strategy 4: Regex fallback if DOMDocument is unavailable or yielded no results
+        if (empty($scraped_logos)) {
+            if (preg_match_all('/<img[^>]+src=["\']([^"\']+)["\'][^>]+alt=["\']Logo van\s+([^"\']+)["\']/i', $html, $m)) {
+                for ($i = 0; $i < count($m[0]); $i++) {
+                    $src = trim($m[1][$i]);
+                    $name = trim($m[2][$i]);
+                    $key = function_exists('mb_strtolower') ? mb_strtolower($name) : strtolower($name);
+                    if ($key && $src && !isset($scraped_logos[$key])) {
+                        $scraped_logos[$key] = $src;
+                    }
+                }
+            }
+            if (preg_match_all('/<img[^>]+alt=["\']Logo van\s+([^"\']+)["\'][^>]+src=["\']([^"\']+)["\']/i', $html, $m)) {
+                for ($i = 0; $i < count($m[0]); $i++) {
+                    $name = trim($m[1][$i]);
+                    $src = trim($m[2][$i]);
+                    $key = function_exists('mb_strtolower') ? mb_strtolower($name) : strtolower($name);
+                    if ($key && $src && !isset($scraped_logos[$key])) {
+                        $scraped_logos[$key] = $src;
                     }
                 }
             }
@@ -80,8 +136,9 @@ try {
         $glon = $value['long'] ?? 0;
         $garea = $value['area'] ?? '';
 
+        $lower_name = function_exists('mb_strtolower') ? mb_strtolower($gname) : strtolower($gname);
         $c_key = 'coord_' . round((float)$glat, 4) . ',' . round((float)$glon, 4);
-        $gurl = $scraped_logos[mb_strtolower($gname)] ?? $scraped_logos[$c_key] ?? 'null';
+        $gurl = $scraped_logos[$lower_name] ?? $scraped_logos[$c_key] ?? '';
 
         $stmt = $conn->prepare("INSERT INTO Groepen (id, naam, gebruikersnaam, straat, huisnummer, postal_code, plaats, lat, lon, url, deelgebied) VALUES (?, ?, 'null', ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE naam = VALUES(naam), straat = VALUES(straat), huisnummer = VALUES(huisnummer), postal_code = VALUES(postal_code), plaats = VALUES(plaats), lat = VALUES(lat), lon = VALUES(lon), url = VALUES(url), deelgebied = ?");
         $stmt->bind_param("isssssddsss", $gid, $gname, $gstreet, $ghouse, $gpostcode, $gcity, $glat, $glon, $gurl, $garea, $garea);

@@ -49,7 +49,7 @@ require_once('includes/auth.php');
 
     <?php
     // Get all scout groups
-    $stmt = $conn->prepare("SELECT * FROM Groepen ORDER BY naam DESC");
+    $stmt = $conn->prepare("SELECT * FROM Groepen ORDER BY naam ASC");
     $stmt->execute();
     $result = $stmt->get_result();
 
@@ -59,6 +59,7 @@ require_once('includes/auth.php');
       while($row = $result->fetch_assoc()) {
         $color = getFoxColor(ucfirst($row['deelgebied']));
         $distance = round(latlon_dist($row['lat'], $row['lon'], $user_lat, $user_lon)/1000, 1);
+        $logo_url = (!empty($row['url']) && $row['url'] !== 'null') ? $row['url'] : 'media/scoutingLogo.png';
         
         echo '<li class="p-4 md:p-6 hover:bg-black/5 transition" meta-name="'.htmlspecialchars($row['naam']).'" meta-subarea="'.htmlspecialchars($row['deelgebied']).'" meta-distance="'.latlon_dist($row['lat'], $row['lon'], $user_lat, $user_lon).'">';
         
@@ -70,8 +71,8 @@ require_once('includes/auth.php');
 
         echo '  <div class="flex flex-wrap items-center justify-between gap-4 md:gap-6">';
         
-        echo '    <div class="w-16 h-16 flex-shrink-0 bg-white rounded border overflow-hidden flex items-center justify-center shadow-sm">';
-        echo '      <img src="'.htmlspecialchars($row['url']).'" class="w-full h-auto object-contain" onerror="this.src=\'media/scoutingLogo.png\'">';
+        echo '    <div class="w-16 h-16 flex-shrink-0 bg-white rounded border overflow-hidden flex items-center justify-center shadow-sm p-1">';
+        echo '      <img src="'.htmlspecialchars($logo_url).'" alt="Logo '.htmlspecialchars($row['naam']).'" class="w-full h-full object-contain" onerror="this.src=\'media/scoutingLogo.png\'">';
         echo '    </div>';
 
         echo '    <div class="flex-grow min-w-[200px] text-sm space-y-1 opacity-80">';
