@@ -180,5 +180,8 @@ foreach ($fox_names as $vosnaam) {
         <a href="<?= $notInAdminfolder ?? '' ?>functies.php?gpstoggle=1&return=<?= urlencode($_SERVER['REQUEST_URI']) ?>"
             class="<?= $gps_color ?> transition-colors" title="Location sharing is <?= $gps_active ? 'ON' : 'OFF' ?>"><i
                 class="fas fa-crosshairs text-lg"></i></a>
+        <a href="<?= $notInAdminfolder ?? '' ?>instellingen"
+            class="opacity-60 hover:opacity-100 transition-colors" title="Instellingen"><i
+                class="fas fa-cog text-lg"></i></a>
     </div>
 </header>
