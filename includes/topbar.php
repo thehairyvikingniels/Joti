@@ -130,8 +130,6 @@ foreach ($fox_names as $vosnaam) {
 <header
     class="m-4 md:m-6 border h-14 theme-card flex items-center justify-between px-6 sticky top-4 md:top-6 z-30 shadow-sm flex-shrink-0">
     <div class="flex items-center">
-        <button class="md:hidden opacity-60 hover:opacity-100 mr-3 transition" onclick="w3_open()"><i
-                class="fas fa-bars"></i></button>
         <?php
         $topbarTitles = [
             'home' => 'Overzicht',
@@ -150,12 +148,26 @@ foreach ($fox_names as $vosnaam) {
             'site' => 'Site Instellingen',
             'database' => 'Database Beheer',
             'kiosk' => 'Kiosk',
-            'audit_log' => 'Audit Log'
+            'audit_log' => 'Audit Log',
+            'users' => 'Gebruikers',
+            'serviceaccounts' => 'Service Accounts',
+            'cronjobs' => 'Cronjobs',
+            'audit' => 'Audit Log',
+            'notifications' => 'Notificaties',
+            'telegram' => 'Telegram',
+            'settings' => 'Instellingen',
+            'system' => 'System',
+            'readiness' => 'Readiness Hub',
+            'instellingen' => 'Instellingen'
         ];
         $currentPage = basename($_SERVER['PHP_SELF'], '.php');
         $topbarTitle = $topbarTitles[$currentPage] ?? ucfirst($currentPage);
         ?>
-        <h1 class="text-base sm:text-lg font-bold"><?= htmlspecialchars($topbarTitle) ?></h1>
+        <div class="flex items-center cursor-pointer md:cursor-default" onclick="if(window.innerWidth < 768) w3_open()" title="Menu">
+            <button type="button" class="md:hidden opacity-60 hover:opacity-100 mr-3 transition cursor-pointer" onclick="w3_open()" aria-label="Open menu"><i
+                    class="fas fa-bars"></i></button>
+            <h1 class="text-base sm:text-lg font-bold select-none"><?= htmlspecialchars($topbarTitle) ?></h1>
+        </div>
         <span
             class="ml-2 sm:ml-4 text-xs sm:text-sm font-medium opacity-60 border-l pl-2 sm:pl-4 whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px] sm:max-w-none"
             style="border-color: var(--theme-card-border);"><?= htmlspecialchars($topbarGroupName) ?></span>
