@@ -174,6 +174,109 @@ if (!function_exists('convertRdToWgs')) {
 }
 
 /**
+ * Convert WGS84 GPS latitude/longitude to Dutch Rijksdriehoekstelsel (RD) coordinates.
+ *
+ * @param float $lat GPS Latitude
+ * @param float $lon GPS Longitude
+ * @return array{rd_x: float, rd_y: float}
+ */
+if (!function_exists('convertWgsToRd')) {
+    function convertWgsToRd(float $lat, float $lon): array {
+        $phi_0 = 52.15517440;
+        $lam_0 = 5.38720621;
+        $dphi = 0.36 * ($lat - $phi_0);
+        $dlam = 0.36 * ($lon - $lam_0);
+
+        $somX = (190094.945 * $dlam)
+              + (-11832.228 * $dphi * $dlam)
+              + (-114.221 * pow($dphi, 2) * $dlam)
+              + (-32.391 * pow($dlam, 3))
+              + (-0.705 * $dphi)
+              + (-2.340 * pow($dphi, 3) * $dlam)
+              + (-0.608 * $dphi * pow($dlam, 3))
+              + (0.148 * pow($dphi, 4) * $dlam);
+
+        $somY = (309056.544 * $dphi)
+              + (3638.893 * pow($dlam, 2))
+              + (72.01 * $dphi * pow($dlam, 2))
+              + (-157.976 * pow($dphi, 2))
+              + (31.62 * pow($dphi, 3))
+              + (-3.921 * pow($dphi, 4))
+              + (-0.106 * pow($dlam, 4));
+
+        return [
+            'rd_x' => (float)round(155000 + $somX),
+            'rd_y' => (float)round(463000 + $somY)
+        ];
+    }
+}
+
+/**
+ * Dynamically computes coordinate start digits and prefill configurations
+ * for each deelgebied based on current scout group locations in Groepen.
+ *
+ * @param mysqli $conn
+ * @return array<string, array{prefill_x: string, placeholder_x: string, prefill_y: string, placeholder_y: string, is_fixed_x: bool}>
+ */
+if (!function_exists('getDeelgebiedenCoordinatePrefills')) {
+    function getDeelgebiedenCoordinatePrefills(mysqli $conn): array {
+        $stmt = $conn->prepare("SELECT deelgebied, lat, lon FROM Groepen WHERE lat IS NOT NULL AND lon IS NOT NULL");
+        if (!$stmt) {
+            return [];
+        }
+        $stmt->execute();
+        $res = $stmt->get_result();
+
+        $byArea = [];
+        while ($row = $res->fetch_assoc()) {
+            $area = trim((string)$row['deelgebied']);
+            if ($area === '') continue;
+            if (!isset($byArea[$area])) {
+                $byArea[$area] = ['xs' => [], 'ys' => []];
+            }
+            $rd = convertWgsToRd((float)$row['lat'], (float)$row['lon']);
+            $byArea[$area]['xs'][] = $rd['rd_x'];
+            $byArea[$area]['ys'][] = $rd['rd_y'];
+        }
+        $stmt->close();
+
+        $prefills = [];
+        foreach ($byArea as $area => $coords) {
+            $minX = min($coords['xs']);
+            $maxX = max($coords['xs']);
+            $minY = min($coords['ys']);
+            $maxY = max($coords['ys']);
+
+            // 100% 1 if all scout groups in this deelgebied have RD X in [100000, 199999]
+            $is100X1 = ($minX >= 100000 && $maxX < 200000);
+            // 100% 4 if all scout groups in this deelgebied have RD Y in [400000, 499999]
+            $is100Y4 = ($minY >= 400000 && $maxY < 500000);
+
+            $prefills[$area] = [
+                'prefill_x' => $is100X1 ? '1***' : '',
+                'placeholder_x' => $is100X1 ? '1***' : '****',
+                'prefill_y' => $is100Y4 ? '4***' : '',
+                'placeholder_y' => $is100Y4 ? '4***' : '4***',
+                'is_fixed_x' => $is100X1
+            ];
+            $prefills[strtolower($area)] = $prefills[$area];
+        }
+
+        // Oscar hunts across all deelgebieden (Gelderland wide)
+        $prefills['Oscar'] = [
+            'prefill_x' => '',
+            'placeholder_x' => '****',
+            'prefill_y' => '4***',
+            'placeholder_y' => '4***',
+            'is_fixed_x' => false
+        ];
+        $prefills['oscar'] = $prefills['Oscar'];
+
+        return $prefills;
+    }
+}
+
+/**
  * Resolve client IP address taking reverse proxy headers (HTTP_X_FORWARDED_FOR) into account.
  *
  * @return string
