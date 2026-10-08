@@ -12,9 +12,14 @@
  * @return bool True if token was generated and set, false if disabled
  */
 function generateRememberToken(mysqli $conn, int $userId, int $priv, array $siteSettings, ?string $userAgent = null): bool {
-    // 1. Determine duration based on privilege role
+    // Opportunistically prune expired tokens (~5% chance)
+    if (random_int(1, 20) === 1) {
+        $conn->query("DELETE FROM Gebruikers_Tokens WHERE expiry < NOW()");
+    }
+
+    // 1. Determine duration based on privilege role (default 720 hours = 30 days)
     $settingKey = ($priv >= 2) ? 'REMEMBER_ME_HOURS_ADMIN' : 'REMEMBER_ME_HOURS';
-    $defaultHours = ($priv >= 2) ? 24 : 72;
+    $defaultHours = 720;
     $durationHours = (int)($siteSettings[$settingKey] ?? $defaultHours);
 
     // If configured as 0, remember-me is disabled for this role
@@ -28,7 +33,6 @@ function generateRememberToken(mysqli $conn, int $userId, int $priv, array $site
     $selector = bin2hex(random_bytes(16));
     $validator = bin2hex(random_bytes(32));
     $hashedValidator = hash('sha256', $validator);
-    $expiry = date('Y-m-d H:i:s', time() + $durationSeconds);
     $truncatedUserAgent = $userAgent ? substr($userAgent, 0, 255) : null;
 
     // 3. Store hashed validator in database with MySQL-calculated expiry
@@ -61,7 +65,7 @@ function generateRememberToken(mysqli $conn, int $userId, int $priv, array $site
 }
 
 /**
- * Validates the persistent remember-me cookie and returns the user ID if valid.
+ * Validates the persistent remember-me cookie, slides its expiration forward, and returns the user ID if valid.
  *
  * @param mysqli $conn Active database connection
  * @return int|null User ID if token is valid, null otherwise
@@ -83,8 +87,12 @@ function validateRememberToken(mysqli $conn): ?int {
         return null;
     }
 
-    // Query unexpired token
-    $stmt = $conn->prepare("SELECT user_id, hashed_validator FROM Gebruikers_Tokens WHERE selector = ? AND expiry > NOW() LIMIT 1");
+    // Query unexpired token along with user privilege for sliding window extension
+    $stmt = $conn->prepare("SELECT t.id, t.user_id, t.hashed_validator, u.priv 
+                           FROM Gebruikers_Tokens t 
+                           JOIN Gebruikers u ON t.user_id = u.id 
+                           WHERE t.selector = ? AND t.expiry > NOW() 
+                           LIMIT 1");
     if (!$stmt) {
         return null;
     }
@@ -95,7 +103,44 @@ function validateRememberToken(mysqli $conn): ?int {
     if ($row = $result->fetch_assoc()) {
         $stmt->close();
         if (hash_equals($row['hashed_validator'], hash('sha256', $validator))) {
-            return (int)$row['user_id'];
+            $userId = (int)$row['user_id'];
+            $priv = (int)$row['priv'];
+
+            // Determine configured duration for this user role
+            global $site_settings;
+            $settings = $site_settings ?? (function_exists('fetchSiteSettings') ? fetchSiteSettings($conn) : []);
+            $settingKey = ($priv >= 2) ? 'REMEMBER_ME_HOURS_ADMIN' : 'REMEMBER_ME_HOURS';
+            $defaultHours = 720;
+            $durationHours = (int)($settings[$settingKey] ?? $defaultHours);
+
+            if ($durationHours <= 0) {
+                clearCurrentRememberToken($conn);
+                return null;
+            }
+
+            // Slide DB token expiry forward
+            $updStmt = $conn->prepare("UPDATE Gebruikers_Tokens SET expiry = DATE_ADD(NOW(), INTERVAL ? HOUR) WHERE selector = ?");
+            if ($updStmt) {
+                $updStmt->bind_param("is", $durationHours, $selector);
+                $updStmt->execute();
+                $updStmt->close();
+            }
+
+            // Refresh persistent HTTP cookie expiration
+            $durationSeconds = $durationHours * 3600;
+            $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+            $cookieValue = $selector . ':' . $validator;
+
+            setcookie('jotify_remember', $cookieValue, [
+                'expires' => time() + $durationSeconds,
+                'path' => '/',
+                'domain' => '',
+                'secure' => $isHttps,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+
+            return $userId;
         }
     } else {
         $stmt->close();

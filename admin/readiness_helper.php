@@ -24,6 +24,7 @@ const OPERATIONAL_TABLES = [
     'Groepen' => 'Scoutinggroepen & IDs',
     'Hints' => 'Hints & Coördinaten',
     'Opdrachten' => 'Opdrachten & Inzendingen',
+    'Fotoopdrachten' => 'Foto-opdrachten & Inzendingen',
     'Nieuws' => 'Nieuwsberichten',
     'Punten' => 'Scores & Klassement',
     'Voslocaties' => 'Vossenlocaties & Coördinaten',
@@ -308,7 +309,7 @@ function handle_run_diagnostics(mysqli $conn, string $webroot): void {
     $latencyDb = round((microtime(true) - $start) * 1000);
 
     $missingTables = [];
-    foreach (['Gebruikers', 'Groepen', 'Hints', 'Opdrachten', 'Punten', 'Voslocaties', 'Voslog', 'Site_Instellingen', 'Auto', 'Auto_Positie', 'Preflight_Checklist'] as $t) {
+    foreach (['Gebruikers', 'Groepen', 'Hints', 'Opdrachten', 'Fotoopdrachten', 'Punten', 'Voslocaties', 'Voslog', 'Site_Instellingen', 'Auto', 'Auto_Positie', 'Preflight_Checklist'] as $t) {
         $chk = $conn->query("SHOW TABLES LIKE '{$t}'");
         if (!$chk || $chk->num_rows === 0) {
             $missingTables[] = $t;
@@ -335,7 +336,13 @@ function handle_run_diagnostics(mysqli $conn, string $webroot): void {
     }
 
     // 3. Essentiële Cronjobs
-    $keyCrons = ['areas', 'articles', 'auto_backup', 'subscriptions', 'push_queue'];
+    $keyCronPairs = [
+        ['API_Areas', 'areas'],
+        ['API_Articles', 'articles'],
+        ['MAINT_Backup', 'auto_backup'],
+        ['API_Subscriptions', 'subscriptions'],
+        ['PUSH_Queue', 'push_queue']
+    ];
     $cronRes = $conn->query("SELECT name, enabled, `interval` FROM Cronjobs");
     $activeCrons = [];
     if ($cronRes) {
@@ -345,7 +352,19 @@ function handle_run_diagnostics(mysqli $conn, string $webroot): void {
             }
         }
     }
-    $missingCrons = array_diff($keyCrons, array_keys($activeCrons));
+    $missingCrons = [];
+    foreach ($keyCronPairs as $pair) {
+        $found = false;
+        foreach ($pair as $nameCandidate) {
+            if (isset($activeCrons[$nameCandidate])) {
+                $found = true;
+                break;
+            }
+        }
+        if (!$found) {
+            $missingCrons[] = $pair[0];
+        }
+    }
 
     // Check last run from Cronlogs
     $lastLogRes = $conn->query("SELECT MAX(exec_time) as last_run FROM Cronlogs");
@@ -546,20 +565,33 @@ function handle_run_diagnostics(mysqli $conn, string $webroot): void {
     $hunters = $userRoles[1] ?? 0;
     $admins = ($userRoles[2] ?? 0) + ($userRoles[3] ?? 0);
 
-    $carRes = $conn->query("SELECT COUNT(*) as cnt FROM Auto");
-    $cars = $carRes ? (int)($carRes->fetch_assoc()['cnt'] ?? 0) : 0;
+    $carRes = $conn->query("SELECT COUNT(*) as total, SUM(CASE WHEN hunter_code IS NOT NULL AND hunter_code != '' THEN 1 ELSE 0 END) as registered FROM Auto");
+    $carStats = $carRes ? $carRes->fetch_assoc() : ['total' => 0, 'registered' => 0];
+    $cars = (int)($carStats['total'] ?? 0);
+    $registeredCars = (int)($carStats['registered'] ?? 0);
 
     $kioskRes = $conn->query("SELECT COUNT(*) as cnt FROM Kiosk_Accounts");
     $kiosks = $kioskRes ? (int)($kioskRes->fetch_assoc()['cnt'] ?? 0) : 0;
 
     if ($hunters > 0 && $cars > 0) {
-        $checks['fleet_kiosks'] = [
-            'status' => 'ok',
-            'title' => 'Jagersvloot & Kiosken',
-            'message' => "{$cars} geregistreerde auto('s), {$hunters} jagers, {$admins} beheerders",
-            'details' => "Kiosk accounts actief: {$kiosks}. Vlootconfiguratie gereed.",
-            'latency_ms' => null
-        ];
+        if ($registeredCars < $cars) {
+            $unreg = $cars - $registeredCars;
+            $checks['fleet_kiosks'] = [
+                'status' => 'warning',
+                'title' => 'Jagersvloot & Kiosken',
+                'message' => "{$cars} voertuigen ({$registeredCars}/{$cars} geregistreerd op Jotihunt.nl), {$hunters} jagers",
+                'details' => "Let op: {$unreg} voertuig(en) hebben nog geen officiële huntercode of raampas. Kiosk accounts actief: {$kiosks}.",
+                'latency_ms' => null
+            ];
+        } else {
+            $checks['fleet_kiosks'] = [
+                'status' => 'ok',
+                'title' => 'Jagersvloot & Kiosken',
+                'message' => "{$cars} geregistreerde voertuigen (100% gekoppeld met Jotihunt.nl), {$hunters} jagers",
+                'details' => "Alle raampassen en codes zijn gesynchroniseerd. Kiosk accounts actief: {$kiosks}.",
+                'latency_ms' => null
+            ];
+        }
     } else {
         $checks['fleet_kiosks'] = [
             'status' => 'warning',

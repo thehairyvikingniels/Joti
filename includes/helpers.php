@@ -174,6 +174,109 @@ if (!function_exists('convertRdToWgs')) {
 }
 
 /**
+ * Convert WGS84 GPS latitude/longitude to Dutch Rijksdriehoekstelsel (RD) coordinates.
+ *
+ * @param float $lat GPS Latitude
+ * @param float $lon GPS Longitude
+ * @return array{rd_x: float, rd_y: float}
+ */
+if (!function_exists('convertWgsToRd')) {
+    function convertWgsToRd(float $lat, float $lon): array {
+        $phi_0 = 52.15517440;
+        $lam_0 = 5.38720621;
+        $dphi = 0.36 * ($lat - $phi_0);
+        $dlam = 0.36 * ($lon - $lam_0);
+
+        $somX = (190094.945 * $dlam)
+              + (-11832.228 * $dphi * $dlam)
+              + (-114.221 * pow($dphi, 2) * $dlam)
+              + (-32.391 * pow($dlam, 3))
+              + (-0.705 * $dphi)
+              + (-2.340 * pow($dphi, 3) * $dlam)
+              + (-0.608 * $dphi * pow($dlam, 3))
+              + (0.148 * pow($dphi, 4) * $dlam);
+
+        $somY = (309056.544 * $dphi)
+              + (3638.893 * pow($dlam, 2))
+              + (72.01 * $dphi * pow($dlam, 2))
+              + (-157.976 * pow($dphi, 2))
+              + (31.62 * pow($dphi, 3))
+              + (-3.921 * pow($dphi, 4))
+              + (-0.106 * pow($dlam, 4));
+
+        return [
+            'rd_x' => (float)round(155000 + $somX),
+            'rd_y' => (float)round(463000 + $somY)
+        ];
+    }
+}
+
+/**
+ * Dynamically computes coordinate start digits and prefill configurations
+ * for each deelgebied based on current scout group locations in Groepen.
+ *
+ * @param mysqli $conn
+ * @return array<string, array{prefill_x: string, placeholder_x: string, prefill_y: string, placeholder_y: string, is_fixed_x: bool}>
+ */
+if (!function_exists('getDeelgebiedenCoordinatePrefills')) {
+    function getDeelgebiedenCoordinatePrefills(mysqli $conn): array {
+        $stmt = $conn->prepare("SELECT deelgebied, lat, lon FROM Groepen WHERE lat IS NOT NULL AND lon IS NOT NULL");
+        if (!$stmt) {
+            return [];
+        }
+        $stmt->execute();
+        $res = $stmt->get_result();
+
+        $byArea = [];
+        while ($row = $res->fetch_assoc()) {
+            $area = trim((string)$row['deelgebied']);
+            if ($area === '') continue;
+            if (!isset($byArea[$area])) {
+                $byArea[$area] = ['xs' => [], 'ys' => []];
+            }
+            $rd = convertWgsToRd((float)$row['lat'], (float)$row['lon']);
+            $byArea[$area]['xs'][] = $rd['rd_x'];
+            $byArea[$area]['ys'][] = $rd['rd_y'];
+        }
+        $stmt->close();
+
+        $prefills = [];
+        foreach ($byArea as $area => $coords) {
+            $minX = min($coords['xs']);
+            $maxX = max($coords['xs']);
+            $minY = min($coords['ys']);
+            $maxY = max($coords['ys']);
+
+            // 100% 1 if all scout groups in this deelgebied have RD X in [100000, 199999]
+            $is100X1 = ($minX >= 100000 && $maxX < 200000);
+            // 100% 4 if all scout groups in this deelgebied have RD Y in [400000, 499999]
+            $is100Y4 = ($minY >= 400000 && $maxY < 500000);
+
+            $prefills[$area] = [
+                'prefill_x' => $is100X1 ? '1***' : '',
+                'placeholder_x' => $is100X1 ? '1***' : '****',
+                'prefill_y' => $is100Y4 ? '4***' : '',
+                'placeholder_y' => $is100Y4 ? '4***' : '4***',
+                'is_fixed_x' => $is100X1
+            ];
+            $prefills[strtolower($area)] = $prefills[$area];
+        }
+
+        // Oscar hunts across all deelgebieden (Gelderland wide)
+        $prefills['Oscar'] = [
+            'prefill_x' => '',
+            'placeholder_x' => '****',
+            'prefill_y' => '4***',
+            'placeholder_y' => '4***',
+            'is_fixed_x' => false
+        ];
+        $prefills['oscar'] = $prefills['Oscar'];
+
+        return $prefills;
+    }
+}
+
+/**
  * Resolve client IP address taking reverse proxy headers (HTTP_X_FORWARDED_FOR) into account.
  *
  * @return string
@@ -501,4 +604,129 @@ if (!function_exists('bitbyte2string')) {
         return $numStr . ' ' . $units[$idx] . ($perSecond ? '/s' : '');
     }
 }
+
+/**
+ * Render HTML for a fox badge with high-contrast hunt immunity styling (Option 1: Modern Split Pill).
+ *
+ * @param string $fox_name e.g. "Alpha"
+ * @param array $vos_info Array containing 'Kleur', 'duratie', and optional 'immune_until'
+ * @param bool $is_mobile True if rendered for mobile grid
+ * @return string HTML output
+ */
+if (!function_exists('renderFoxBadge')) {
+    function renderFoxBadge(string $fox_name, array $vos_info, bool $is_mobile = false): string {
+        $color = $vos_info['Kleur'] ?? 'gray';
+        $duratie = $vos_info['duratie'] ?? '';
+        $initial = substr($fox_name, 0, 1);
+        $immune_until = $vos_info['immune_until'] ?? null;
+        $is_immune = ($immune_until !== null && $immune_until > time());
+
+        $tw_color = match ($color) {
+            'red' => 'bg-red-500 text-white',
+            'orange' => 'bg-orange-500 text-white',
+            'green' => 'bg-green-500 text-white',
+            default => 'bg-gray-200 text-gray-700',
+        };
+
+        $base_class = $is_mobile ? 'rounded py-2 px-3 flex items-center justify-center font-bold text-sm shadow-sm' : 'px-2 py-1 rounded text-xs font-bold flex items-center shadow-sm';
+
+        if (!$is_immune) {
+            return '<div class="' . $base_class . ' ' . $tw_color . ' whitespace-nowrap">'
+                . '<span class="' . ($is_mobile ? 'mr-2' : 'mr-1') . '">' . htmlspecialchars($initial) . '</span>'
+                . '<span>' . htmlspecialchars($duratie) . '</span>'
+                . '</div>';
+        }
+
+        $diff = $immune_until - time();
+        $m = floor($diff / 60);
+        $s = $diff % 60;
+        $timer_text = ($diff > 0) ? "{$m}m {$s}s" : '0m 0s';
+
+        $pad = $is_mobile ? 'py-1.5 px-2.5 gap-2 text-sm' : 'py-0.5 px-1.5 gap-1.5 text-xs';
+        $pod_pad = $is_mobile ? 'px-2 py-0.5 text-xs' : 'px-1.5 py-0.5 text-[11px]';
+        $lock_size = $is_mobile ? 'text-[11px]' : 'text-[9px]';
+
+        return '<div class="fox-badge-container rounded-md font-bold flex items-center justify-center shadow-sm ' . $tw_color . ' whitespace-nowrap ' . $pad . ' border border-black/10" '
+            . 'data-fox="' . htmlspecialchars($fox_name) . '" '
+            . 'data-color="' . htmlspecialchars($color) . '" '
+            . 'data-initial="' . htmlspecialchars($initial) . '" '
+            . 'data-duratie="' . htmlspecialchars($duratie) . '" '
+            . 'data-until="' . $immune_until . '" '
+            . 'data-mobile="' . ($is_mobile ? '1' : '0') . '">'
+            . '<span class="font-extrabold tracking-wide select-none drop-shadow-sm">' . htmlspecialchars($initial) . '</span>'
+            . '<div class="bg-slate-950/90 text-amber-300 ring-1 ring-amber-400/50 ' . $pod_pad . ' rounded font-mono font-bold flex items-center shadow-inner tracking-tight">'
+            . '<i class="fas fa-lock ' . $lock_size . ' text-amber-400 mr-1.5 opacity-90"></i>'
+            . '<span class="immune-countdown" data-until="' . $immune_until . '" data-duratie="' . htmlspecialchars($duratie) . '">' . $timer_text . '</span>'
+            . '</div>'
+            . '</div>';
+    }
+}
+
+/**
+ * Return FontAwesome icon class for vehicle/hunter type.
+ */
+if (!function_exists('getVehicleIcon')) {
+    function getVehicleIcon(?string $type): string {
+        switch ($type) {
+            case 'motorcycle': return 'fa-motorcycle';
+            case 'scooter': return 'fa-motorcycle';
+            case 'bike': return 'fa-bicycle';
+            case 'foot': return 'fa-walking';
+            case 'other': return 'fa-helicopter';
+            default: return 'fa-car';
+        }
+    }
+}
+
+/**
+ * Return Dutch label for vehicle/hunter type.
+ */
+if (!function_exists('getVehicleLabel')) {
+    function getVehicleLabel(?string $type): string {
+        switch ($type) {
+            case 'motorcycle': return 'Motor';
+            case 'scooter': return 'Scooter';
+            case 'bike': return 'Fiets';
+            case 'foot': return 'Lopend';
+            case 'other': return 'Overig';
+            default: return 'Auto';
+        }
+    }
+}
+
+/**
+ * Return hex color code for RDW color name or custom hex string.
+ */
+if (!function_exists('getRdwColorHex')) {
+    function getRdwColorHex(?string $colorName): string {
+        if (empty($colorName)) return '#64748b';
+        $c = strtoupper(trim($colorName));
+        if (preg_match('/^#[0-9A-F]{6}$/i', $c)) {
+            return $c;
+        }
+        switch ($c) {
+            case 'ZWART': return '#18181b';
+            case 'WIT': return '#cbd5e1';
+            case 'GRIJS': return '#64748b';
+            case 'ZILVER': return '#94a3b8';
+            case 'BLAUW': return '#2563eb';
+            case 'ROOD': return '#dc2626';
+            case 'GROEN': return '#16a34a';
+            case 'GEEL': return '#eab308';
+            case 'ORANJE': return '#ea580c';
+            case 'BRUIN': return '#78350f';
+            case 'PAARS': return '#9333ea';
+            case 'ROSE':
+            case 'ROZE': return '#ec4899';
+            case 'BEIGE': return '#d4b896';
+            case 'CREME': return '#fde047';
+            case 'GOUD': return '#d97706';
+            case 'DIVERSEN':
+            case 'MEERKLEURIG': return '#6366f1';
+            default: return '#64748b';
+        }
+    }
+}
+
+
 

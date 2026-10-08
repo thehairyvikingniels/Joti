@@ -25,6 +25,7 @@ GROUP BY
 HAVING
   nextcron IS NULL OR UNIX_TIMESTAMP(now()) >= nextcron - 12"; 
 
+$dispatchedCount = 0;
 $stmt_cron = $conn->prepare($sql);
 if ($stmt_cron) {
     $stmt_cron->execute();
@@ -33,6 +34,7 @@ if ($stmt_cron) {
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             $target = $row['URL'];
+            $dispatchedCount++;
             
             // Execute as an isolated HTTP request if it's a web URL
             if (strpos($target, 'http') === 0) {
@@ -53,4 +55,30 @@ if ($stmt_cron) {
     }
     $stmt_cron->close();
 }
+
+// Record master cron runner heartbeat and metrics in Site_Instellingen
+$duration_ms = (int)round((microtime(true) - START_TIME) * 1000);
+$now = date('Y-m-d H:i:s');
+$info = json_encode([
+    'timestamp' => $now,
+    'duration_ms' => $duration_ms,
+    'tasks_dispatched' => $dispatchedCount,
+    'sapi' => PHP_SAPI
+]);
+
+$stmt_hb = $conn->prepare("INSERT INTO Site_Instellingen (Instelling, Waarde, Omschrijving) VALUES ('CRON_MASTER_LAST_RUN', ?, 'Laatste uitvoeringstijd van cron/index.php') ON DUPLICATE KEY UPDATE Waarde = VALUES(Waarde)");
+if ($stmt_hb) {
+    $stmt_hb->bind_param("s", $now);
+    $stmt_hb->execute();
+    $stmt_hb->close();
+}
+
+$stmt_hbi = $conn->prepare("INSERT INTO Site_Instellingen (Instelling, Waarde, Omschrijving) VALUES ('CRON_MASTER_INFO', ?, 'Laatste uitvoeringsdetails van cron/index.php') ON DUPLICATE KEY UPDATE Waarde = VALUES(Waarde)");
+if ($stmt_hbi) {
+    $stmt_hbi->bind_param("s", $info);
+    $stmt_hbi->execute();
+    $stmt_hbi->close();
+}
+
 $conn->close();
+

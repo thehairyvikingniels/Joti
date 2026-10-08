@@ -833,13 +833,14 @@ switch ($action) {
 
         // 1. Ensure Cronjobs table has standard jobs
         $defaultJobs = [
-            ['areas', 1, 'cron/areas.php', 'Vossen statussen synchroniseren met Jotihunt.nl API', 30],
-            ['articles', 1, 'cron/articles.php', 'Nieuws, hints en opdrachten synchroniseren', 60],
-            ['push_queue', 1, 'cron/notifications.php', 'Push notificaties en Telegram berichten wachtrij verwerken', 35],
-            ['subscriptions', 1, 'cron/subscriptions.php', 'Deelnemende scoutinggroepen synchroniseren', 300],
-            ['welcome', 0, 'cron/welcome.php', 'Automatisch welkomstbericht bij nadering clubhuis', 60],
-            ['jotiPortal', 1, 'cron/scraper_helper.php', 'Punten, hunts en telegram registratiecode scrapen', 180],
-            ['auto_backup', 1, 'cron/backup.php', 'Automatische database- en mediaback-up met getrapte bewaartermijn', 3600]
+            ['API_Areas', 1, 'cron/areas.php', 'Synchronize fox team coordinates and hunt statuses with the Jotihunt.nl API', 30],
+            ['API_Articles', 1, 'cron/articles.php', 'Synchronize game news, hint articles, and assignment updates with the Jotihunt.nl API', 60],
+            ['API_PhotoAssign', 1, 'cron/fotoopdrachten.php', 'Synchronize photo assignments, submissions, and approval statuses with the Jotihunt.nl API', 90],
+            ['API_Subscriptions', 1, 'cron/subscriptions.php', 'Synchronize participating scouting groups and locations with the Jotihunt.nl API', 300],
+            ['SCRAPE_Portal', 1, 'cron/scraper_helper.php', 'Scrape group points, completed hunts, and Telegram registration codes from the official portal', 180],
+            ['PUSH_Queue', 1, 'cron/notifications.php', 'Process and dispatch outgoing Web Push notifications and Telegram broadcast messages', 35],
+            ['GEO_Welcome', 0, 'cron/welcome.php', 'Send automated welcome messages when hunters approach the basecamp perimeter', 60],
+            ['MAINT_Backup', 1, 'cron/backup.php', 'Create automated system backups and prune historical archives according to retention policy', 3600]
         ];
 
         $stmt = $conn->prepare("INSERT INTO Cronjobs (name, enabled, URL, description, `interval`) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE enabled = VALUES(enabled), `interval` = VALUES(`interval`)");

@@ -27,10 +27,19 @@ SET time_zone = "+00:00";
 CREATE TABLE IF NOT EXISTS `Auto` (
   `kenteken` char(8) NOT NULL,
   `eigenaar` int(11) NOT NULL,
+  `hunter_type` enum('car','motorcycle','scooter','bike','foot','other') NOT NULL DEFAULT 'car',
+  `rdw_kleur` varchar(32) DEFAULT NULL,
+  `aantal_zitplaatsen` int(3) DEFAULT NULL,
+  `naam` varchar(64) DEFAULT NULL,
+  `telefoon` varchar(32) DEFAULT NULL,
+  `hunter_code` varchar(16) DEFAULT NULL,
+  `hunter_portal_id` int(11) DEFAULT NULL,
+  `pdf_path` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `aangemaakt_op` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`kenteken`),
   KEY `eigenaar` (`eigenaar`),
+  KEY `hunter_portal_id` (`hunter_portal_id`),
   CONSTRAINT `Auto_ibfk_1` FOREIGN KEY (`eigenaar`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -93,7 +102,7 @@ CREATE TABLE IF NOT EXISTS `Auto_Toewijzingen` (
 --
 
 CREATE TABLE IF NOT EXISTS `Cronjobs` (
-  `name` varchar(16) NOT NULL,
+  `name` varchar(32) NOT NULL,
   `enabled` tinyint(1) NOT NULL DEFAULT 0,
   `URL` varchar(1024) NOT NULL,
   `description` varchar(2048) NOT NULL,
@@ -102,13 +111,14 @@ CREATE TABLE IF NOT EXISTS `Cronjobs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 INSERT INTO `Cronjobs` (`name`, `enabled`, `URL`, `description`, `interval`) VALUES
-('areas', 1, 'cron/areas.php', 'Vossen statussen synchroniseren met Jotihunt.nl API', 30),
-('articles', 1, 'cron/articles.php', 'Nieuws, hints en opdrachten synchroniseren', 60),
-('push_queue', 1, 'cron/notifications.php', 'Push notificaties en Telegram berichten wachtrij verwerken', 35),
-('subscriptions', 1, 'cron/subscriptions.php', 'Deelnemende scoutinggroepen synchroniseren', 300),
-('welcome', 0, 'cron/welcome.php', 'Automatisch welkomstbericht bij nadering clubhuis', 60),
-('jotiPortal', 1, 'cron/scraper_helper.php', 'Punten, hunts en telegram registratiecode scrapen', 180),
-('auto_backup', 1, 'cron/backup.php', 'Automatische database- en mediaback-up met getrapte bewaartermijn', 3600)
+('API_Areas', 1, 'cron/areas.php', 'Synchronize fox team coordinates and hunt statuses with the Jotihunt.nl API', 30),
+('API_Articles', 1, 'cron/articles.php', 'Synchronize game news, hint articles, and assignment updates with the Jotihunt.nl API', 60),
+('API_PhotoAssign', 1, 'cron/fotoopdrachten.php', 'Synchronize photo assignments, submissions, and approval statuses with the Jotihunt.nl API', 90),
+('API_Subscriptions', 1, 'cron/subscriptions.php', 'Synchronize participating scouting groups and locations with the Jotihunt.nl API', 300),
+('SCRAPE_Portal', 1, 'cron/scraper_helper.php', 'Scrape group points, completed hunts, and Telegram registration codes from the official portal', 180),
+('PUSH_Queue', 1, 'cron/notifications.php', 'Process and dispatch outgoing Web Push notifications and Telegram broadcast messages', 35),
+('GEO_Welcome', 0, 'cron/welcome.php', 'Send automated welcome messages when hunters approach the basecamp perimeter', 60),
+('MAINT_Backup', 1, 'cron/backup.php', 'Create automated system backups and prune historical archives according to retention policy', 3600)
 ON DUPLICATE KEY UPDATE `description` = VALUES(`description`), `interval` = VALUES(`interval`);
 
 -- --------------------------------------------------------
@@ -118,7 +128,7 @@ ON DUPLICATE KEY UPDATE `description` = VALUES(`description`), `interval` = VALU
 --
 
 CREATE TABLE IF NOT EXISTS `Cronlogs` (
-  `name` varchar(16) NOT NULL,
+  `name` varchar(32) NOT NULL,
   `exec_time` datetime NOT NULL,
   `exec_length` int(11) DEFAULT NULL,
   `exec_stat` int(11) DEFAULT NULL,
@@ -182,6 +192,32 @@ CREATE TABLE IF NOT EXISTS `Gebruikers_Tokens` (
 -- --------------------------------------------------------
 
 --
+-- Tabelstructuur voor tabel `Fotoopdrachten`
+--
+
+CREATE TABLE IF NOT EXISTS `Fotoopdrachten` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `external_id` int(11) DEFAULT NULL,
+  `titel` varchar(255) NOT NULL,
+  `omschrijving` longtext NOT NULL,
+  `start_at` datetime NOT NULL,
+  `end_at` datetime NOT NULL,
+  `max_punten` int(11) NOT NULL DEFAULT 5,
+  `ingestuurd_op` datetime DEFAULT NULL,
+  `ingestuurd_door` int(11) DEFAULT NULL,
+  `toegekende_punten` int(11) DEFAULT NULL,
+  `opmerkingen` text DEFAULT NULL,
+  `afbeelding_url` varchar(512) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_fotoopdracht_unique` (`titel`(191), `start_at`),
+  KEY `fk_fotoopdrachten_user` (`ingestuurd_door`),
+  CONSTRAINT `fk_fotoopdrachten_user` FOREIGN KEY (`ingestuurd_door`) REFERENCES `Gebruikers` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Tabelstructuur voor tabel `Groepen`
 --
 
@@ -212,6 +248,26 @@ CREATE TABLE IF NOT EXISTS `Hints` (
   `inhoud` text NOT NULL,
   `datum` datetime NOT NULL,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Tabelstructuur voor tabel `Jotihunt_Hunters`
+--
+
+CREATE TABLE IF NOT EXISTS `Jotihunt_Hunters` (
+  `portal_id` int(11) NOT NULL,
+  `type` varchar(32) NOT NULL DEFAULT 'car',
+  `naam` varchar(255) NOT NULL,
+  `telefoon` varchar(32) NOT NULL,
+  `code` varchar(16) NOT NULL,
+  `kenteken` varchar(16) DEFAULT NULL,
+  `pdf_file` varchar(255) DEFAULT NULL,
+  `last_scraped_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`portal_id`),
+  KEY `idx_kenteken` (`kenteken`),
+  KEY `idx_code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -589,8 +645,8 @@ INSERT IGNORE INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) 
 ('GROUP_ID', '0', 'The ID of the scout group using this website. Used for point calculations.'),
 ('GROUP_URL', 'https://example.com/', 'The URL of the scout group using this website. '),
 ('JOTIHUNT_CREDENTIALS',	'{\"username\":\"example@domain.com\",\"password\":\"example_password\"}',	'Credentials of the official Jotihunt website in JSON format.'),
-('REMEMBER_ME_HOURS', '72', 'Aantal uur dat een normale gebruiker (priv 0-1) ingelogd kan blijven. 0 = uitgeschakeld.'),
-('REMEMBER_ME_HOURS_ADMIN', '24', 'Aantal uur dat een admin (priv 2-3) ingelogd kan blijven. 0 = uitgeschakeld.'),
+('REMEMBER_ME_HOURS', '720', 'Aantal uur dat een normale gebruiker (priv 0-1) ingelogd kan blijven. 0 = uitgeschakeld.'),
+('REMEMBER_ME_HOURS_ADMIN', '720', 'Aantal uur dat een admin (priv 2-3) ingelogd kan blijven. 0 = uitgeschakeld.'),
 ('HAPPY_HOUR', '0', 'Active status flag for Jotihunt Happy Hour indicating double points for fox locations (0 or 1).'),
 ('TELEGRAM_API_ID', '0', 'Telegram API App ID from my.telegram.org for MTProto listener authentication.'),
 ('TELEGRAM_API_HASH', 'placeholder_api_hash', 'Telegram API App Hash from my.telegram.org for MTProto listener authentication.'),
@@ -598,7 +654,8 @@ INSERT IGNORE INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) 
 ('TELEGRAM_FORWARD_MODE', 'forward', 'Delivery mode for subscriber messages: forward (keeps bot header) or relay (clean text).'),
 ('TELEGRAM_INGEST_SECRET', 'placeholder_secret', 'Shared secret token required to authorize incoming Webhook and MTProto ingest requests.'),
 ('TELEGRAM_REGISTRATION_CODE', 'placeholder_code', 'Latest registration token scraped from the Jotihunt portal used to pair with @Jotihunt_bot.'),
-('TELEGRAM_BOT_TOKEN', '123456789:ABCdefGHIjklMNOpqrSTUvwxYZ', 'Optional Telegram Bot API token from @BotFather used for sending outbound broadcast notifications.');
+('TELEGRAM_BOT_TOKEN', '123456789:ABCdefGHIjklMNOpqrSTUvwxYZ', 'Optional Telegram Bot API token from @BotFather used for sending outbound broadcast notifications.'),
+('RDW_LOOKUP_ENABLED', '1', 'Schakel automatische RDW kenteken validatie en merk/model opvraging in (0 of 1)');
 
 --
 -- Standaardgroep voor schone installatie

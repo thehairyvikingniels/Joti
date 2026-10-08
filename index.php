@@ -130,7 +130,7 @@ $stmt->close();
 
                 <div class="flex items-center justify-between text-sm pt-1">
                   <label class="flex items-center space-x-2 cursor-pointer select-none opacity-85 hover:opacity-100 transition">
-                    <input type="checkbox" name="remember_me" value="1" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300">
+                    <input type="checkbox" name="remember_me" value="1" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300">
                     <span class="text-xs sm:text-sm font-semibold">Ingelogd blijven</span>
                   </label>
                 </div>

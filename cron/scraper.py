@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import sys
+import os
 import re
 import json
 import random
@@ -19,6 +20,8 @@ BASE_URL = "https://jotihunt.nl"
 LOGIN_URL = f"{BASE_URL}/login"
 DASHBOARD_URL = f"{BASE_URL}/scoutingGroup/dashboard"
 HUNTS_URL = f"{BASE_URL}/hunts"
+HUNTER_URL = f"{BASE_URL}/hunter"
+HUNTER_NEW_URL = f"{BASE_URL}/hunter/new"
 
 # A list of user-agent profiles to randomize requests
 PROFILES = [
@@ -59,6 +62,158 @@ PROFILES = [
         "Sec-Ch-Ua-Platform": '"Android"'
     }
 ]
+
+def scrape_hunters(session):
+    """Haalt alle geregistreerde hunters op van https://jotihunt.nl/hunter en downloadt de PDF raampassen."""
+    hunters_list = []
+    try:
+        hunter_page = session.get(HUNTER_URL, timeout=12)
+        hunter_page.raise_for_status()
+        hunter_soup = BeautifulSoup(hunter_page.text, 'html.parser')
+        
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        abs_passes_dir = os.path.join(base_dir, "media", "hunter_passes")
+        os.makedirs(abs_passes_dir, exist_ok=True)
+
+        hunter_table = hunter_soup.find('table')
+        if hunter_table and hunter_table.find('tbody'):
+            for row in hunter_table.find('tbody').find_all('tr'):
+                cols = row.find_all('td')
+                if len(cols) >= 6:
+                    h_type = cols[0].text.strip().lower()
+                    h_name = cols[1].text.strip()
+                    h_phone = cols[2].text.strip()
+                    h_code = cols[3].text.strip()
+                    h_plate = cols[4].text.strip().upper()
+                    
+                    actions_td = cols[5]
+                    download_link = actions_td.find('a', href=re.compile(r'/hunter/download/(\d+)'))
+                    portal_id = None
+                    if download_link and download_link.get('href'):
+                        m = re.search(r'/hunter/download/(\d+)', download_link['href'])
+                        if m:
+                            portal_id = int(m.group(1))
+
+                    pdf_rel_path = None
+                    if portal_id:
+                        pdf_filename = f"{portal_id}_{h_code}.pdf"
+                        abs_pdf_path = os.path.join(abs_passes_dir, pdf_filename)
+                        pdf_rel_path = f"media/hunter_passes/{pdf_filename}"
+                        
+                        try:
+                            if not os.path.exists(abs_pdf_path) or os.path.getsize(abs_pdf_path) == 0:
+                                dl_url = f"{BASE_URL}/hunter/download/{portal_id}"
+                                pdf_resp = session.get(dl_url, timeout=15)
+                                if pdf_resp.status_code == 200 and len(pdf_resp.content) > 100:
+                                    with open(abs_pdf_path, 'wb') as pf:
+                                        pf.write(pdf_resp.content)
+                        except Exception as pe:
+                            print(f"Waarschuwing: PDF downloaden mislukt voor hunter {portal_id}: {pe}", file=sys.stderr)
+
+                    hunters_list.append({
+                        "portal_id": portal_id,
+                        "type": h_type,
+                        "name": h_name,
+                        "phone": h_phone,
+                        "code": h_code,
+                        "license_plate": h_plate,
+                        "pdf_file": pdf_rel_path
+                    })
+    except Exception as e:
+        print(f"Waarschuwing: Fout bij ophalen van hunters: {e}", file=sys.stderr)
+    return hunters_list
+
+def register_hunter(session, h_type, h_name, h_phone, h_plate=""):
+    """Meldt een nieuw voertuig/hunter aan via https://jotihunt.nl/hunter/new."""
+    new_page = session.get(HUNTER_NEW_URL, timeout=12)
+    new_page.raise_for_status()
+    new_soup = BeautifulSoup(new_page.text, 'html.parser')
+    
+    csrf_token = None
+    token_input = new_soup.find('input', attrs={'name': '_token'})
+    if token_input:
+        csrf_token = token_input.get('value')
+    if not csrf_token:
+        meta_token = new_soup.find('meta', attrs={'name': 'csrf-token'})
+        if meta_token:
+            csrf_token = meta_token.get('content')
+            
+    if not csrf_token:
+        raise ValueError("Kon geen CSRF token vinden op hunter/new pagina.")
+        
+    payload = {
+        '_token': csrf_token,
+        'type': h_type,
+        'name': h_name,
+        'telephone': h_phone,
+        'license_plate': h_plate
+    }
+    
+    session.headers.update({'Referer': HUNTER_NEW_URL})
+    post_res = session.post(HUNTER_URL, data=payload, timeout=12)
+    post_res.raise_for_status()
+    time.sleep(random.uniform(1.0, 2.0))
+    return True
+
+def sync_and_register_vehicles(session, local_vehicles):
+    """
+    Vergelijkt lokale voertuigen met de geregistreerde hunters op Jotihunt.nl.
+    Meldt ontbrekende lokale voertuigen automatisch aan.
+    Downloadt PDF raampassen (alleen als ze nog niet lokaal bestaan).
+    """
+    portal_hunters = scrape_hunters(session)
+    if not local_vehicles:
+        return portal_hunters, []
+
+    # Bepaal welke portal hunters er al zijn
+    registered_plates = set()
+    registered_names = set()
+    for ph in portal_hunters:
+        plate = ph.get('license_plate', '').replace('-', '').replace(' ', '').upper()
+        if plate:
+            registered_plates.add(plate)
+        name = ph.get('name', '').strip().lower()
+        if name:
+            registered_names.add(name)
+
+    newly_registered = []
+    for lv in local_vehicles:
+        l_type = lv.get('type', 'car').lower()
+        l_plate = lv.get('clean_plate', '').replace('-', '').replace(' ', '').upper()
+        l_name = lv.get('naam', '').strip()
+        if '(' in l_name and ')' in l_name:
+            clean_name = re.sub(r'\s*\([^)]*\)$', '', l_name).strip()
+            if clean_name:
+                l_name = clean_name
+        l_phone = lv.get('telefoon', '').strip() or '0600000000'
+
+        is_already_on_portal = False
+        if l_type in ['car', 'motorcycle', 'scooter'] and l_plate:
+            if l_plate in registered_plates:
+                is_already_on_portal = True
+        elif l_name and l_name.lower() in registered_names:
+            is_already_on_portal = True
+
+        if not is_already_on_portal:
+            print(f"Nieuw lokaal voertuig gevonden dat nog niet op Jotihunt.nl staat: {l_name} ({l_type}, {lv.get('kenteken')}). Bezig met automatisch aanmelden...")
+            try:
+                portal_type = 'motorcycle' if l_type == 'scooter' else (l_type if l_type in ['car', 'motorcycle', 'bike', 'foot'] else 'other')
+                plate_arg = lv.get('kenteken', '') if (l_type in ['car', 'motorcycle', 'scooter'] and not lv.get('kenteken', '').startswith(('FIETS', 'VOET', 'HELI', 'OVERIG', 'BALLON', 'UNIT'))) else ''
+                register_hunter(session, portal_type, l_name, l_phone, plate_arg)
+                newly_registered.append(lv)
+                print(f" -> Succesvol aangemeld op Jotihunt.nl!")
+                if plate_arg and l_plate:
+                    registered_plates.add(l_plate)
+                registered_names.add(l_name.lower())
+            except Exception as re_err:
+                print(f"Waarschuwing: Aanmelden mislukt voor {l_name}: {re_err}", file=sys.stderr)
+
+    # Als er nieuwe voertuigen zijn aangemeld, haal de bijgewerkte lijst opnieuw op
+    if newly_registered:
+        time.sleep(random.uniform(1.5, 3.0))
+        portal_hunters = scrape_hunters(session)
+
+    return portal_hunters, newly_registered
 
 def main():
     print("Startende scraper voor Jotihunt portal...")
@@ -116,6 +271,36 @@ def main():
             
         dashboard_soup = BeautifulSoup(dashboard_page.text, 'html.parser')
         
+        # Check of er een specifieke actie is aangevraagd om een hunter te registreren
+        if "--register-hunter" in sys.argv:
+            idx = sys.argv.index("--register-hunter")
+            reg_args = sys.argv[idx+1:]
+            if len(reg_args) < 3:
+                print("Error: Minimaal type, naam en telefoonnummer vereist voor registratie.")
+                sys.exit(1)
+            h_type = reg_args[0]
+            h_name = reg_args[1]
+            h_phone = reg_args[2]
+            h_plate = reg_args[3] if len(reg_args) > 3 else ""
+            
+            print(f"Bezig met registreren van hunter: {h_name} ({h_type})...")
+            register_hunter(session, h_type, h_name, h_phone, h_plate)
+            print("Hunter succesvol geregistreerd op Jotihunt.nl! Ophalen van bijgewerkte lijst...")
+            time.sleep(1.0)
+            updated_hunters = scrape_hunters(session)
+            print(json.dumps({
+                "status": "success",
+                "registered": True,
+                "hunter": {
+                    "type": h_type,
+                    "name": h_name,
+                    "phone": h_phone,
+                    "license_plate": h_plate
+                },
+                "hunters": updated_hunters
+            }, indent=4, ensure_ascii=False))
+            sys.exit(0)
+
         time.sleep(random.uniform(1.5, 4.0))
 
         hunts_page = session.get(HUNTS_URL, timeout=10)
@@ -133,7 +318,8 @@ def main():
             "hunts": [],
             "opdrachten": [],
             "foto_opdrachten": [],
-            "telegram_code": None
+            "telegram_code": None,
+            "hunters": []
         }
 
         # Look for group_id in links or page text e.g. /scoutingGroup/12
@@ -212,11 +398,20 @@ def main():
                 titel = a_tag.text.strip()
                 opdracht_id = a_tag['href'].split('/')[-1]
                 punten_str = row.contents[-1].strip().replace("pt.", "").strip()
-                
+
+                # Extract remarks/opmerkingen if present in child tags or title attributes
+                opmerkingen = None
+                remark_elem = row.find(['p', 'span', 'small', 'i', 'div'], class_=re.compile("text-muted|text-gray|italic|comment|remark|opmerking|feedback", re.IGNORECASE))
+                if remark_elem and remark_elem != a_tag:
+                    opmerkingen = remark_elem.text.strip()
+                elif row.get('title'):
+                    opmerkingen = row.get('title', '').strip()
+
                 scraped_data["foto_opdrachten"].append({
                     "id": int(opdracht_id) if opdracht_id.isdigit() else None,
                     "titel": titel,
-                    "punten": int(punten_str) if punten_str.isdigit() else 0
+                    "punten": int(punten_str) if punten_str.isdigit() else 0,
+                    "opmerkingen": opmerkingen
                 })
 
         hunts_table = hunts_soup.find('tbody')
@@ -242,6 +437,21 @@ def main():
                         "punten": punten,
                         "hunttijd": hunttijd
                     })
+
+        local_vehicles = []
+        if "--local-vehicles" in sys.argv:
+            try:
+                lv_idx = sys.argv.index("--local-vehicles")
+                if lv_idx + 1 < len(sys.argv):
+                    local_vehicles = json.loads(sys.argv[lv_idx + 1])
+            except Exception as je:
+                print(f"Waarschuwing: Kon --local-vehicles JSON niet parsen: {je}", file=sys.stderr)
+
+        print("Hunters vergelijken, aanmelden en raampassen synchroniseren...")
+        time.sleep(random.uniform(1.0, 2.0))
+        portal_hunters, newly_registered = sync_and_register_vehicles(session, local_vehicles)
+        scraped_data["hunters"] = portal_hunters
+        scraped_data["newly_registered_count"] = len(newly_registered)
 
         # Output the scraped data as JSON to PHP
         print(json.dumps(scraped_data, indent=4, ensure_ascii=False))

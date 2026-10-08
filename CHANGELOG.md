@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [v2026.10.0] - 2026-10-08
+
+### Highlights
+- **Real-Time Collaborative Hints & Probeer Wildcard Modal (`hints.php`, `hints_helper.php`, `js/hints.js`)**: Real-time 2-second background sync scanner, strict 4-character hectometer coordinate fields (`maxlength="4"`), future-proof dynamic prefills (`1***` and `4***`) per deelgebied, universal wildcard Mapbox analysis, and 8-digit paste auto-splitting.
+- **Categorized Accordion Navigation (`includes/sidebar.php`)**: Redesigned sidebar navigation with categorized accordion groups (`Actie`, `Navigatie`, `Opdrachten`, `Informatie`, `Beheer`, `Systeem`) and relocated user settings shortcut to the profile footer.
+- **Mobile Usability & Persistent Session Renewal**: Tapping the topbar title or hamburger opens the mobile sidebar; remember-me enabled by default with 30-day sliding session retention.
+- **Interactive Fleet Management & Tactical Whiteboard (`autos.php`, `whiteboard.php`, `js/whiteboard.js`)**: Real-time Jotihunt vehicle sync, RDW license plate lookup, CSS top-down vehicle mockups with authentic paint colors, and passenger capacity limits.
+
+### Added
+- **Hints Management Engine (`hints.php`, `hints_helper.php`, `js/hints.js`)**:
+  - Strict 4-character hectometer coordinate fields (`maxlength="4"`) matching the official Jotihunt 8-digit puzzle solution format without 6-character auto-expansion.
+  - Future-proof dynamic coordinate prefills (`1***` for Alpha..Foxtrot, `4***` for all areas) computed per deelgebied from the `Groepen` table.
+  - Interactive "Probeer" Mapbox modal with universal wildcard analysis: candidate permutations for single wildcards, bounding box search envelopes for multi-wildcard patterns (e.g. `1*** / 4***`, `19** / 44**`), and connecting historical fox trail with distance calculation.
+  - Automatic 8-digit pasted coordinate pair splitting (`1924 4452` to X: `1924`, Y: `4452`).
+  - Real-time 2-second background sync scanner across team members with visual field updates.
+  - High-contrast themed "Sluiten" buttons and stats cards adapting to all UI themes.
+- **Categorized Sidebar Navigation (`includes/sidebar.php`, `includes/theme.php`)**:
+  - Reorganized sidebar navigation into logical collapsible accordion sections: Actie, Navigatie, Opdrachten, Informatie, Beheer (priv=2), and Systeem (priv=3).
+  - Relocated user settings directly to the username/profile button in the sidebar footer with responsive firstname truncation.
+- **Tactical Vehicle Visualization (`whiteboard.php`, `js/whiteboard.js`, `autos.php`)**:
+  - Added top-down CSS car mockups with RDW license plate lookup, true vehicle colors, and passenger occupancy indicators.
+  - Portal sync and color picker for vehicle management.
+- **Photo Assignments (`fotoopdrachten.php`)**:
+  - Dedicated photo assignments page, submission tracking, submitter attribution, and timezone fixes.
+- **Database Explorer & Cron Diagnostics (`admin/database.php`, `admin/cronjobs.php`)**:
+  - Full database explorer for inspecting and querying database tables.
+  - Master cron heartbeat checker, categorized titles, and execution logs modal.
+
+### Fixed
+- **Mobile Navigation (`includes/topbar.php`)**:
+  - Allowed opening the mobile sidebar by tapping either the hamburger icon or the page title.
+- **Persistent Authentication (`login.php`, `includes/auth.php`)**:
+  - Enabled "Stay logged in" (remember-me) by default, extended cookie retention to 30 days, and implemented sliding session renewal.
+- **Scout Group Logo Scraping (`cron/scraper.py`, `groepen.php`)**:
+  - Restored scout group logo scraping and sanitized image fallbacks.
+- **Telegram Broadcasting (`includes/telegram_parser.php`)**:
+  - Prevented outbound broadcast echo loops in parser and listener.
+
+---
+
 ## [v2026.09.0] - 2026-09-04
 
 ### Highlights

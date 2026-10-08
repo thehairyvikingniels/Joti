@@ -89,25 +89,7 @@ if ($stmt) {
     <?php
       if (isset($fox_names)) {
           foreach ($fox_names as $n) {
-            $tw_color = 'bg-gray-200 text-gray-700';
-            if ($vos[$n]['Kleur'] == 'red') $tw_color = 'bg-red-500 text-white';
-            elseif ($vos[$n]['Kleur'] == 'orange') $tw_color = 'bg-orange-500 text-white';
-            elseif ($vos[$n]['Kleur'] == 'green') $tw_color = 'bg-green-500 text-white';
-            
-            echo '<div class="rounded py-2 px-3 flex items-center justify-center font-bold text-sm shadow-sm '.$tw_color.' whitespace-nowrap"';
-            if (isset($vos[$n]["immune_until"])) {
-                echo ' style="background-image: repeating-linear-gradient(45deg, rgba(100, 116, 139, 0.4), rgba(100, 116, 139, 0.4) 8px, rgba(100, 116, 139, 0.1) 8px, rgba(100, 116, 139, 0.1) 16px);"';
-            }
-            echo '>';
-            echo '<span class="mr-2">'.htmlspecialchars(substr($n,0,1)).'</span>';
-            if (isset($vos[$n]["immune_until"])) {
-                $diff = $vos[$n]["immune_until"] - time();
-                $initial_text = ($diff > 0) ? floor($diff / 60) . 'm ' . ($diff % 60) . 's' : '0m 0s';
-                echo '<span class="immune-countdown" data-until="'.$vos[$n]["immune_until"].'" data-duratie="'.htmlspecialchars($vos[$n]["duratie"]).'">'.$initial_text.'</span>';
-            } else {
-                echo '<span>'.htmlspecialchars($vos[$n]["duratie"]).'</span>';
-            }
-            echo '</div>';
+              echo renderFoxBadge($n, $vos[$n], true);
           }
       }
     ?>

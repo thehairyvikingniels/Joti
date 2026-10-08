@@ -27,6 +27,18 @@ function parseAndDispatchTelegramMessage(
     $details = [];
     $push_sent = false;
 
+    // Ignore outbound broadcasts from Jotify itself to prevent echo loops
+    if (str_starts_with($text, '📢') || stripos($sender, 'jotify') !== false) {
+        return [
+            'success' => true,
+            'type' => 'ignored_self_broadcast',
+            'summary' => 'Ignored outgoing Jotify broadcast loop',
+            'details' => ['raw_text' => $text],
+            'push_sent' => false,
+            'message_id' => null
+        ];
+    }
+
     // 1. FOX STATUS CHANGE
     // Example: "Status van Charlie is gewijzigd in orange"
     if (preg_match('/Status van\s+([A-Za-z]+)\s+is gewijzigd in\s+(green|orange|red)/i', $text, $matches)) {
@@ -139,12 +151,15 @@ function parseAndDispatchTelegramMessage(
         );
         $push_sent = true;
 
-    // 4. ASSIGNMENT GRADED
+    // 4. ASSIGNMENT / FOTO-OPDRACHT GRADED OR SUBMITTED
+    // Example: "Jullie inzending voor de foto-opdracht 'Koe in de wei' is beoordeeld, jullie hebben daarvoor 5 punt(en) gekregen"
     // Example: "Jullie inzending voor de opdracht 'Light of Eärendil ✨' is beoordeeld, jullie hebben daarvoor 3 punt(en) gekregen"
-    } elseif (preg_match('/Jullie inzending voor de opdracht\s+[\'"](.+?)[\'"]\s+is beoordeeld,\s+jullie hebben daarvoor\s+(\d+)\s+punt\(en\)\s+gekregen/iu', $text, $matches)) {
-        $type = 'assignment_graded';
-        $assignmentTitle = trim($matches[1]);
-        $points = (int)$matches[2];
+    } elseif (preg_match('/Jullie inzending voor de (opdracht|foto-?opdracht)\s+[\'"](.+?)[\'"]\s+is (beoordeeld|ontvangen|ingediend)(?:,\s+jullie hebben daarvoor\s+(\d+)\s+punt\(en\)\s+gekregen)?/iu', $text, $matches)) {
+        $taskKind = strtolower($matches[1]);
+        $assignmentTitle = trim($matches[2]);
+        $action = strtolower($matches[3]);
+        $points = isset($matches[4]) ? (int)$matches[4] : null;
+        $isFoto = (stripos($taskKind, 'foto') !== false);
 
         // Optional jury feedback
         $feedback = null;
@@ -152,45 +167,72 @@ function parseAndDispatchTelegramMessage(
             $feedback = trim($fbMatch[1]);
         }
 
+        $type = $isFoto ? 'fotoopdracht_graded' : 'assignment_graded';
+        $summary = ($isFoto ? "Foto-opdracht" : "Opdracht") . " '{$assignmentTitle}' " . ($action === 'beoordeeld' ? "beoordeeld" . ($points !== null ? " (+{$points} pt)" : "") : "ingediend");
+
         $details = [
             'title' => $assignmentTitle,
+            'is_foto' => $isFoto,
+            'action' => $action,
             'points' => $points,
             'feedback' => $feedback
         ];
-        $summary = "Opdracht '{$assignmentTitle}' beoordeeld (+{$points} pt)";
 
-        // Try updating matching Opdrachten row
         $searchPattern = '%' . $assignmentTitle . '%';
-        $stmt = $conn->prepare("UPDATE Opdrachten SET ingestuurd_op = NOW() WHERE titel LIKE ? AND ingestuurd_op IS NULL");
-        if ($stmt) {
-            $stmt->bind_param("s", $searchPattern);
-            $stmt->execute();
-            $stmt->close();
-        }
 
-        // Update group opdrachten points in Punten table
-        $stmt_pts = $conn->prepare("UPDATE Punten SET opdrachten = opdrachten + ?, last_updated = NOW() WHERE groep_id = (SELECT CAST(Waarde AS UNSIGNED) FROM Site_Instellingen WHERE Instelling = 'GROUP_ID' LIMIT 1)");
-        if ($stmt_pts) {
-            $stmt_pts->bind_param("i", $points);
-            $stmt_pts->execute();
-            $stmt_pts->close();
-        }
+        if ($isFoto) {
+            // Update Fotoopdrachten table
+            $stmt = $conn->prepare("UPDATE Fotoopdrachten SET ingestuurd_op = COALESCE(ingestuurd_op, NOW()), toegekende_punten = COALESCE(?, toegekende_punten), opmerkingen = COALESCE(?, opmerkingen) WHERE titel LIKE ?");
+            if ($stmt) {
+                $stmt->bind_param("iss", $points, $feedback, $searchPattern);
+                $stmt->execute();
+                $stmt->close();
+            }
 
-        $pushBody = "Jullie hebben {$points} punten gekregen voor '{$assignmentTitle}'.";
-        if (!empty($feedback)) {
-            $pushBody .= " Jury: " . substr($feedback, 0, 100);
-        }
+            if ($points !== null && $points > 0) {
+                $stmt_pts = $conn->prepare("UPDATE Punten SET foto_opdrachten = COALESCE(foto_opdrachten, 0) + ?, last_updated = NOW() WHERE groep_id = (SELECT CAST(Waarde AS UNSIGNED) FROM Site_Instellingen WHERE Instelling = 'GROUP_ID' LIMIT 1)");
+                if ($stmt_pts) {
+                    $stmt_pts->bind_param("i", $points);
+                    $stmt_pts->execute();
+                    $stmt_pts->close();
+                }
+            }
 
-        send_push_notification(
-            'ALL',
-            "Opdracht Beoordeeld (+{$points} pt)",
-            $pushBody,
-            '/opdrachten',
-            'telegram/parser',
-            null,
-            'opdrachten'
-        );
-        $push_sent = true;
+            $pushTitle = ($action === 'beoordeeld') ? "Foto-opdracht Beoordeeld (+{$points} pt)" : "Foto-opdracht Ingezonden";
+            $pushBody = ($action === 'beoordeeld') ? "Jullie hebben {$points} punten gekregen voor '{$assignmentTitle}'." : "De foto-opdracht '{$assignmentTitle}' is ingeleverd.";
+            if (!empty($feedback)) {
+                $pushBody .= " Jury: " . substr($feedback, 0, 100);
+            }
+
+            send_push_notification('ALL', $pushTitle, $pushBody, '/fotoopdrachten', 'telegram/parser', null, 'opdrachten');
+            $push_sent = true;
+        } else {
+            // Update regular Opdrachten table
+            $stmt = $conn->prepare("UPDATE Opdrachten SET ingestuurd_op = COALESCE(ingestuurd_op, NOW()) WHERE titel LIKE ? AND ingestuurd_op IS NULL");
+            if ($stmt) {
+                $stmt->bind_param("s", $searchPattern);
+                $stmt->execute();
+                $stmt->close();
+            }
+
+            if ($points !== null && $points > 0) {
+                $stmt_pts = $conn->prepare("UPDATE Punten SET opdrachten = COALESCE(opdrachten, 0) + ?, last_updated = NOW() WHERE groep_id = (SELECT CAST(Waarde AS UNSIGNED) FROM Site_Instellingen WHERE Instelling = 'GROUP_ID' LIMIT 1)");
+                if ($stmt_pts) {
+                    $stmt_pts->bind_param("i", $points);
+                    $stmt_pts->execute();
+                    $stmt_pts->close();
+                }
+            }
+
+            $pushTitle = ($action === 'beoordeeld') ? "Opdracht Beoordeeld (+{$points} pt)" : "Opdracht Ingezonden";
+            $pushBody = ($action === 'beoordeeld') ? "Jullie hebben {$points} punten gekregen voor '{$assignmentTitle}'." : "De opdracht '{$assignmentTitle}' is ingeleverd.";
+            if (!empty($feedback)) {
+                $pushBody .= " Jury: " . substr($feedback, 0, 100);
+            }
+
+            send_push_notification('ALL', $pushTitle, $pushBody, '/opdrachten', 'telegram/parser', null, 'opdrachten');
+            $push_sent = true;
+        }
 
     // 5. HAPPY HOUR
     } elseif (preg_match('/\bHAPPY\s*HOUR\b/i', $text)) {

@@ -557,11 +557,13 @@ if (file_exists($lockFile)) {
                 <div class="bg-slate-900/30 p-4 rounded-xl border border-slate-700/40 text-xs text-slate-400 space-y-1">
                     <p class="font-semibold text-slate-300">Standaard geactiveerde taken:</p>
                     <ul class="list-disc list-inside space-y-0.5">
-                        <li><strong class="text-slate-300">areas.php</strong>: Vossenstatussen synchroniseren met Jotihunt.nl (30s)</li>
-                        <li><strong class="text-slate-300">articles.php</strong>: Nieuws, hints & opdrachten ophalen (60s)</li>
-                        <li><strong class="text-slate-300">notifications.php</strong>: Pushnotificaties & Telegram verzending (40s)</li>
-                        <li><strong class="text-slate-300">subscriptions.php</strong>: Deelnemende scoutinggroepen synchroniseren (300s)</li>
-                        <li><strong class="text-slate-300">jotiPortal</strong>: Automatisch punten & registratiecode scrapen (180s)</li>
+                        <li><strong class="text-slate-300">API_Areas</strong>: Vossenstatussen synchroniseren met Jotihunt.nl (30s)</li>
+                        <li><strong class="text-slate-300">API_Articles</strong>: Nieuws, hints & opdrachten ophalen (60s)</li>
+                        <li><strong class="text-slate-300">API_PhotoAssign</strong>: Foto-opdrachten synchroniseren (90s)</li>
+                        <li><strong class="text-slate-300">PUSH_Queue</strong>: Pushnotificaties & Telegram verzending (35s)</li>
+                        <li><strong class="text-slate-300">API_Subscriptions</strong>: Deelnemende scoutinggroepen synchroniseren (300s)</li>
+                        <li><strong class="text-slate-300">SCRAPE_Portal</strong>: Automatisch punten & registratiecode scrapen (180s)</li>
+                        <li><strong class="text-slate-300">MAINT_Backup</strong>: Automatische database- en mediaback-up (3600s)</li>
                     </ul>
                 </div>
 

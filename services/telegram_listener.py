@@ -166,7 +166,12 @@ async def main():
         
         # Only process messages from Jotihunt official bot or test bots
         is_target_bot = any(b.lower() == sender_username for b in TARGET_BOTS)
-        if not is_target_bot and not event.is_private:
+        if not is_target_bot:
+            return
+
+        # Never process messages originating from Jotify itself (prevents echo loops)
+        if "jotify" in sender_username or (event.raw_text or "").startswith("📢"):
+            logger.info(f"Ignoring outbound Jotify broadcast from @{sender_username}")
             return
 
         raw_text = event.raw_text or ''
