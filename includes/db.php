@@ -8,6 +8,10 @@ declare(strict_types=1);
  * All functions use prepared statements with strict typing and parameter binding.
  */
 
+if (date_default_timezone_get() !== 'Europe/Amsterdam') {
+    date_default_timezone_set('Europe/Amsterdam');
+}
+
 /**
  * Execute a prepared SQL statement and return the mysqli_result (or bool for non-SELECT queries).
  *

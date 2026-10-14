@@ -23,10 +23,6 @@ if (!function_exists('parseToTimestamp')) {
             return (int)$ts;
         }
         $str = trim((string)$ts);
-        // If standard MySQL datetime without timezone offset (e.g. '2026-09-01 10:12:39'), treat as UTC
-        if (preg_match('/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/', $str)) {
-            $str .= ' UTC';
-        }
         $parsed = strtotime($str);
         return $parsed !== false ? $parsed : null;
     }
@@ -46,6 +42,11 @@ if (!function_exists('time2str')) {
         }
 
         $diff = time() - $timestamp;
+
+        // Minor clock skew tolerance: timestamps up to 10 seconds in the future are considered "Zojuist"
+        if ($diff < 0 && $diff >= -10) {
+            $diff = 0;
+        }
 
         if ($diff >= 0) {
             if ($diff < 60) return 'Zojuist';
