@@ -327,11 +327,11 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
         <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
           <h3 class="text-xl font-bold flex items-center gap-2"><i class="fab fa-telegram-plane"></i> <span>Telegram Koppeling & Meldingen</span></h3>
           <?php if ($is_linked): ?>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-300 border border-green-500/30">
-              <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Gekoppeld
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-sm">
+              <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> Gekoppeld
             </span>
           <?php else: ?>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-600 text-white shadow-sm">
               Niet gekoppeld
             </span>
           <?php endif; ?>
@@ -347,21 +347,19 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
 
           <?php if ($is_linked): ?>
             <!-- Gekoppeld Status Weergave -->
-            <div class="p-4 rounded-xl border bg-green-50/50 border-green-200 dark:bg-green-950/20 dark:border-green-800/40">
-              <div class="flex items-start gap-3">
-                <div class="p-2 rounded-lg bg-green-500 text-white mt-0.5">
-                  <i class="fas fa-check-circle text-lg"></i>
-                </div>
-                <div class="flex-1">
-                  <h4 class="text-sm font-bold text-green-900 dark:text-green-300">Account succesvol gekoppeld!</h4>
-                  <p class="text-xs text-green-800/80 dark:text-green-300/80 mt-1">
-                    Jouw Telegram Chat ID is <code class="font-mono font-bold"><?= htmlspecialchars($telegram_chat_id) ?></code>. Je ontvangt automatische updates van spelgebeurtenissen via de 40-seconden notificatie-wachtrij.
-                  </p>
-                  <p class="text-xs text-green-800/80 dark:text-green-300/80 mt-2 flex items-center gap-1.5">
-                    <i class="fas fa-satellite-dish text-green-600"></i>
-                    <span><strong>Live Locatie:</strong> Deel je live locatie via de paperclip 📎 in Telegram om continu op de kaart zichtbaar te blijven.</span>
-                  </p>
-                </div>
+            <div class="p-4 rounded-xl border flex items-start gap-3 shadow-sm" style="background-color: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.35); color: var(--theme-text);">
+              <div class="p-2 rounded-lg bg-emerald-600 text-white mt-0.5 shadow-sm flex-shrink-0">
+                <i class="fas fa-check-circle text-lg"></i>
+              </div>
+              <div class="flex-1 space-y-1">
+                <h4 class="text-sm font-bold text-emerald-600 dark:text-emerald-400">Account succesvol gekoppeld!</h4>
+                <p class="text-xs opacity-90 leading-relaxed" style="color: var(--theme-text);">
+                  Jouw Telegram Chat ID is <code class="font-mono font-bold px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10"><?= htmlspecialchars($telegram_chat_id) ?></code>. Je ontvangt automatische updates van spelgebeurtenissen via de 40-seconden notificatie-wachtrij.
+                </p>
+                <p class="text-xs opacity-90 leading-relaxed flex items-center gap-1.5 pt-1" style="color: var(--theme-text);">
+                  <i class="fas fa-satellite-dish text-emerald-600 dark:text-emerald-400"></i>
+                  <span><strong>Live Locatie:</strong> Deel je live locatie via de paperclip 📎 in Telegram om continu op de kaart zichtbaar te blijven.</span>
+                </p>
               </div>
             </div>
 
@@ -417,7 +415,7 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
               <div class="text-xs opacity-70 space-y-1 text-left max-w-md mx-auto pt-2 border-t border-gray-200/60 dark:border-gray-700/60">
                 <p class="font-semibold">Of koppel handmatig:</p>
                 <p>1. Open <a href="https://t.me/JotifyScoutBot" target="_blank" class="text-blue-500 font-bold hover:underline">@JotifyScoutBot</a> in Telegram.</p>
-                <p>2. Stuur het commando: <code class="font-mono bg-gray-200/60 dark:bg-gray-700 px-1 py-0.5 rounded">/start <?= htmlspecialchars($telegram_link_code) ?></code></p>
+                <p>2. Stuur het commando: <code class="font-mono font-bold px-2 py-0.5 rounded border select-all text-blue-600 dark:text-blue-400" style="background-color: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3);">/start <?= htmlspecialchars($telegram_link_code) ?></code></p>
                 <p>3. Druk op Verzenden. Je account is direct gekoppeld!</p>
               </div>
             </div>
