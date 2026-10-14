@@ -729,5 +729,169 @@ if (!function_exists('getRdwColorHex')) {
     }
 }
 
+/**
+ * Start and register a new tracked user session with initial telemetry.
+ *
+ * @param mysqli $conn Active database connection
+ * @param int $userId Authenticated user ID
+ * @param string $authMethod Authentication method ('password', 'remember_me', 'php_session')
+ * @return int|null New session ID, or null on failure
+ */
+if (!function_exists('startTrackedSession')) {
+    function startTrackedSession(mysqli $conn, int $userId, string $authMethod = 'password'): ?int {
+        if ($userId <= 0) {
+            return null;
+        }
+
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // 1. Opportunistic cleanup of stale sessions (> 30 mins of inactivity)
+        $conn->query("UPDATE User_Sessions SET status = 'expired', ended_at = last_activity WHERE status = 'active' AND last_activity < (NOW() - INTERVAL 30 MINUTE)");
+
+        // 2. Expire any still-active session for this user sharing the same PHP session ID
+        $phpSid = session_id() ?: null;
+        if ($phpSid !== null) {
+            $stmtExp = $conn->prepare("UPDATE User_Sessions SET status = 'expired', ended_at = NOW() WHERE user_id = ? AND php_session_id = ? AND status = 'active'");
+            if ($stmtExp) {
+                $stmtExp->bind_param("is", $userId, $phpSid);
+                $stmtExp->execute();
+                $stmtExp->close();
+            }
+        }
+
+        // 3. Resolve IP and Network info
+        $ip = function_exists('getClientIP') ? getClientIP() : ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+        $forwarded = isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? substr(trim((string)$_SERVER['HTTP_X_FORWARDED_FOR']), 0, 255) : null;
+        $ua = isset($_SERVER['HTTP_USER_AGENT']) ? substr((string)$_SERVER['HTTP_USER_AGENT'], 0, 512) : null;
+
+        if (!in_array($authMethod, ['password', 'remember_me', 'php_session'], true)) {
+            $authMethod = 'password';
+        }
+
+        // 4. Insert new User_Sessions record
+        $stmt = $conn->prepare(
+            "INSERT INTO User_Sessions (user_id, php_session_id, auth_method, ip_address, forwarded_for, user_agent, started_at, last_activity, status) 
+             VALUES (?, ?, ?, ?, ?, ?, NOW(3), NOW(3), 'active')"
+        );
+        if (!$stmt) {
+            error_log('startTrackedSession prepare failed: ' . $conn->error);
+            return null;
+        }
+
+        $stmt->bind_param("isssss", $userId, $phpSid, $authMethod, $ip, $forwarded, $ua);
+        if (!$stmt->execute()) {
+            error_log('startTrackedSession execute failed: ' . $stmt->error);
+            $stmt->close();
+            return null;
+        }
+
+        $sessionId = (int)$stmt->insert_id;
+        $stmt->close();
+
+        // 5. Initialize PHP session variables
+        $_SESSION['tracker_session_id'] = $sessionId;
+        $_SESSION['tracker_handshake_done'] = false;
+        $_SESSION['tracker_last_seen'] = time();
+
+        // 6. Record initial 'auth' event in Session_Events
+        $pageUrl = substr($_SERVER['REQUEST_URI'] ?? '/login.php', 0, 255);
+        $targetLabel = ($authMethod === 'remember_me')
+            ? 'Automatische login (Remember Me cookie)'
+            : (($authMethod === 'password') ? 'Inloggen met wachtwoord' : 'Sessie hersteld');
+
+        $stmtEv = $conn->prepare(
+            "INSERT INTO Session_Events (session_id, event_type, page_url, target_label, created_at) 
+             VALUES (?, 'auth', ?, ?, NOW(3))"
+        );
+        if ($stmtEv) {
+            $stmtEv->bind_param("iss", $sessionId, $pageUrl, $targetLabel);
+            $stmtEv->execute();
+            $stmtEv->close();
+        }
+
+        return $sessionId;
+    }
+}
+
+/**
+ * Terminate a tracked user session and record logout event.
+ *
+ * @param mysqli $conn Active database connection
+ * @param int|null $sessionId Optional session ID (defaults to $_SESSION['tracker_session_id'])
+ * @return void
+ */
+if (!function_exists('endTrackedSession')) {
+    function endTrackedSession(mysqli $conn, ?int $sessionId = null): void {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $sid = $sessionId ?? (!empty($_SESSION['tracker_session_id']) ? (int)$_SESSION['tracker_session_id'] : null);
+        if ($sid !== null && $sid > 0) {
+            $stmt = $conn->prepare("UPDATE User_Sessions SET status = 'logged_out', ended_at = NOW(3), last_activity = NOW(3) WHERE id = ? AND status = 'active'");
+            if ($stmt) {
+                $stmt->bind_param("i", $sid);
+                $stmt->execute();
+                $stmt->close();
+            }
+
+            $pageUrl = '/logout.php';
+            $label = 'Uitgelogd';
+            $stmtEv = $conn->prepare("INSERT INTO Session_Events (session_id, event_type, page_url, target_label, created_at) VALUES (?, 'auth', ?, ?, NOW(3))");
+            if ($stmtEv) {
+                $stmtEv->bind_param("iss", $sid, $pageUrl, $label);
+                $stmtEv->execute();
+                $stmtEv->close();
+            }
+        }
+
+        unset($_SESSION['tracker_session_id'], $_SESSION['tracker_handshake_done'], $_SESSION['tracker_last_seen']);
+    }
+}
+
+/**
+ * Ensure an authenticated request has an active tracked session.
+ *
+ * @param mysqli $conn Active database connection
+ * @param int $userId Authenticated user ID
+ * @return int|null Active session ID
+ */
+if (!function_exists('ensureTrackedSession')) {
+    function ensureTrackedSession(mysqli $conn, int $userId): ?int {
+        if ($userId <= 0) {
+            return null;
+        }
+
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $sessionId = !empty($_SESSION['tracker_session_id']) ? (int)$_SESSION['tracker_session_id'] : null;
+
+        if ($sessionId === null) {
+            return startTrackedSession($conn, $userId, 'php_session');
+        }
+
+        $lastSeen = (int)($_SESSION['tracker_last_seen'] ?? 0);
+        $now = time();
+
+        // If inactive for more than 30 minutes (1800 seconds), expire and start fresh session
+        if ($lastSeen > 0 && ($now - $lastSeen) > 1800) {
+            $stmt = $conn->prepare("UPDATE User_Sessions SET status = 'expired', ended_at = last_activity WHERE id = ? AND status = 'active'");
+            if ($stmt) {
+                $stmt->bind_param("i", $sessionId);
+                $stmt->execute();
+                $stmt->close();
+            }
+            return startTrackedSession($conn, $userId, 'php_session');
+        }
+
+        $_SESSION['tracker_last_seen'] = $now;
+        return $sessionId;
+    }
+}
+
 
 

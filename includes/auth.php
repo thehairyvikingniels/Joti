@@ -23,6 +23,8 @@ if (!file_exists(__DIR__ . '/../dblogin.php') || !file_exists(__DIR__ . '/../.in
 
 // 3. Load database connection & remember-me helper
 require_once(__DIR__ . '/../dblogin.php');
+require_once(__DIR__ . '/helpers.php');
+require_once(__DIR__ . '/db.php');
 require_once(__DIR__ . '/remember_me.php');
 
 // 3. Auth check — validate persistent cookie or redirect unauthenticated users
@@ -31,6 +33,7 @@ if (empty($_SESSION['id']) && empty($_SESSION['kiosk_id'])) {
     if ($rememberUserId !== null) {
         $_SESSION['id'] = $rememberUserId;
         session_regenerate_id(true);
+        startTrackedSession($conn, (int)$rememberUserId, 'remember_me');
     } else {
         $redirect = (basename(dirname($_SERVER['SCRIPT_FILENAME'])) === 'admin') ? '../index' : 'index';
         header('Location: ' . $redirect);
@@ -71,6 +74,7 @@ if ($user_id > 0) {
         $user_lat = $user_data['lat'] ?: 51.98769228691746;  // Default: HQ coordinates
         $user_lon = $user_data['lon'] ?: 5.876286397679744;
         $_SESSION['priv'] = $privilege;
+        ensureTrackedSession($conn, $user_id);
     } else {
         // User no longer exists in DB — clear remember token and destroy session
         clearCurrentRememberToken($conn);

@@ -21,6 +21,7 @@ if (!file_exists(__DIR__ . '/dblogin.php') || !file_exists(__DIR__ . '/.installe
 require_once('dblogin.php');
 require_once('includes/remember_me.php');
 require_once('includes/db.php');
+require_once('includes/helpers.php');
 
 if (isset($_POST['pswd1'])){
   if ((empty($_POST['voornaam'])) OR (empty($_POST['achternaam'])) OR (empty($_POST['email'])) OR (empty($_POST['gebruikersnaam'])) OR (empty($_POST['pswd0'])) OR (empty($_POST['pswd1']))){
@@ -133,6 +134,9 @@ if (isset($_POST['pswd1'])){
           $_SESSION['gebruikersnaam'] = $row['gebruikersnaam'] ?? '';
           $_SESSION['gps'] = "false";
           $_SESSION['theme'] = $row['theme'] ?? 'light';
+
+          // Initialize tracked user session for telemetry and audit correlation
+          startTrackedSession($conn, (int)$row['id'], 'password');
 
           // Handle "Ingelogd Blijven" (Remember Me) persistent cookie
           if (!empty($_POST['remember_me'])) {
