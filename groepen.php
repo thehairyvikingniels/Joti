@@ -82,7 +82,6 @@ require_once('includes/auth.php');
         echo '    </div>';
 
         echo '    <div class="flex gap-2 w-full md:w-auto mt-2 md:mt-0">';
-        echo '      <a href="#" class="flex-1 md:flex-none text-center bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm font-semibold transition shadow-sm">Tegenhunt</a>';
         echo '      <a href="http://www.google.com/maps/dir/?api=1&destination='.urlencode($row['straat'].' '.$row['huisnummer'].', '.$row['plaats']).'&travelmode=driving" target="_blank" class="flex-1 md:flex-none text-center theme-bg-primary hover:opacity-90 text-white px-4 py-2 rounded text-sm font-semibold transition shadow-sm">Navigeer</a>';
         echo '      <a href="http://www.google.com/maps/search/?api=1&query='.$row['lat'].','.$row['lon'].'" target="_blank" class="flex-1 md:flex-none text-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-semibold transition shadow-sm">Maps</a>';
         echo '    </div>';
