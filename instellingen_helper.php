@@ -1,6 +1,12 @@
 <?php
 // AJAX handler for user profile updates, password changes, API token regeneration, avatar uploads, and notification preferences.
 require_once('includes/auth.php');
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES) && isset($_SERVER['CONTENT_LENGTH']) && (int)$_SERVER['CONTENT_LENGTH'] > 0) {
+    header("Location: instellingen.php?e=" . urlencode("Het geüploade bestand is te groot voor de server (maximaal toegestane grootte overschreden).") . "&t=profielfoto#profielfoto");
+    exit();
+}
+
 if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['lastname']) && !empty($_POST['email'])) {
     
     // Profielgegevens updaten
@@ -73,7 +79,24 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
     header("Location: instellingen.php?e=" . urlencode("Profielfoto verwijderd") . "&t=profielfoto#profielfoto");
     die();
 
-} elseif (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+} elseif (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] !== UPLOAD_ERR_NO_FILE) {
+    if ($_FILES['profile_picture']['error'] !== UPLOAD_ERR_OK) {
+        $uploadErrors = [
+            UPLOAD_ERR_INI_SIZE   => 'De afbeelding is te groot (overschrijdt serverlimiet).',
+            UPLOAD_ERR_FORM_SIZE  => 'De afbeelding is te groot (overschrijdt formulierlimiet).',
+            UPLOAD_ERR_PARTIAL    => 'De afbeelding is slechts gedeeltelijk geüpload. Probeer het opnieuw.',
+            UPLOAD_ERR_NO_TMP_DIR => 'Serverfout: tijdelijke map ontbreekt.',
+            UPLOAD_ERR_CANT_WRITE => 'Serverfout: kan bestand niet opslaan op schijf.',
+            UPLOAD_ERR_EXTENSION  => 'Upload geblokkeerd door een PHP-extensie.'
+        ];
+        $errCode = $_FILES['profile_picture']['error'];
+        $errMsg = $uploadErrors[$errCode] ?? 'Onbekende fout bij het uploaden van de profielfoto.';
+        header("Location: instellingen.php?e=" . urlencode($errMsg) . "&t=profielfoto#profielfoto");
+        exit();
+    }
+
+    ini_set('memory_limit', '256M');
+
     $fileTmpPath = $_FILES['profile_picture']['tmp_name'];
     $fileType = mime_content_type($fileTmpPath);
     $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -82,7 +105,7 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
         if (!function_exists('imagecreatefromjpeg')) {
             $e = "De server mist de PHP GD extensie. Installeer php-gd om afbeeldingen te uploaden.";
             header("Location: instellingen.php?e=" . urlencode($e) . "&t=profielfoto#profielfoto");
-            die();
+            exit();
         }
         
         $hash = bin2hex(random_bytes(8));
@@ -91,9 +114,10 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
             @mkdir($profile_dir, 0775, true);
         }
         
-        if ($fileType == 'image/jpeg') $src = imagecreatefromjpeg($fileTmpPath);
-        elseif ($fileType == 'image/png') $src = imagecreatefrompng($fileTmpPath);
-        elseif ($fileType == 'image/webp') $src = imagecreatefromwebp($fileTmpPath);
+        $src = false;
+        if ($fileType == 'image/jpeg') $src = @imagecreatefromjpeg($fileTmpPath);
+        elseif ($fileType == 'image/png') $src = @imagecreatefrompng($fileTmpPath);
+        elseif ($fileType == 'image/webp') $src = @imagecreatefromwebp($fileTmpPath);
         
         if ($src) {
             $width = imagesx($src);
@@ -127,13 +151,13 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
             }
             $stmt->close();
         } else {
-            $e = "Fout bij verwerken afbeelding.";
+            $e = "Ongeldig of niet-ondersteund afbeeldingsformaat.";
         }
     } else {
         $e = "Ongeldig bestandstype. Alleen JPG, PNG en WebP zijn toegestaan.";
     }
     header("Location: instellingen.php?e=" . urlencode($e) . "&t=profielfoto#profielfoto");
-    die();
+    exit();
 } elseif (isset($_POST['save_notif_prefs'])) {
     
     $prefs = [

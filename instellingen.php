@@ -143,23 +143,25 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
           
           <div class="flex flex-col items-center mb-4">
             <?php if ($profile_picture): ?>
-              <img src="<?= $notInAdminfolder ?? '' ?>profile_image.php?hash=<?= urlencode($profile_picture) ?>&res=high" alt="Profielfoto" class="w-28 h-28 rounded-full object-cover shadow-md mb-2 border-2 border-gray-200">
+              <img id="profile-picture-preview" src="<?= $notInAdminfolder ?? '' ?>profile_image.php?hash=<?= urlencode($profile_picture) ?>&res=high" alt="Profielfoto" class="w-28 h-28 rounded-full object-cover shadow-md mb-2 border-2 border-gray-200">
             <?php else: ?>
-              <div class="w-28 h-28 rounded-full theme-bg-primary text-white flex items-center justify-center font-bold text-3xl shadow-md mb-2">
+              <div id="profile-avatar-fallback" class="w-28 h-28 rounded-full theme-bg-primary text-white flex items-center justify-center font-bold text-3xl shadow-md mb-2">
                  <?php echo strtoupper(substr($first_name ?? 'U', 0, 1)); ?>
               </div>
+              <img id="profile-picture-preview" src="" alt="Profielfoto" class="hidden w-28 h-28 rounded-full object-cover shadow-md mb-2 border-2 border-gray-200">
             <?php endif; ?>
           </div>
 
           <div class="space-y-3">
             <div>
               <label class="block text-sm font-semibold mb-1 opacity-80">Nieuwe foto uploaden</label>
-              <input name="profile_picture" type="file" accept="image/jpeg, image/png, image/webp" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm">
+              <input id="profile-picture-input" name="profile_picture" type="file" accept="image/jpeg, image/png, image/webp" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm">
             </div>
+            <div id="profile-upload-status" class="text-xs text-blue-500 hidden font-medium text-center"></div>
           </div>
           
           <div class="mt-6 text-center flex gap-2 justify-center">
-            <button type="submit" class="theme-bg-primary text-white font-bold py-2.5 px-6 rounded-xl hover:opacity-90 transition shadow-sm">Uploaden</button>
+            <button id="profile-picture-submit" type="submit" class="theme-bg-primary text-white font-bold py-2.5 px-6 rounded-xl hover:opacity-90 transition shadow-sm">Uploaden</button>
             <?php if ($profile_picture): ?>
             <a href="instellingen_helper.php?delete_profile_picture=1" class="bg-red-500 text-white font-bold py-2.5 px-4 rounded-xl hover:bg-red-600 transition shadow-sm"><i class="fas fa-trash-alt"></i></a>
             <?php endif; ?>
