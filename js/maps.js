@@ -54,57 +54,10 @@ function sendMapState() {
 }
 
 /**
- * Draw historical route polyline for a specific vehicle.
- * @param {string} carKey
+ * Vehicle route drawing disabled.
  */
-function drawCarPath(carKey) {
-    removeCarPath();
-    const coords = activeCarPaths[carKey];
-    if (!coords || coords.length === 0 || !mapInstance) return;
-
-    if (!mapInstance.getSource("car_path_source")) {
-        mapInstance.addSource("car_path_source", {
-            type: "geojson",
-            data: {
-                type: "Feature",
-                properties: {},
-                geometry: {
-                    type: "LineString",
-                    coordinates: coords
-                }
-            }
-        });
-        mapInstance.addLayer({
-            id: "car_path_layer",
-            type: "line",
-            source: "car_path_source",
-            layout: { "line-join": "round", "line-cap": "round" },
-            paint: { "line-color": "#3B82F6", "line-width": 4, "line-opacity": 0.8 }
-        });
-    } else {
-        mapInstance.getSource("car_path_source").setData({
-            type: "Feature",
-            properties: {},
-            geometry: {
-                type: "LineString",
-                coordinates: coords
-            }
-        });
-    }
-}
-
-/**
- * Remove active vehicle route polyline.
- */
-function removeCarPath() {
-    if (!mapInstance) return;
-    if (mapInstance.getLayer("car_path_layer")) {
-        mapInstance.removeLayer("car_path_layer");
-    }
-    if (mapInstance.getSource("car_path_source")) {
-        mapInstance.removeSource("car_path_source");
-    }
-}
+function drawCarPath() {}
+function removeCarPath() {}
 
 /**
  * Initialize Mapbox map with full layer data.
@@ -147,29 +100,34 @@ function initJotiMap(data) {
         });
     }
 
-    // 3. Vehicle markers and path associations
+    // 3. Vehicle markers
     if (data.cars && data.cars.length > 0) {
         data.cars.forEach((c) => {
-            const carKey = c.kenteken.replace(/-/g, "_");
-            activeCarPaths[carKey] = c.path || [];
-
             const el = document.createElement("div");
-            el.className = "marker";
-            el.style.backgroundImage = "url(media/icons/pin_auto.png)";
-            el.style.width = "40px";
-            el.style.height = "32px";
-            el.style.backgroundSize = "100%";
+            el.className = "car-marker";
+            el.title = `Auto ${c.kenteken.toUpperCase()}`;
 
-            const popupHtml = `<h4>${c.kenteken.toUpperCase()}</h4><p><strong>Inzittenden:</strong> ${c.bijrijders || "Onbekend"}</p><p>${c.timeAgo}</p><a href='https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lon}' target='_blank'>Navigeer</a>`;
-            const popup = new mapboxgl.Popup().setHTML(popupHtml);
+            let iconClass = "fa-car";
+            if (c.hunter_type === "motorcycle") iconClass = "fa-motorcycle";
+            else if (c.hunter_type === "bike") iconClass = "fa-bicycle";
 
-            const marker = new mapboxgl.Marker(el).setLngLat([c.lon, c.lat]).setPopup(popup).addTo(mapInstance);
-            marker.getElement().addEventListener("click", () => {
-                drawCarPath(carKey);
-            });
-            popup.on("close", () => {
-                removeCarPath();
-            });
+            const whiteShadow = (c.rdw_kleur && c.rdw_kleur.toUpperCase() === "WIT") ? " filter: drop-shadow(0 0 1px #475569);" : "";
+            const iconColor = c.color || "#18181b";
+
+            el.innerHTML = `<i class="fas ${iconClass}" style="color: ${iconColor}; font-size: 18px;${whiteShadow}"></i>`;
+
+            const popupHtml = `
+                <h4>${c.kenteken.toUpperCase()}</h4>
+                <p><strong>Inzittenden:</strong> ${c.bijrijders}</p>
+                <p>${c.timeAgo}</p>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lon}" target="_blank">Navigeer</a>
+            `;
+            const popup = new mapboxgl.Popup({ offset: 18 }).setHTML(popupHtml);
+
+            new mapboxgl.Marker({ element: el, anchor: "center" })
+                .setLngLat([c.lon, c.lat])
+                .setPopup(popup)
+                .addTo(mapInstance);
         });
     }
 
@@ -177,14 +135,30 @@ function initJotiMap(data) {
     if (data.people && data.people.length > 0) {
         data.people.forEach((p) => {
             const el = document.createElement("div");
-            el.className = "marker";
-            el.style.backgroundImage = "url(media/icons/pin_persoon.png)";
-            el.style.width = "40px";
-            el.style.height = "32px";
-            el.style.backgroundSize = "100%";
+            el.className = "user-marker";
 
-            const popup = new mapboxgl.Popup().setHTML(`<h4>${p.voornaam}</h4><p>${p.timeAgo}</p>`);
-            new mapboxgl.Marker(el).setLngLat([p.lon, p.lat]).setPopup(popup).addTo(mapInstance);
+            const fullName = p.name || p.voornaam || "Gebruiker";
+            const initial = p.short || (p.voornaam ? p.voornaam.charAt(0).toUpperCase() : "?");
+            el.title = fullName;
+
+            if (p.profile_picture) {
+                const picUrl = `profile_image.php?hash=${encodeURIComponent(p.profile_picture)}&res=low`;
+                el.innerHTML = `<img class="user-marker-avatar" src="${picUrl}" alt="${fullName}" onerror="this.outerHTML='<div class=\\'user-marker-badge\\'>${initial}</div>'">`;
+            } else {
+                el.innerHTML = `<div class="user-marker-badge">${initial}</div>`;
+            }
+
+            const popupHtml = `
+                <h4>${fullName}</h4>
+                <p><strong>Laatst gezien:</strong> ${p.timeAgo}</p>
+                <a href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}" target="_blank">Navigeer</a>
+            `;
+            const popup = new mapboxgl.Popup({ offset: 22 }).setHTML(popupHtml);
+
+            new mapboxgl.Marker({ element: el, anchor: "center" })
+                .setLngLat([p.lon, p.lat])
+                .setPopup(popup)
+                .addTo(mapInstance);
         });
     }
 

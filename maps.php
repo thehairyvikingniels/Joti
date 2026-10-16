@@ -84,48 +84,67 @@ if (isset($_GET['groepen']) && $_GET['groepen'] === 'true') {
 // 2. Cars
 if (isset($_GET['autos']) && $_GET['autos'] === 'true') {
     $sql_autos = '
-        SELECT ap.auto as kenteken, ap.lat, ap.lon, ap.datumtijd, GROUP_CONCAT(g.voornaam SEPARATOR ", ") as bijrijders
+        SELECT ap.auto as kenteken, ap.lat, ap.lon, ap.datumtijd, a.rdw_kleur, a.hunter_type, GROUP_CONCAT(g.voornaam SEPARATOR ", ") as bijrijders
         FROM Auto_Positie ap
         INNER JOIN (
             SELECT auto, MAX(datumtijd) AS max_datumtijd
             FROM Auto_Positie
             GROUP BY auto
         ) ap_max ON ap.auto = ap_max.auto AND ap.datumtijd = ap_max.max_datumtijd
-        LEFT JOIN Auto_Bijrijders ab ON ap.auto = ab.auto
-        LEFT JOIN Gebruikers g ON ab.gebruiker_id = g.id
-        GROUP BY ap.auto, ap.lat, ap.lon, ap.datumtijd
+        LEFT JOIN Auto a ON ap.auto = a.kenteken
+        INNER JOIN Auto_Bijrijders ab ON ap.auto = ab.auto
+        INNER JOIN Gebruikers g ON ab.gebruiker_id = g.id
+        GROUP BY ap.auto, ap.lat, ap.lon, ap.datumtijd, a.rdw_kleur, a.hunter_type
+        HAVING bijrijders IS NOT NULL AND bijrijders != ""
     ';
     $cars = dbFetchAll($conn, $sql_autos);
-    $two_hours_ago = date('Y-m-d H:i:s', strtotime('-2 hours'));
     foreach ($cars as $car) {
         $date1 = new DateTime($car['datumtijd']);
         $now = new DateTime();
         $interval = $now->diff($date1);
         $minutes_since = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
-        if ($minutes_since <= 15) {
-            $path_rows = dbFetchAll($conn, 'SELECT lon, lat FROM Auto_Positie WHERE auto = ? AND datumtijd >= ? ORDER BY datumtijd ASC', [$car['kenteken'], $two_hours_ago], 'ss');
-            $path_coords = array_map(fn($p) => [(float)$p['lon'], (float)$p['lat']], $path_rows);
+        if ($minutes_since <= 15 && !empty($car['bijrijders'])) {
+            $colorHex = getRdwColorHex($car['rdw_kleur'] ?? null);
             $map_payload['cars'][] = [
                 'kenteken' => $car['kenteken'],
                 'lat' => (float)$car['lat'],
                 'lon' => (float)$car['lon'],
+                'color' => $colorHex,
+                'rdw_kleur' => $car['rdw_kleur'] ?? '',
+                'hunter_type' => $car['hunter_type'] ?? 'car',
                 'bijrijders' => htmlspecialchars((string)($car['bijrijders'] ?? '')),
-                'timeAgo' => time2str($car['datumtijd']),
-                'path' => $path_coords
+                'timeAgo' => time2str($car['datumtijd'])
             ];
         }
     }
 }
 
-// 3. People
+// 3. People (exclude users currently in a car)
 if (isset($_GET['personen']) && $_GET['personen'] === 'true') {
-    $users = dbFetchAll($conn, 'SELECT * FROM Gebruikers WHERE lat IS NOT NULL AND lon IS NOT NULL AND geotijd IS NOT NULL');
+    $sql_people = '
+        SELECT g.id, g.voornaam, g.achternaam, g.lat, g.lon, g.geotijd, g.profile_picture 
+        FROM Gebruikers g
+        LEFT JOIN Auto_Bijrijders ab ON g.id = ab.gebruiker_id
+        WHERE g.lat IS NOT NULL 
+          AND g.lon IS NOT NULL 
+          AND g.geotijd IS NOT NULL
+          AND ab.gebruiker_id IS NULL
+    ';
+    $users = dbFetchAll($conn, $sql_people);
     $time_15_mins_ago = time() - (15 * 60);
     foreach ($users as $u) {
         $geotijd_ts = is_numeric($u['geotijd']) ? (int)$u['geotijd'] : strtotime((string)$u['geotijd']);
         if (!empty($u['lat']) && !empty($u['lon']) && $geotijd_ts > $time_15_mins_ago) {
+            $firstName = ucfirst((string)$u['voornaam']);
+            $lastName = ucfirst((string)($u['achternaam'] ?? ''));
+            $short = strtoupper(substr($firstName, 0, 1));
             $map_payload['people'][] = [
-                'voornaam' => ucfirst((string)$u['voornaam']),
+                'id' => (int)$u['id'],
+                'voornaam' => $firstName,
+                'achternaam' => $lastName,
+                'name' => trim("$firstName $lastName"),
+                'short' => $short ?: '?',
+                'profile_picture' => !empty($u['profile_picture']) ? (string)$u['profile_picture'] : null,
                 'lat' => (float)$u['lat'],
                 'lon' => (float)$u['lon'],
                 'timeAgo' => time2str($u['geotijd'])
@@ -223,6 +242,7 @@ if (!empty($deelgebieden_filter)) {
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 body { margin: 0; padding: 0; }
 #map { position: absolute; top: 0; bottom: 0; width: 100%; }
@@ -238,11 +258,68 @@ body { margin: 0; padding: 0; }
   margin: 0 0 5px 0;
   font-size: 12px;
 }
+
+/* User avatar marker */
+.user-marker {
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease-out;
+}
+.user-marker:hover {
+  transform: scale(1.1);
+  z-index: 10;
+}
+.user-marker-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  object-fit: cover;
+  background: #ffffff;
+  display: block;
+}
+.user-marker-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  background: #3b82f6;
+  color: #ffffff;
+  font-weight: 700;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+}
+
+/* Vehicle marker */
+.car-marker {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease-out;
+}
+.car-marker:hover {
+  transform: scale(1.1);
+  z-index: 10;
+}
 </style>
 </head>
 <body>
 <div id="map"></div>
-<script src="js/maps.js"></script>
+<script src="js/maps.js?v=<?= @filemtime(__DIR__ . '/js/maps.js') ?: 1 ?>"></script>
 <script>
 const jotiMapData = <?= json_encode($map_payload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 initJotiMap(jotiMapData);
