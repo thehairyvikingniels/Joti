@@ -74,6 +74,10 @@ if ($user_id > 0) {
         $user_lat = $user_data['lat'] ?: 51.98769228691746;  // Default: HQ coordinates
         $user_lon = $user_data['lon'] ?: 5.876286397679744;
         $_SESSION['priv'] = $privilege;
+        if ($privilege === 0 && !isset($_SESSION['welcome_modal_checked'])) {
+            $_SESSION['welcome_modal_checked'] = true;
+            $_SESSION['show_welcome_modal'] = true;
+        }
         ensureTrackedSession($conn, $user_id);
     } else {
         // User no longer exists in DB — clear remember token and destroy session

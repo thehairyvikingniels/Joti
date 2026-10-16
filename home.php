@@ -97,6 +97,25 @@ if ($stmt) {
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
+    <?php if ($privilege == 0 && !$is_kiosk): ?>
+      <!-- Gast Activatie Banner -->
+      <div class="mb-6 p-4 sm:p-5 rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/40 border-l-4 border-l-amber-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+        <div class="flex items-center gap-3.5">
+          <div class="w-11 h-11 rounded-full bg-amber-500 text-white flex items-center justify-center text-lg flex-shrink-0 shadow-xs">
+            <i class="fas fa-user-clock"></i>
+          </div>
+          <div>
+            <p class="font-bold text-sm sm:text-base text-amber-950 dark:text-amber-100">Je account moet nog worden geactiveerd als Vossenjager</p>
+            <p class="text-xs sm:text-sm text-amber-800 dark:text-amber-300 mt-0.5">Je hebt momenteel Gast-toegang. Een beheerder kan je account activeren.</p>
+          </div>
+        </div>
+        <button type="button" onclick="openWelcomeModal(false)" class="text-xs sm:text-sm px-4 py-2.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold transition flex-shrink-0 shadow-xs flex items-center gap-2 cursor-pointer">
+          <i class="fas fa-users-cog"></i>
+          <span>Bekijk Beheerders</span>
+        </button>
+      </div>
+    <?php endif; ?>
+
       <!-- Stats -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div class="theme-card rounded p-5 border shadow-sm flex flex-col justify-between">
@@ -181,34 +200,51 @@ if ($stmt) {
   </div>
 </div>
 
-<!-- Welcome modal -->
+<!-- Welcome / Account Activation modal for Guests (priv 0) -->
 <?php
-// show welcome modal once after login for priv 0
-if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] === true && isset($_SESSION['priv']) && $_SESSION['priv'] == 0) {
-  // unset immediately so it won't show on refresh
-  unset($_SESSION['show_welcome_modal']);
-  ?>
-  <div id="welcomeModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+$auto_open_welcome = false;
+if ($privilege == 0 && !$is_kiosk):
+    if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] === true) {
+        $auto_open_welcome = true;
+        unset($_SESSION['show_welcome_modal']);
+    }
+?>
+  <div id="welcomeModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
     <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden transform -translate-y-4 transition-transform duration-300 theme-card theme-text" id="welcomeModalContent">
-      <header class="theme-bg-primary text-white p-5 border-b border-black/10"> 
-        <h2 class="text-xl font-bold">Welkom bij Jotify!</h2>
+      <header class="theme-bg-primary text-white p-5 border-b border-black/10 flex items-center justify-between"> 
+        <h2 class="text-xl font-bold flex items-center gap-2">
+          <i class="fas fa-user-clock"></i>
+          <span>Account Activatie Vereist</span>
+        </h2>
+        <button type="button" onclick="closeWelcomeModal()" id="welcomeTopClose" class="text-white/70 hover:text-white transition p-1 text-lg hidden cursor-pointer">
+          <i class="fas fa-times"></i>
+        </button>
       </header>
       <div class="p-6 space-y-4 text-sm">
         <p>
-          Hoi <strong><?php echo ucfirst($first_name); ?></strong>, als nieuwe gebruiker van dit platform willen we je graag welkom heten!
+          Hoi <strong><?= htmlspecialchars(ucfirst($first_name)); ?></strong>, welkom bij Jotify!
         </p>
+        <div class="p-4 rounded-xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/40 border-l-4 border-l-amber-500">
+          <p class="font-bold flex items-center gap-2 text-sm text-amber-950 dark:text-amber-100">
+            <i class="fas fa-exclamation-triangle text-amber-600 dark:text-amber-400"></i>
+            <span>Je account staat momenteel op 'Gast' en is nog niet geactiveerd.</span>
+          </p>
+          <p class="text-xs sm:text-sm mt-1.5 text-amber-900 dark:text-amber-200 leading-relaxed font-medium">
+            Zolang je account niet geactiveerd is door een beheerder heb je beperkte toegang en kun je geen locaties of opdrachten insturen.
+          </p>
+        </div>
         <p>
-          Dit platform is speciaal ontwikkeld voor de Jotihunt en biedt verschillende functies om je ervaring te verbeteren. Hier zijn enkele belangrijke punten:
+          Dit platform is speciaal ontwikkeld voor de Jotihunt en biedt verschillende functies om je ervaring te verbeteren:
         </p>
-        <ul class="list-disc pl-5 space-y-1 opacity-90">
-          <li>Je kunt eenvoudig hints opvragen en opdrachten bekijken via het menu.</li>
-          <li>Je locatie kan worden gedeeld met de homebase. Dit kun je aan- of uitzetten met de GPS-knop linksbovenin.</li>
+        <ul class="list-disc pl-5 space-y-1.5 opacity-90 text-xs sm:text-sm">
+          <li>Je kunt eenvoudig hints en nieuws bekijken via het menu.</li>
+          <li>Je locatie kan worden gedeeld met de homebase via de GPS-knop rechtsboven of deel je locatie met onze Jotify Telegram bot.</li>
           <li>Voor vragen of problemen kun je altijd contact opnemen met de organisatie.</li>
         </ul>
-        <p class="font-semibold pt-2">
-          Jij hebt op dit moment nog geen extra rechten. Deze kan je aanvragen bij:
+        <p class="font-semibold pt-1">
+          Vraag een van de volgende beheerders om je account te activeren naar Vossenjager:
         </p>
-        <ul class="list-disc pl-5 space-y-1 opacity-90">
+        <ul class="list-disc pl-5 space-y-1 opacity-90 font-medium text-xs sm:text-sm">
           <?php
           // Get admins for the introduction modal
           $stmt = $conn->prepare("SELECT voornaam, achternaam FROM Gebruikers WHERE priv > 1 ORDER BY voornaam ASC");
@@ -217,7 +253,7 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
 
           if ($result->num_rows > 0) {
             while($row = $result->fetch_assoc()) {
-              echo '<li>'.ucfirst($row['voornaam']).' '.ucfirst($row['achternaam']).'</li>';
+              echo '<li>' . htmlspecialchars(ucfirst($row['voornaam']) . ' ' . ucfirst($row['achternaam'])) . '</li>';
             }
           } else {
             echo '<li>Geen beheerders gevonden...</li>';
@@ -229,9 +265,9 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
       <footer class="p-4 bg-black/5 border-t border-black/10 flex justify-end">
         <div class="relative min-w-[160px]">
           <!-- disabled button with countdown -->
-          <button id="welcomeClose" class="w-full py-2.5 px-4 bg-green-500 text-white font-bold rounded shadow-sm opacity-50 cursor-not-allowed flex items-center justify-center space-x-2 transition-opacity" disabled>
+          <button id="welcomeClose" onclick="closeWelcomeModal()" class="w-full py-2.5 px-4 bg-green-600 text-white font-bold rounded shadow-sm opacity-50 cursor-not-allowed flex items-center justify-center space-x-2 transition cursor-pointer" disabled>
             <span id="closeLabel">Sluiten</span>
-            <span id="closeCountdown" class="opacity-90 font-mono">(7s)</span>
+            <span id="closeCountdown" class="opacity-90 font-mono">(5s)</span>
           </button>
           <!-- progress overlay -->
           <div id="welcomeProgress" class="absolute left-0 top-0 h-full bg-white/20 rounded pointer-events-none" style="width:0%;"></div>
@@ -239,22 +275,12 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
       </footer>
     </div>
   </div>
-
-  <script>initWelcomeModal();</script>
-  <?php
-}
-?>
+<?php endif; ?>
 
 <input type="hidden" id="hgtyhgty">
 
-    <!-- The core Firebase JS SDK is always required and must be listed first -->
-
+<!-- The core Firebase JS SDK is always required and must be listed first -->
 <script src="https://www.gstatic.com/firebasejs/7.0.0/firebase-app.js"></script>
-
-<!-- TODO: Add SDKs for Firebase products that you want to use
-
-     https://firebase.google.com/docs/web/setup#available-libraries -->
-
 <script src="https://www.gstatic.com/firebasejs/7.0.0/firebase-analytics.js"></script>
 
 <script>
@@ -277,6 +303,9 @@ if (isset($_SESSION['show_welcome_modal']) && $_SESSION['show_welcome_modal'] ==
 <script src="js/home.js"></script>
 <script>
 initHome(<?= ($privilege > 0) ? "true" : "false" ?>);
+<?php if (!empty($auto_open_welcome)): ?>
+initWelcomeModal(true);
+<?php endif; ?>
 </script>
 
 <script src="js/gps.js"></script>

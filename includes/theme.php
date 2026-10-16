@@ -91,6 +91,7 @@ $themeConfig = getThemeConfig($theme);
 </style>
 <script>
     tailwind.config = {
+        darkMode: 'class',
         theme: {
             extend: {
                 colors: {
@@ -105,6 +106,13 @@ $themeConfig = getThemeConfig($theme);
                 }
             }
         }
+    };
+    if (document.documentElement) {
+        <?php if (in_array($theme, ['dark', 'cyber'])): ?>
+        document.documentElement.classList.add('dark');
+        <?php else: ?>
+        document.documentElement.classList.remove('dark');
+        <?php endif; ?>
     }
 </script>
 <link rel="manifest" href="/manifest.json">
