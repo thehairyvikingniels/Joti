@@ -716,7 +716,9 @@ INSERT IGNORE INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) 
 ('TELEGRAM_INGEST_SECRET', 'placeholder_secret', 'Shared secret token required to authorize incoming Webhook and MTProto ingest requests.'),
 ('TELEGRAM_REGISTRATION_CODE', 'placeholder_code', 'Latest registration token scraped from the Jotihunt portal used to pair with @Jotihunt_bot.'),
 ('TELEGRAM_BOT_TOKEN', '123456789:ABCdefGHIjklMNOpqrSTUvwxYZ', 'Optional Telegram Bot API token from @BotFather used for sending outbound broadcast notifications.'),
-('RDW_LOOKUP_ENABLED', '1', 'Schakel automatische RDW kenteken validatie en merk/model opvraging in (0 of 1)');
+('RDW_LOOKUP_ENABLED', '1', 'Schakel automatische RDW kenteken validatie en merk/model opvraging in (0 of 1)'),
+('WHITEBOARD_FOX_NAMES', '', 'Komma-gescheiden lijst van vossenteams die op het whiteboard getoond worden (leeg = alle vossen tonen). Wordt ook automatisch bijgewerkt door de Jotihunt.nl portaal scraper.'),
+('EIGEN_DEELGEBIED', '', 'Eigen deelgebied van de scoutinggroep (wordt automatisch bijgewerkt door de Jotihunt.nl portaal scraper).');
 
 --
 -- Standaardgroep voor schone installatie

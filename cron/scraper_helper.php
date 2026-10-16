@@ -231,6 +231,32 @@ if ($json_start !== false && $json_end !== false && $status_code === 200) {
             }
         }
 
+        // UPDATE DEELGEBIED & ALLOWED HUNTING FOXES
+        if (!empty($data['deelgebied'])) {
+            $stmt_dg = $conn->prepare("INSERT INTO Site_Instellingen (Instelling, Waarde, Omschrijving) VALUES ('EIGEN_DEELGEBIED', ?, 'Eigen deelgebied van de scoutinggroep') ON DUPLICATE KEY UPDATE Waarde = VALUES(Waarde)");
+            if ($stmt_dg) {
+                $stmt_dg->bind_param("s", $data['deelgebied']);
+                $stmt_dg->execute();
+                $stmt_dg->close();
+                $output .= "\n[PHP] Eigen deelgebied bijgewerkt: " . $data['deelgebied'];
+            }
+        }
+
+        if (!empty($data['allowed_foxes']) && is_array($data['allowed_foxes'])) {
+            // Oscar is always huntable by every group
+            if (!in_array('Oscar', $data['allowed_foxes'], true)) {
+                $data['allowed_foxes'][] = 'Oscar';
+            }
+            $allowed_str = implode(', ', $data['allowed_foxes']);
+            $stmt_af = $conn->prepare("INSERT INTO Site_Instellingen (Instelling, Waarde, Omschrijving) VALUES ('WHITEBOARD_FOX_NAMES', ?, 'Komma-gescheiden lijst van vossenteams die op het whiteboard getoond worden') ON DUPLICATE KEY UPDATE Waarde = VALUES(Waarde)");
+            if ($stmt_af) {
+                $stmt_af->bind_param("s", $allowed_str);
+                $stmt_af->execute();
+                $stmt_af->close();
+                $output .= "\n[PHP] Toegestane hunt-deelgebieden voor whiteboard bijgewerkt: " . $allowed_str;
+            }
+        }
+
         // UPDATE & SYNC HUNTERS / VEHICLES
         if (isset($data['hunters']) && is_array($data['hunters'])) {
             $stmt_hunt_upsert = $conn->prepare("
