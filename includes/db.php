@@ -149,7 +149,10 @@ function send_push_notification(
 
     $users = [];
     if ($toUser === 'ALL') {
-        $rows = dbFetchAll($conn, 'SELECT DISTINCT s.user_id, g.notification_prefs FROM Notification_Subscriptions s JOIN Gebruikers g ON s.user_id = g.id');
+        $rows = dbFetchAll(
+            $conn,
+            'SELECT DISTINCT g.id AS user_id, g.notification_prefs FROM Gebruikers g LEFT JOIN Notification_Subscriptions s ON g.id = s.user_id WHERE g.priv >= 1 AND (s.id IS NOT NULL OR (g.telegram_enabled = 1 AND g.telegram_chat_id IS NOT NULL AND g.telegram_chat_id != ""))'
+        );
         foreach ($rows as $row) {
             $users[$row['user_id']] = $row['notification_prefs'];
         }

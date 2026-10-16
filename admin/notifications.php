@@ -12,40 +12,44 @@ if ($privilege < 2){
 
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'send_push') {
-    $title = $_POST['title'] ?? '';
-    $message = $_POST['message'] ?? '';
-    $url = $_POST['url'] ?? '/';
+    $title = trim($_POST['title'] ?? '');
+    $message = trim($_POST['message'] ?? '');
+    $url = trim($_POST['url'] ?? '/');
     $target_users = $_POST['users'] ?? [];
-    $send_telegram = !empty($_POST['send_telegram']);
     
-    if (!empty($title) && !empty($message) && (!empty($target_users) || $send_telegram)) {
-        if (!empty($target_users)) {
-            if (in_array('ALL', $target_users)) {
-                send_push_notification('ALL', $title, $message, $url, 'admin/notifications');
-            } else {
-                send_push_notification($target_users, $title, $message, $url, 'admin/notifications');
-            }
+    if (!empty($title) && !empty($message) && !empty($target_users)) {
+        if (in_array('ALL', $target_users, true)) {
+            send_push_notification('ALL', $title, $message, $url, 'admin/notifications');
+            $success_msg = "Notificatie is in de wachtrij geplaatst voor alle ontvangers en wordt verzonden door de achtergrondwerker.";
+        } else {
+            send_push_notification($target_users, $title, $message, $url, 'admin/notifications');
+            $count = count($target_users);
+            $success_msg = "Notificatie is in de wachtrij geplaatst voor {$count} geselecteerde ontvanger(s) en wordt verzonden door de achtergrondwerker.";
         }
-        
-        $tg_info = '';
-        if ($send_telegram) {
-            $tg_count = send_telegram_broadcast_notification($conn, $title, $message, $url);
-            $tg_info = " Tevens verzonden naar {$tg_count} gekoppelde Telegram ontvanger(s).";
-        }
-        $success_msg = "Notificatie is succesvol verwerkt." . $tg_info;
     } else {
-        $error_msg = "Vul alle velden in en selecteer minimaal één gebruiker of kies Telegram.";
+        $error_msg = "Vul alle velden in en selecteer minimaal één ontvanger.";
     }
 }
 
-// Fetch users who have active push subscriptions
-$stmt_sub = $conn->prepare("SELECT DISTINCT g.id, g.voornaam, g.achternaam, g.priv FROM Gebruikers g JOIN Notification_Subscriptions s ON g.id = s.user_id ORDER BY g.voornaam");
-$stmt_sub->execute();
-$subRes = $stmt_sub->get_result();
-$subscribed_users = [];
-while ($r = $subRes->fetch_assoc()) {
-    $subscribed_users[] = $r;
+// Fetch users who have active notification channels (Web Push or Telegram)
+$stmt_users = $conn->prepare("
+    SELECT g.id, g.voornaam, g.achternaam, g.priv,
+           (CASE WHEN g.telegram_enabled = 1 AND g.telegram_chat_id IS NOT NULL AND g.telegram_chat_id != '' THEN 1 ELSE 0 END) AS has_telegram,
+           COUNT(s.id) AS web_count
+    FROM Gebruikers g
+    LEFT JOIN Notification_Subscriptions s ON g.id = s.user_id
+    WHERE g.priv >= 1
+    GROUP BY g.id, g.voornaam, g.achternaam, g.priv, g.telegram_enabled, g.telegram_chat_id
+    HAVING has_telegram = 1 OR web_count > 0
+    ORDER BY g.voornaam, g.achternaam
+");
+$stmt_users->execute();
+$usersRes = $stmt_users->get_result();
+$notifyable_users = [];
+while ($r = $usersRes->fetch_assoc()) {
+    $notifyable_users[] = $r;
 }
+$stmt_users->close();
 
 // Haal backlog op
 $stmt_backlog = $conn->prepare("SELECT b.*, g.voornaam, g.achternaam FROM Notification_Backlog b LEFT JOIN Gebruikers g ON b.user_id = g.id ORDER BY b.added_on DESC LIMIT 100");
@@ -116,53 +120,82 @@ $backlogRes = $stmt_backlog->get_result();
                             </div>
                             
                             <!-- Right Column -->
-                            <div class="space-y-2">
-                                <label class="block text-sm font-medium mb-1">Selecteer Ontvangers</label>
-                                
-                                <div class="mb-2">
-                                    <label class="inline-flex items-center">
-                                        <input type="checkbox" id="selectAll" name="users[]" value="ALL" class="form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out">
-                                        <span class="ml-2 font-semibold">Iedereen selecteren (ALL)</span>
-                                    </label>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-sm font-medium">Selecteer Ontvangers</label>
+                                    <span id="selectedCountBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 font-semibold">0 geselecteerd</span>
                                 </div>
                                 
-                                <div class="border rounded-md border-gray-300 max-h-48 overflow-y-auto p-3 theme-override-bg">
-                                    <?php if (empty($subscribed_users)): ?>
-                                        <p class="text-sm opacity-60 italic">Geen gebruikers met actieve push-abonnementen.</p>
+                                <!-- Quick filter / select buttons -->
+                                <div class="flex flex-wrap gap-1.5">
+                                    <button type="button" id="btnSelectAll" class="px-2.5 py-1 text-xs rounded-lg font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                                        <i class="fas fa-check-double mr-1 text-green-600"></i>Iedereen
+                                    </button>
+                                    <button type="button" id="btnSelectTg" class="px-2.5 py-1 text-xs rounded-lg font-medium border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition">
+                                        <i class="fab fa-telegram mr-1"></i>Alle Telegram
+                                    </button>
+                                    <button type="button" id="btnSelectWeb" class="px-2.5 py-1 text-xs rounded-lg font-medium border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition">
+                                        <i class="fas fa-globe mr-1"></i>Alle Web
+                                    </button>
+                                    <button type="button" id="btnSelectNone" class="px-2.5 py-1 text-xs rounded-lg font-medium border border-gray-300 dark:border-gray-600 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+                                        <i class="fas fa-times mr-1 text-red-500"></i>Geen
+                                    </button>
+                                </div>
+
+                                <!-- Table of notifyable users -->
+                                <div class="border rounded-xl border-gray-300 dark:border-gray-700 max-h-72 overflow-y-auto theme-override-bg shadow-inner">
+                                    <?php if (empty($notifyable_users)): ?>
+                                        <p class="text-sm opacity-60 italic p-4 text-center">Geen gebruikers met actieve Web Push of Telegram kanalen gevonden.</p>
                                     <?php else: ?>
-                                        <?php foreach ($subscribed_users as $u): ?>
-                                        <?php
-                                        $roleNames = [0 => 'Gast', 1 => 'Vossenjager', 2 => 'Admin', 3 => 'Superadmin'];
-                                        $u_role = $roleNames[$u['priv']] ?? 'Onbekend';
-                                        ?>
-                                        <div class="mb-1">
-                                            <label class="inline-flex items-center">
-                                                <input type="checkbox" name="users[]" value="<?= htmlspecialchars($u['id']) ?>" class="user-cb form-checkbox h-4 w-4 text-blue-600 transition duration-150 ease-in-out">
-                                                <span class="ml-2 text-sm"><?= htmlspecialchars($u['voornaam'] . ' ' . $u['achternaam']) ?> <span class="opacity-50 text-xs">(<?= $u_role ?>)</span></span>
-                                            </label>
-                                        </div>
-                                        <?php endforeach; ?>
+                                        <table class="w-full text-left text-xs">
+                                            <thead class="sticky top-0 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-semibold z-10">
+                                                <tr>
+                                                    <th class="p-2.5 w-8 text-center">
+                                                        <input type="checkbox" id="headerCheckbox" class="rounded text-blue-600 h-3.5 w-3.5 cursor-pointer">
+                                                    </th>
+                                                    <th class="p-2.5">Naam & Rol</th>
+                                                    <th class="p-2.5 text-right pr-3">Kanalen</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                                                <?php 
+                                                $roleNames = [0 => 'Gast', 1 => 'Vossenjager', 2 => 'Admin', 3 => 'Superadmin'];
+                                                foreach ($notifyable_users as $u): 
+                                                    $u_role = $roleNames[$u['priv']] ?? 'Onbekend';
+                                                    $hasTg = (int)$u['has_telegram'] === 1;
+                                                    $webCount = (int)$u['web_count'];
+                                                    $hasWeb = $webCount > 0;
+                                                ?>
+                                                <tr class="user-row hover:bg-blue-50/40 dark:hover:bg-blue-900/20 cursor-pointer transition-colors" data-has-telegram="<?= $hasTg ? '1' : '0' ?>" data-has-web="<?= $hasWeb ? '1' : '0' ?>">
+                                                    <td class="p-2.5 text-center" onclick="event.stopPropagation()">
+                                                        <input type="checkbox" name="users[]" value="<?= htmlspecialchars((string)$u['id']) ?>" class="user-cb form-checkbox h-4 w-4 text-blue-600 rounded cursor-pointer" data-has-telegram="<?= $hasTg ? '1' : '0' ?>" data-has-web="<?= $hasWeb ? '1' : '0' ?>">
+                                                    </td>
+                                                    <td class="p-2.5">
+                                                        <span class="font-medium text-gray-900 dark:text-gray-100"><?= htmlspecialchars($u['voornaam'] . ' ' . $u['achternaam']) ?></span>
+                                                        <span class="opacity-60 text-[11px] block"><?= $u_role ?></span>
+                                                    </td>
+                                                    <td class="p-2.5 text-right pr-3 space-x-1 whitespace-nowrap">
+                                                        <?php if ($hasTg): ?>
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300">
+                                                                <i class="fab fa-telegram mr-1"></i>Telegram
+                                                            </span>
+                                                        <?php endif; ?>
+                                                        <?php if ($hasWeb): ?>
+                                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-300">
+                                                                <i class="fas fa-globe mr-1"></i>Web (<?= $webCount ?>)
+                                                            </span>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
                                     <?php endif; ?>
                                 </div>
-                                <p class="text-xs opacity-60 mt-1">Alleen gebruikers die permissie hebben gegeven in hun browser worden hier weergegeven.</p>
+                                <p class="text-xs opacity-60">Alleen gebruikers met een actieve browser Web Push koppeling of een gekoppeld Telegram account kunnen worden geselecteerd.</p>
                             </div>
                         </div>
 
-                        <!-- Telegram Broadcast Toggle Option -->
-                        <div class="mt-6 p-4 rounded-xl border flex items-center justify-between theme-override-bg" style="border-color: var(--theme-card-border);">
-                            <div class="flex items-center space-x-3">
-                                <i class="fab fa-telegram text-blue-500 text-2xl"></i>
-                                <div>
-                                    <span class="text-sm font-semibold block">Tevens verzenden via Telegram</span>
-                                    <span class="text-xs opacity-70">Stuur dit bericht ook door naar alle gekoppelde Telegram gebruikers en de centrale groep</span>
-                                </div>
-                            </div>
-                            <label class="switch">
-                                <input type="checkbox" name="send_telegram" value="1" checked>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        
                         <div class="mt-6">
                             <button type="submit" class="w-full md:w-auto px-8 py-2.5 theme-bg-primary text-white font-bold rounded-xl shadow-sm hover:opacity-90 transition">
                                 <i class="fas fa-paper-plane mr-2"></i>Versturen
@@ -227,20 +260,72 @@ $backlogRes = $stmt_backlog->get_result();
   </div>
 
 <script>
-    // Handle 'Select All' logic
-    document.getElementById('selectAll').addEventListener('change', function(e) {
-        let checkboxes = document.querySelectorAll('.user-cb');
-        if (e.target.checked) {
-            checkboxes.forEach(cb => {
-                cb.checked = false;
-                cb.disabled = true;
-            });
-        } else {
-            checkboxes.forEach(cb => {
-                cb.disabled = false;
-            });
+document.addEventListener('DOMContentLoaded', function() {
+    const userCheckboxes = document.querySelectorAll('.user-cb');
+    const headerCheckbox = document.getElementById('headerCheckbox');
+    const badge = document.getElementById('selectedCountBadge');
+    const rows = document.querySelectorAll('.user-row');
+
+    function updateCount() {
+        const total = userCheckboxes.length;
+        const checked = document.querySelectorAll('.user-cb:checked').length;
+        if (badge) {
+            badge.textContent = `${checked} geselecteerd`;
         }
+        if (headerCheckbox) {
+            headerCheckbox.checked = (total > 0 && checked === total);
+            headerCheckbox.indeterminate = (checked > 0 && checked < total);
+        }
+    }
+
+    if (headerCheckbox) {
+        headerCheckbox.addEventListener('change', function() {
+            userCheckboxes.forEach(cb => { cb.checked = headerCheckbox.checked; });
+            updateCount();
+        });
+    }
+
+    userCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateCount);
     });
+
+    rows.forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.tagName.toLowerCase() === 'input') return;
+            const cb = row.querySelector('.user-cb');
+            if (cb) {
+                cb.checked = !cb.checked;
+                updateCount();
+            }
+        });
+    });
+
+    document.getElementById('btnSelectAll')?.addEventListener('click', function() {
+        userCheckboxes.forEach(cb => { cb.checked = true; });
+        updateCount();
+    });
+
+    document.getElementById('btnSelectTg')?.addEventListener('click', function() {
+        userCheckboxes.forEach(cb => {
+            cb.checked = (cb.dataset.hasTelegram === '1');
+        });
+        updateCount();
+    });
+
+    document.getElementById('btnSelectWeb')?.addEventListener('click', function() {
+        userCheckboxes.forEach(cb => {
+            cb.checked = (cb.dataset.hasWeb === '1');
+        });
+        updateCount();
+    });
+
+    document.getElementById('btnSelectNone')?.addEventListener('click', function() {
+        userCheckboxes.forEach(cb => { cb.checked = false; });
+        updateCount();
+    });
+
+    updateCount();
+});
 </script>
 </body>
 </html>

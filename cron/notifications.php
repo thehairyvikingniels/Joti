@@ -136,7 +136,7 @@ while ($notification = $res->fetch_assoc()) {
                 $tgText = "📢 *{$cleanTitle}*\n\n" . $notification['message'];
                 if (!empty($notification['url']) && $notification['url'] !== '/') {
                     $cleanUrl = str_starts_with($notification['url'], '/') ? $notification['url'] : '/' . $notification['url'];
-                    $tgText .= "\n\n🔗 [Openen in Jotify](https://joti.maarleveld.app{$cleanUrl})";
+                    $tgText .= "\n\n🔗 [Openen in Jotify](https://jotify.maarleveld.app{$cleanUrl})";
                 }
                 $resTg = $tgBot->sendMessage($tgUser['telegram_chat_id'], $tgText);
                 if ($resTg['ok'] ?? false) {
