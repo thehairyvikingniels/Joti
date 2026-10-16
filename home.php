@@ -85,15 +85,15 @@ if ($stmt) {
   <?php include_once('includes/topbar.php') ?>
 
   <!-- Mobile Fox Status -->
+  <?php if (!$is_kiosk && isset($fox_names) && !empty($vos)): ?>
   <div class="md:hidden p-4 grid grid-cols-3 sm:grid-cols-4 gap-2">
     <?php
-      if (isset($fox_names)) {
-          foreach ($fox_names as $n) {
-              echo renderFoxBadge($n, $vos[$n], true);
-          }
-      }
+    	foreach ($fox_names as $n) {
+            echo renderFoxBadge($n, $vos[$n], true);
+        }
     ?>
   </div>
+<?php endif; ?>
 
   <main class="p-4 md:p-6 max-w-[1400px] mx-auto w-full flex-1">
 
