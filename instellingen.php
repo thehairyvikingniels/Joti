@@ -4,11 +4,12 @@ define("PAGE_NAME", "instellingen");
 require_once('includes/auth.php');
 
 // Fetch subscriptions
-$stmt = $conn->prepare("SELECT id, endpoint, device_name FROM Notification_Subscriptions WHERE user_id=?");
+$stmt = $conn->prepare("SELECT id, endpoint, device_name, created_at FROM Notification_Subscriptions WHERE user_id=? ORDER BY created_at DESC");
 $stmt->bind_param("i", $_SESSION['id']);
 $stmt->execute();
-$subscriptions = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$subs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
+$subscriptions = $subs;
 
 // Fetch preferences
 $stmt = $conn->prepare("SELECT notification_prefs FROM Gebruikers WHERE id=?");
@@ -143,23 +144,25 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
           
           <div class="flex flex-col items-center mb-4">
             <?php if ($profile_picture): ?>
-              <img src="<?= $notInAdminfolder ?? '' ?>profile_image.php?hash=<?= urlencode($profile_picture) ?>&res=high" alt="Profielfoto" class="w-28 h-28 rounded-full object-cover shadow-md mb-2 border-2 border-gray-200">
+              <img id="profile-picture-preview" src="<?= $notInAdminfolder ?? '' ?>profile_image.php?hash=<?= urlencode($profile_picture) ?>&res=high" alt="Profielfoto" class="w-28 h-28 rounded-full object-cover shadow-md mb-2 border-2 border-gray-200">
             <?php else: ?>
-              <div class="w-28 h-28 rounded-full theme-bg-primary text-white flex items-center justify-center font-bold text-3xl shadow-md mb-2">
+              <div id="profile-avatar-fallback" class="w-28 h-28 rounded-full theme-bg-primary text-white flex items-center justify-center font-bold text-3xl shadow-md mb-2">
                  <?php echo strtoupper(substr($first_name ?? 'U', 0, 1)); ?>
               </div>
+              <img id="profile-picture-preview" src="" alt="Profielfoto" class="hidden w-28 h-28 rounded-full object-cover shadow-md mb-2 border-2 border-gray-200">
             <?php endif; ?>
           </div>
 
           <div class="space-y-3">
             <div>
               <label class="block text-sm font-semibold mb-1 opacity-80">Nieuwe foto uploaden</label>
-              <input name="profile_picture" type="file" accept="image/jpeg, image/png, image/webp" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm">
+              <input id="profile-picture-input" name="profile_picture" type="file" accept="image/jpeg, image/png, image/webp" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm">
             </div>
+            <div id="profile-upload-status" class="text-xs text-blue-500 hidden font-medium text-center"></div>
           </div>
           
           <div class="mt-6 text-center flex gap-2 justify-center">
-            <button type="submit" class="theme-bg-primary text-white font-bold py-2.5 px-6 rounded-xl hover:opacity-90 transition shadow-sm">Uploaden</button>
+            <button id="profile-picture-submit" type="submit" class="theme-bg-primary text-white font-bold py-2.5 px-6 rounded-xl hover:opacity-90 transition shadow-sm">Uploaden</button>
             <?php if ($profile_picture): ?>
             <a href="instellingen_helper.php?delete_profile_picture=1" class="bg-red-500 text-white font-bold py-2.5 px-4 rounded-xl hover:bg-red-600 transition shadow-sm"><i class="fas fa-trash-alt"></i></a>
             <?php endif; ?>
@@ -238,10 +241,10 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
               <p class="text-xs opacity-70 mb-4">Beheer welke apparaten pushnotificaties ontvangen.</p>
               
               <div class="space-y-3 mb-4">
-                <button id="push-toggle-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2">
+                <button id="push-toggle-btn" type="button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
                   <i class="fas fa-bell"></i> <span>Pushnotificaties inschakelen</span>
                 </button>
-                <div id="push-status-msg" class="text-xs text-center"></div>
+                <div id="push-status-msg" class="text-xs text-center min-h-[1.25rem]"></div>
               </div>
 
               <?php if (empty($subs)): ?>
@@ -252,12 +255,12 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
                     <div class="p-3 flex items-center justify-between hover:bg-black/5 transition">
                       <div>
                         <span class="font-bold block"><?= htmlspecialchars($sub['device_name'] ?: 'Browser Sessie') ?></span>
-                        <span class="opacity-50 text-[10px]">Toegevoegd: <?= date('d-m-Y H:i', strtotime($sub['created_at'])) ?></span>
+                        <span class="opacity-50 text-[10px]">Toegevoegd: <?= !empty($sub['created_at']) ? date('d-m-Y H:i', strtotime($sub['created_at'])) : 'Onbekend' ?></span>
                       </div>
-                      <form method="POST" action="instellingen_helper.php" class="m-0">
-                        <input type="hidden" name="delete_sub_id" value="<?= $sub['id'] ?>">
-                        <button type="submit" class="text-red-500 hover:text-red-700 p-1.5 transition" title="Verwijder apparaat"><i class="fas fa-trash-alt"></i></button>
-                      </form>
+                      <div class="flex items-center gap-1">
+                        <button type="button" onclick="renameDevice(<?= (int)$sub['id'] ?>, '<?= htmlspecialchars(addslashes($sub['device_name'] ?? 'Browser Sessie'), ENT_QUOTES) ?>')" class="text-blue-500 hover:text-blue-700 p-1.5 transition cursor-pointer" title="Hernoem apparaat"><i class="fas fa-edit"></i></button>
+                        <button type="button" onclick="openDeleteDeviceModal(<?= (int)$sub['id'] ?>)" class="text-red-500 hover:text-red-700 p-1.5 transition cursor-pointer" title="Verwijder apparaat"><i class="fas fa-trash-alt"></i></button>
+                      </div>
                     </div>
                   <?php endforeach; ?>
                 </div>
@@ -325,11 +328,11 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
         <div class="theme-card-header px-6 py-4 border-b text-white flex justify-between items-center" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
           <h3 class="text-xl font-bold flex items-center gap-2"><i class="fab fa-telegram-plane"></i> <span>Telegram Koppeling & Meldingen</span></h3>
           <?php if ($is_linked): ?>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-300 border border-green-500/30">
-              <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Gekoppeld
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-600 text-white shadow-sm">
+              <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> Gekoppeld
             </span>
           <?php else: ?>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-600 text-white shadow-sm">
               Niet gekoppeld
             </span>
           <?php endif; ?>
@@ -345,21 +348,19 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
 
           <?php if ($is_linked): ?>
             <!-- Gekoppeld Status Weergave -->
-            <div class="p-4 rounded-xl border bg-green-50/50 border-green-200 dark:bg-green-950/20 dark:border-green-800/40">
-              <div class="flex items-start gap-3">
-                <div class="p-2 rounded-lg bg-green-500 text-white mt-0.5">
-                  <i class="fas fa-check-circle text-lg"></i>
-                </div>
-                <div class="flex-1">
-                  <h4 class="text-sm font-bold text-green-900 dark:text-green-300">Account succesvol gekoppeld!</h4>
-                  <p class="text-xs text-green-800/80 dark:text-green-300/80 mt-1">
-                    Jouw Telegram Chat ID is <code class="font-mono font-bold"><?= htmlspecialchars($telegram_chat_id) ?></code>. Je ontvangt automatische updates van spelgebeurtenissen via de 40-seconden notificatie-wachtrij.
-                  </p>
-                  <p class="text-xs text-green-800/80 dark:text-green-300/80 mt-2 flex items-center gap-1.5">
-                    <i class="fas fa-satellite-dish text-green-600"></i>
-                    <span><strong>Live Locatie:</strong> Deel je live locatie via de paperclip 📎 in Telegram om continu op de kaart zichtbaar te blijven.</span>
-                  </p>
-                </div>
+            <div class="p-4 rounded-xl border flex items-start gap-3 shadow-sm" style="background-color: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.35); color: var(--theme-text);">
+              <div class="p-2 rounded-lg bg-emerald-600 text-white mt-0.5 shadow-sm flex-shrink-0">
+                <i class="fas fa-check-circle text-lg"></i>
+              </div>
+              <div class="flex-1 space-y-1">
+                <h4 class="text-sm font-bold text-emerald-600 dark:text-emerald-400">Account succesvol gekoppeld!</h4>
+                <p class="text-xs opacity-90 leading-relaxed" style="color: var(--theme-text);">
+                  Jouw Telegram Chat ID is <code class="font-mono font-bold px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10"><?= htmlspecialchars($telegram_chat_id) ?></code>. Je ontvangt automatische updates van spelgebeurtenissen via de 40-seconden notificatie-wachtrij.
+                </p>
+                <p class="text-xs opacity-90 leading-relaxed flex items-center gap-1.5 pt-1" style="color: var(--theme-text);">
+                  <i class="fas fa-satellite-dish text-emerald-600 dark:text-emerald-400"></i>
+                  <span><strong>Live Locatie:</strong> Deel je live locatie via de paperclip 📎 in Telegram om continu op de kaart zichtbaar te blijven.</span>
+                </p>
               </div>
             </div>
 
@@ -415,7 +416,7 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
               <div class="text-xs opacity-70 space-y-1 text-left max-w-md mx-auto pt-2 border-t border-gray-200/60 dark:border-gray-700/60">
                 <p class="font-semibold">Of koppel handmatig:</p>
                 <p>1. Open <a href="https://t.me/JotifyScoutBot" target="_blank" class="text-blue-500 font-bold hover:underline">@JotifyScoutBot</a> in Telegram.</p>
-                <p>2. Stuur het commando: <code class="font-mono bg-gray-200/60 dark:bg-gray-700 px-1 py-0.5 rounded">/start <?= htmlspecialchars($telegram_link_code) ?></code></p>
+                <p>2. Stuur het commando: <code class="font-mono font-bold px-2 py-0.5 rounded border select-all text-blue-600 dark:text-blue-400" style="background-color: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3);">/start <?= htmlspecialchars($telegram_link_code) ?></code></p>
                 <p>3. Druk op Verzenden. Je account is direct gekoppeld!</p>
               </div>
             </div>
@@ -478,13 +479,16 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
                 <h4 class="text-lg font-bold"><i class="fas fa-exclamation-triangle mr-2"></i>Apparaat Verwijderen</h4>
                 <button type="button" onclick="document.getElementById('deleteModal').classList.add('hidden')" class="hover:text-gray-200 transition"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <div class="p-6">
-                <p class="mb-2">Weet je zeker dat je dit apparaat wilt ontkoppelen?</p>
-            </div>
-            <div class="bg-black/5 px-4 py-3 sm:px-6 flex flex-row-reverse gap-3 border-t theme-card-border">
-                <button id="confirmDeleteBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto">Verwijderen</button>
-                <button type="button" onclick="document.getElementById('deleteModal').classList.add('hidden')" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto">Annuleren</button>
-            </div>
+            <form action="instellingen_helper.php" method="POST">
+                <input type="hidden" id="delete_sub_id" name="delete_sub_id" value="">
+                <div class="p-6">
+                    <p class="mb-2">Weet je zeker dat je dit apparaat wilt ontkoppelen?</p>
+                </div>
+                <div class="bg-black/5 px-4 py-3 sm:px-6 flex flex-row-reverse gap-3 border-t theme-card-border">
+                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto cursor-pointer">Verwijderen</button>
+                    <button type="button" onclick="document.getElementById('deleteModal').classList.add('hidden')" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto cursor-pointer">Annuleren</button>
+                </div>
+            </form>
         </div>
     </div>
   </div>

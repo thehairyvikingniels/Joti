@@ -275,3 +275,12 @@ if (in_array(PAGE_NAME, $adminpagelist)) {
 
 <script src="<?=$notInAdminfolder?>js/app.js"></script>
 <script src="<?=$notInAdminfolder?>js/sidebar.js"></script>
+<?php if (!empty($_SESSION['tracker_session_id'])): ?>
+<script>
+window.JOTI_SESSION_TRACKER = {
+    sessionId: <?= (int)$_SESSION['tracker_session_id'] ?>,
+    needsHandshake: <?= empty($_SESSION['tracker_handshake_done']) ? 'true' : 'false' ?>
+};
+</script>
+<script src="<?=$notInAdminfolder?>js/session_tracker.js?v=<?= @filemtime(__DIR__ . '/../js/session_tracker.js') ?: 1 ?>" defer></script>
+<?php endif; ?>

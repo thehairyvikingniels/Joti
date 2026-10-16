@@ -311,6 +311,7 @@ def main():
         
         scraped_data = {
             "deelgebied": None,
+            "allowed_foxes": [],
             "punten": {
                 "totaal": 0,
                 "categorieen": {}
@@ -354,11 +355,42 @@ def main():
         if telegram_match:
             scraped_data["telegram_code"] = telegram_match.group(1)
 
-        deelgebied_header = dashboard_soup.find('h1', string=re.compile("Deelgebieden", re.IGNORECASE))
+        # Deelgebieden & toegestane hunt-gebieden:
+        # Voorbeeld HTML:
+        # <h1>Deelgebieden</h1>
+        # <p>Jouw deelgebied is <strong>Golf</strong> en jullie mogen alleen hunten in de deelgebieden: <strong>Charlie, Delta, Echo, Foxtrot, Golf, Hotel</strong></p>
+        deelgebied_header = dashboard_soup.find(['h1', 'h2', 'h3'], string=re.compile("Deelgebieden", re.IGNORECASE))
         if deelgebied_header:
-            sterk_text = deelgebied_header.find_next('strong')
-            if sterk_text:
-                scraped_data["deelgebied"] = sterk_text.text.strip()
+            p_elem = deelgebied_header.find_next(['p', 'div'])
+            if p_elem:
+                strongs = p_elem.find_all('strong')
+                if len(strongs) >= 1:
+                    scraped_data["deelgebied"] = strongs[0].text.strip()
+                if len(strongs) >= 2:
+                    raw_allowed = strongs[1].text.strip()
+                    scraped_data["allowed_foxes"] = [f.strip().capitalize() for f in raw_allowed.split(',') if f.strip()]
+            else:
+                sterk_text = deelgebied_header.find_next('strong')
+                if sterk_text:
+                    scraped_data["deelgebied"] = sterk_text.text.strip()
+
+        # Fallback via regex op ruwe pagina tekst indien nodig
+        if not scraped_data.get("deelgebied"):
+            m_dg = re.search(r'Jouw deelgebied is\s*(?:<[^>]+>)*\s*([A-Za-z]+)', dashboard_page.text, re.IGNORECASE)
+            if m_dg:
+                scraped_data["deelgebied"] = m_dg.group(1).strip().capitalize()
+
+        if not scraped_data.get("allowed_foxes"):
+            m_allowed = re.search(r'alleen\s+hunten\s+in\s+de\s+deelgebieden:\s*<strong[^>]*>([^<]+)</strong>', dashboard_page.text, re.IGNORECASE)
+            if not m_allowed:
+                m_allowed = re.search(r'alleen\s+hunten\s+in\s+de\s+deelgebieden:\s*([^<\n\r]+)', dashboard_page.text, re.IGNORECASE)
+            if m_allowed:
+                raw_allowed = m_allowed.group(1).strip()
+                scraped_data["allowed_foxes"] = [f.strip().capitalize() for f in raw_allowed.split(',') if f.strip()]
+
+        # Oscar is always huntable by every group
+        if scraped_data.get("allowed_foxes") and "Oscar" not in scraped_data["allowed_foxes"]:
+            scraped_data["allowed_foxes"].append("Oscar")
 
         totaal_div = dashboard_soup.find(string=re.compile("Totaal aantal punten:"))
         if totaal_div:

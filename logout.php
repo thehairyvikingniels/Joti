@@ -6,6 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once('dblogin.php');
 require_once('includes/db.php');
+require_once('includes/helpers.php');
 require_once('includes/remember_me.php');
 
 if (!empty($_SESSION['id'])) {
@@ -15,6 +16,7 @@ if (!empty($_SESSION['id'])) {
         'actor_username' => $uname,
         'severity' => 'info'
     ]);
+    endTrackedSession($conn);
 }
 
 // Clear persistent token for this device from DB and expire cookie

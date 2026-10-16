@@ -16,5 +16,8 @@ if ($conn->connect_error) {
 
 $conn->set_charset("utf8mb4");
 
+$tzOffset = date('P');
+$conn->query("SET time_zone = '" . $conn->real_escape_string($tzOffset) . "'");
+
 require_once(__DIR__ . '/includes/globals.php');
 ?>

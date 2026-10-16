@@ -1,5 +1,5 @@
 // Service worker providing offline navigation caching, Web Push notification display, and notification click routing.
-const CACHE_NAME = 'jotihunt-kiosk-v4';
+const CACHE_NAME = 'jotihunt-kiosk-v5';
 const OFFLINE_URL = '/offline.php';
 
 self.addEventListener('install', function(event) {
@@ -28,6 +28,10 @@ self.addEventListener('activate', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(function() {

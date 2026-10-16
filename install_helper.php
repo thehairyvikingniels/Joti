@@ -323,6 +323,8 @@ switch ($action) {
                     . "    die(\"Database connection failed: \" . \$conn->connect_error);\n"
                     . "}\n\n"
                     . "\$conn->set_charset(\"utf8mb4\");\n\n"
+                    . "\$tzOffset = date('P');\n"
+                    . "\$conn->query(\"SET time_zone = '\" . \$conn->real_escape_string(\$tzOffset) . \"'\");\n\n"
                     . "require_once(__DIR__ . '/includes/globals.php');\n";
 
                 if (file_put_contents(__DIR__ . '/dblogin.php', $dbloginContent) === false) {
@@ -456,6 +458,8 @@ switch ($action) {
             . "    die(\"Database connection failed: \" . \$conn->connect_error);\n"
             . "}\n\n"
             . "\$conn->set_charset(\"utf8mb4\");\n\n"
+            . "\$tzOffset = date('P');\n"
+            . "\$conn->query(\"SET time_zone = '\" . \$conn->real_escape_string(\$tzOffset) . \"'\");\n\n"
             . "require_once(__DIR__ . '/includes/globals.php');\n";
 
         if (file_put_contents(__DIR__ . '/dblogin.php', $dbloginContent) === false) {

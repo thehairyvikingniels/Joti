@@ -123,131 +123,267 @@ if (($privilege ?? 0) < 2) {
 
       </div>
 
-      <!-- Filter Toolbar -->
-      <div class="theme-card rounded-xl border p-4 shadow-sm" style="border-color: var(--theme-card-border);">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          
-          <!-- Search input -->
-          <div class="lg:col-span-2 relative">
-            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none opacity-50">
-              <i class="fas fa-search text-xs"></i>
-            </span>
-            <input type="text" id="filter-search" placeholder="Zoek op actie, gebruiker, doel, IP..." class="w-full pl-9 pr-4 py-2 text-sm rounded-lg border bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/50" style="border-color: var(--theme-card-border);">
-          </div>
-
-          <!-- Category filter -->
-          <div>
-            <select id="filter-category" class="w-full px-3 py-2 text-sm rounded-lg border bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/50" style="border-color: var(--theme-card-border);">
-              <option value="all">Alle Categorieën</option>
-              <option value="assignment">Toewijzingen</option>
-              <option value="whiteboard">Whiteboard</option>
-              <option value="auth">Authenticatie</option>
-              <option value="user">Gebruikersbeheer</option>
-              <option value="settings">Instellingen</option>
-              <option value="cron">Cronjobs</option>
-              <option value="security">Beveiliging / Kiosk</option>
-              <option value="system">Systeem</option>
-            </select>
-          </div>
-
-          <!-- Severity filter -->
-          <div>
-            <select id="filter-severity" class="w-full px-3 py-2 text-sm rounded-lg border bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/50" style="border-color: var(--theme-card-border);">
-              <option value="">Alle Niveaus</option>
-              <option value="info">Info</option>
-              <option value="warning">Waarschuwing</option>
-              <option value="error">Fout</option>
-              <option value="security">Beveiliging</option>
-            </select>
-          </div>
-
-          <!-- User filter -->
-          <div>
-            <select id="filter-user" class="w-full px-3 py-2 text-sm rounded-lg border bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/50" style="border-color: var(--theme-card-border);">
-              <option value="">Alle Gebruikers</option>
-              <!-- Filled via AJAX -->
-            </select>
-          </div>
-
-        </div>
-
-        <div class="flex items-center justify-between mt-3 pt-3 border-t text-xs opacity-70" style="border-color: var(--theme-card-border);">
-          <div id="filter-indicator">Filters actief: 0</div>
-          <button id="btn-reset-filters" type="button" class="hover:underline flex items-center gap-1">
-            <i class="fas fa-rotate-left"></i> <span>Herstel filters</span>
-          </button>
-        </div>
+      <!-- Navigation Tabs: Audit Logboek vs Sessie Tracker -->
+      <div class="flex items-center gap-2 border-b" style="border-color: var(--theme-card-border);">
+        <button id="tab-btn-audit" type="button" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-blue-500 text-blue-500 flex items-center gap-2 transition" onclick="window.AuditHub.switchMainTab('audit')">
+          <i class="fas fa-list-ul"></i>
+          <span>Audit Logboek</span>
+        </button>
+        <button id="tab-btn-sessions" type="button" class="tab-btn px-4 py-3 text-sm font-semibold border-b-2 border-transparent opacity-70 hover:opacity-100 flex items-center gap-2 transition" onclick="window.AuditHub.switchMainTab('sessions')">
+          <i class="fas fa-desktop"></i>
+          <span>Sessie Tracker</span>
+          <span id="active-sessions-badge" class="ml-1 text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 font-bold hidden">0 actief</span>
+        </button>
       </div>
 
-      <!-- Main Logs Feed Table Card -->
-      <div class="theme-card rounded-xl border shadow-sm overflow-hidden" style="border-color: var(--theme-card-border);">
-        <div class="theme-card-header px-6 py-4 border-b flex justify-between items-center text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
-          <h3 class="text-lg font-bold flex items-center gap-2">
-            <i class="fas fa-list-ul"></i>
-            <span>Gebeurtenissenlog</span>
-            <span id="log-count-badge" class="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white">0</span>
-          </h3>
+      <!-- TAB 1: Audit Logs View -->
+      <div id="view-audit-logs" class="space-y-6">
+        <!-- Filter Toolbar -->
+        <div class="theme-card rounded-xl border p-4 shadow-sm" style="border-color: var(--theme-card-border);">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            
+            <!-- Search input -->
+            <div class="lg:col-span-2 relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none opacity-50">
+                <i class="fas fa-search text-xs"></i>
+              </span>
+              <input type="text" id="filter-search" placeholder="Zoek op actie, gebruiker, doel, IP..." class="w-full pl-9 pr-4 py-2 text-sm rounded-lg border bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/50" style="border-color: var(--theme-card-border);">
+            </div>
 
-          <div class="flex items-center gap-3">
-            <button id="btn-refresh" class="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
-              <i id="icon-refresh-spin" class="fas fa-rotate"></i>
-              <span>Ververs</span>
+            <!-- Category filter -->
+            <div>
+              <select id="filter-category" class="w-full px-3 py-2 text-sm rounded-lg border bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/50" style="border-color: var(--theme-card-border);">
+                <option value="all">Alle Categorieën</option>
+                <option value="assignment">Toewijzingen</option>
+                <option value="whiteboard">Whiteboard</option>
+                <option value="auth">Authenticatie</option>
+                <option value="user">Gebruikersbeheer</option>
+                <option value="settings">Instellingen</option>
+                <option value="cron">Cronjobs</option>
+                <option value="security">Beveiliging / Kiosk</option>
+                <option value="system">Systeem</option>
+              </select>
+            </div>
+
+            <!-- Severity filter -->
+            <div>
+              <select id="filter-severity" class="w-full px-3 py-2 text-sm rounded-lg border bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/50" style="border-color: var(--theme-card-border);">
+                <option value="">Alle Niveaus</option>
+                <option value="info">Info</option>
+                <option value="warning">Waarschuwing</option>
+                <option value="error">Fout</option>
+                <option value="security">Beveiliging</option>
+              </select>
+            </div>
+
+            <!-- User filter -->
+            <div>
+              <select id="filter-user" class="w-full px-3 py-2 text-sm rounded-lg border bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/50" style="border-color: var(--theme-card-border);">
+                <option value="">Alle Gebruikers</option>
+                <!-- Filled via AJAX -->
+              </select>
+            </div>
+
+          </div>
+
+          <div class="flex items-center justify-between mt-3 pt-3 border-t text-xs opacity-70" style="border-color: var(--theme-card-border);">
+            <div id="filter-indicator">Filters actief: 0</div>
+            <button id="btn-reset-filters" type="button" class="hover:underline flex items-center gap-1">
+              <i class="fas fa-rotate-left"></i> <span>Herstel filters</span>
             </button>
           </div>
         </div>
 
-        <!-- Table Responsive Container -->
-        <div class="overflow-x-auto min-h-[300px] relative">
-          <!-- Loading overlay -->
-          <div id="logs-loading" class="hidden absolute inset-0 bg-white/60 dark:bg-black/60 z-10 flex items-center justify-center backdrop-blur-sm">
-            <div class="flex items-center gap-3 px-4 py-2 rounded-lg bg-black/80 text-white text-sm font-semibold shadow-lg">
-              <i class="fas fa-spinner fa-spin text-blue-400"></i>
-              <span>Logboeken laden...</span>
+        <!-- Main Logs Feed Table Card -->
+        <div class="theme-card rounded-xl border shadow-sm overflow-hidden" style="border-color: var(--theme-card-border);">
+          <div class="theme-card-header px-6 py-4 border-b flex justify-between items-center text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h3 class="text-lg font-bold flex items-center gap-2">
+              <i class="fas fa-list-ul"></i>
+              <span>Gebeurtenissenlog</span>
+              <span id="log-count-badge" class="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white">0</span>
+            </h3>
+
+            <div class="flex items-center gap-3">
+              <button id="btn-refresh" class="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                <i id="icon-refresh-spin" class="fas fa-rotate"></i>
+                <span>Ververs</span>
+              </button>
             </div>
           </div>
 
-          <table class="w-full text-left text-sm whitespace-nowrap">
-            <thead class="text-xs uppercase bg-black/5 font-semibold opacity-70 border-b" style="border-color: var(--theme-card-border);">
-              <tr>
-                <th scope="col" class="px-4 py-3">Tijdstip</th>
-                <th scope="col" class="px-4 py-3">Niveau</th>
-                <th scope="col" class="px-4 py-3">Categorie</th>
-                <th scope="col" class="px-4 py-3">Acteur</th>
-                <th scope="col" class="px-4 py-3">Onderwerp / Doel</th>
-                <th scope="col" class="px-4 py-3">Details</th>
-                <th scope="col" class="px-4 py-3">IP Adres</th>
-                <th scope="col" class="px-4 py-3 text-right">Acties</th>
-              </tr>
-            </thead>
-            <tbody id="logs-tbody" class="divide-y" style="border-color: var(--theme-card-border);">
-              <!-- Rendered via JS -->
-            </tbody>
-          </table>
-
-          <!-- Empty state -->
-          <div id="logs-empty" class="hidden py-16 text-center">
-            <div class="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mx-auto text-2xl opacity-40 mb-3">
-              <i class="fas fa-clipboard-list"></i>
+          <!-- Table Responsive Container -->
+          <div class="overflow-x-auto min-h-[300px] relative">
+            <!-- Loading overlay -->
+            <div id="logs-loading" class="hidden absolute inset-0 bg-white/60 dark:bg-black/60 z-10 flex items-center justify-center backdrop-blur-sm">
+              <div class="flex items-center gap-3 px-4 py-2 rounded-lg bg-black/80 text-white text-sm font-semibold shadow-lg">
+                <i class="fas fa-spinner fa-spin text-blue-400"></i>
+                <span>Logboeken laden...</span>
+              </div>
             </div>
-            <p class="font-semibold text-base">Geen logberichten gevonden</p>
-            <p class="text-xs opacity-60 mt-1">Probeer de zoekterm of filters aan te passen.</p>
+
+            <table class="w-full text-left text-sm whitespace-nowrap">
+              <thead class="text-xs uppercase bg-black/5 font-semibold opacity-70 border-b" style="border-color: var(--theme-card-border);">
+                <tr>
+                  <th scope="col" class="px-4 py-3">Tijdstip</th>
+                  <th scope="col" class="px-4 py-3">Niveau</th>
+                  <th scope="col" class="px-4 py-3">Categorie</th>
+                  <th scope="col" class="px-4 py-3">Acteur</th>
+                  <th scope="col" class="px-4 py-3">Onderwerp / Doel</th>
+                  <th scope="col" class="px-4 py-3">Details</th>
+                  <th scope="col" class="px-4 py-3">IP Adres</th>
+                  <th scope="col" class="px-4 py-3 text-right">Acties</th>
+                </tr>
+              </thead>
+              <tbody id="logs-tbody" class="divide-y" style="border-color: var(--theme-card-border);">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+
+            <!-- Empty state -->
+            <div id="logs-empty" class="hidden py-16 text-center">
+              <div class="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mx-auto text-2xl opacity-40 mb-3">
+                <i class="fas fa-clipboard-list"></i>
+              </div>
+              <p class="font-semibold text-base">Geen logberichten gevonden</p>
+              <p class="text-xs opacity-60 mt-1">Probeer de zoekterm of filters aan te passen.</p>
+            </div>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="px-6 py-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-xs opacity-80" style="border-color: var(--theme-card-border);">
+            <div id="pagination-info">Pagina 1 van 1 (0 regels)</div>
+            <div class="flex items-center gap-2">
+              <button id="btn-page-prev" class="px-3 py-1.5 rounded-lg border hover:bg-black/5 transition disabled:opacity-30 disabled:cursor-not-allowed" style="border-color: var(--theme-card-border);">
+                <i class="fas fa-chevron-left mr-1"></i> Vorige
+              </button>
+              <span id="pagination-current-page" class="font-semibold px-2">1</span>
+              <button id="btn-page-next" class="px-3 py-1.5 rounded-lg border hover:bg-black/5 transition disabled:opacity-30 disabled:cursor-not-allowed" style="border-color: var(--theme-card-border);">
+                Volgende <i class="fas fa-chevron-right ml-1"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div> <!-- /#view-audit-logs -->
+
+      <!-- TAB 2: Sessions & Interactions View -->
+      <div id="view-sessions" class="space-y-6 hidden">
+        <!-- Sessions Filter Toolbar -->
+        <div class="theme-card rounded-xl border p-4 shadow-sm" style="border-color: var(--theme-card-border);">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <!-- Search input -->
+            <div class="lg:col-span-2 relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none opacity-50">
+                <i class="fas fa-search text-xs"></i>
+              </span>
+              <input type="text" id="filter-sessions-search" placeholder="Zoek op gebruiker, IP, platform..." class="w-full pl-9 pr-4 py-2 text-sm rounded-lg border bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/50" style="border-color: var(--theme-card-border);">
+            </div>
+
+            <!-- Auth Method Filter -->
+            <div>
+              <select id="filter-sessions-auth" class="w-full px-3 py-2 text-sm rounded-lg border bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/50" style="border-color: var(--theme-card-border);">
+                <option value="all">Alle Methodes</option>
+                <option value="password">Wachtwoord</option>
+                <option value="remember_me">Remember-Me Cookie</option>
+                <option value="php_session">Sessie Hersteld</option>
+              </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div>
+              <select id="filter-sessions-status" class="w-full px-3 py-2 text-sm rounded-lg border bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/50" style="border-color: var(--theme-card-border);">
+                <option value="all">Alle Statussen</option>
+                <option value="active">Actief</option>
+                <option value="logged_out">Uitgelogd</option>
+                <option value="expired">Verlopen</option>
+              </select>
+            </div>
+
+            <!-- User filter -->
+            <div>
+              <select id="filter-sessions-user" class="w-full px-3 py-2 text-sm rounded-lg border bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500/50" style="border-color: var(--theme-card-border);">
+                <option value="">Alle Gebruikers</option>
+                <!-- Populated via AJAX -->
+              </select>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between mt-3 pt-3 border-t text-xs opacity-70" style="border-color: var(--theme-card-border);">
+            <div id="filter-sessions-indicator">Filters actief: 0</div>
+            <button id="btn-reset-sessions-filters" type="button" class="hover:underline flex items-center gap-1">
+              <i class="fas fa-rotate-left"></i> <span>Herstel filters</span>
+            </button>
           </div>
         </div>
 
-        <!-- Pagination Bar -->
-        <div class="px-6 py-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-xs opacity-80" style="border-color: var(--theme-card-border);">
-          <div id="pagination-info">Pagina 1 van 1 (0 regels)</div>
-          <div class="flex items-center gap-2">
-            <button id="btn-page-prev" class="px-3 py-1.5 rounded-lg border hover:bg-black/5 transition disabled:opacity-30 disabled:cursor-not-allowed" style="border-color: var(--theme-card-border);">
-              <i class="fas fa-chevron-left mr-1"></i> Vorige
-            </button>
-            <span id="pagination-current-page" class="font-semibold px-2">1</span>
-            <button id="btn-page-next" class="px-3 py-1.5 rounded-lg border hover:bg-black/5 transition disabled:opacity-30 disabled:cursor-not-allowed" style="border-color: var(--theme-card-border);">
-              Volgende <i class="fas fa-chevron-right ml-1"></i>
-            </button>
+        <!-- Sessions Feed Table Card -->
+        <div class="theme-card rounded-xl border shadow-sm overflow-hidden" style="border-color: var(--theme-card-border);">
+          <div class="theme-card-header px-6 py-4 border-b flex justify-between items-center text-white" style="background-color: var(--theme-sidebar-active); border-color: var(--theme-card-border);">
+            <h3 class="text-lg font-bold flex items-center gap-2">
+              <i class="fas fa-desktop"></i>
+              <span>Gebruikerssessies & Telemetrie</span>
+              <span id="sessions-count-badge" class="ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-white/20 text-white">0</span>
+            </h3>
+
+            <div class="flex items-center gap-3">
+              <button id="btn-refresh-sessions" class="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                <i id="icon-refresh-sessions-spin" class="fas fa-rotate"></i>
+                <span>Ververs</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Table Responsive Container -->
+          <div class="overflow-x-auto min-h-[300px] relative">
+            <!-- Loading overlay -->
+            <div id="sessions-loading" class="hidden absolute inset-0 bg-white/60 dark:bg-black/60 z-10 flex items-center justify-center backdrop-blur-sm">
+              <div class="flex items-center gap-3 px-4 py-2 rounded-lg bg-black/80 text-white text-sm font-semibold shadow-lg">
+                <i class="fas fa-spinner fa-spin text-blue-400"></i>
+                <span>Sessies laden...</span>
+              </div>
+            </div>
+
+            <table class="w-full text-left text-sm whitespace-nowrap">
+              <thead class="text-xs uppercase bg-black/5 font-semibold opacity-70 border-b" style="border-color: var(--theme-card-border);">
+                <tr>
+                  <th scope="col" class="px-4 py-3">Gebruiker</th>
+                  <th scope="col" class="px-4 py-3">Status & Methode</th>
+                  <th scope="col" class="px-4 py-3">Netwerk & IP</th>
+                  <th scope="col" class="px-4 py-3">Apparaat & Viewport</th>
+                  <th scope="col" class="px-4 py-3">Starttijd & Duur</th>
+                  <th scope="col" class="px-4 py-3">Activiteit</th>
+                  <th scope="col" class="px-4 py-3 text-right">Details</th>
+                </tr>
+              </thead>
+              <tbody id="sessions-tbody" class="divide-y" style="border-color: var(--theme-card-border);">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+
+            <!-- Empty state -->
+            <div id="sessions-empty" class="hidden py-16 text-center">
+              <div class="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mx-auto text-2xl opacity-40 mb-3">
+                <i class="fas fa-desktop"></i>
+              </div>
+              <p class="font-semibold text-base">Geen sessies gevonden</p>
+              <p class="text-xs opacity-60 mt-1">Probeer de zoekterm of filters aan te passen.</p>
+            </div>
+          </div>
+
+          <!-- Sessions Pagination Bar -->
+          <div class="px-6 py-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-xs opacity-80" style="border-color: var(--theme-card-border);">
+            <div id="sessions-pagination-info">Pagina 1 van 1 (0 sessies)</div>
+            <div class="flex items-center gap-2">
+              <button id="btn-sessions-page-prev" class="px-3 py-1.5 rounded-lg border hover:bg-black/5 transition disabled:opacity-30 disabled:cursor-not-allowed" style="border-color: var(--theme-card-border);">
+                <i class="fas fa-chevron-left mr-1"></i> Vorige
+              </button>
+              <span id="sessions-pagination-current-page" class="font-semibold px-2">1</span>
+              <button id="btn-sessions-page-next" class="px-3 py-1.5 rounded-lg border hover:bg-black/5 transition disabled:opacity-30 disabled:cursor-not-allowed" style="border-color: var(--theme-card-border);">
+                Volgende <i class="fas fa-chevron-right ml-1"></i>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </div> <!-- /#view-sessions -->
 
     </div>
 

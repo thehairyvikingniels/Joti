@@ -11,7 +11,7 @@ description: >-
 | Environment | Hostname | Public IP / Port | User | Web URL | Project Root | Default Branch |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Production** | `LAMP` | `86.92.200.173:2222` | `root` | `https://joti.maarleveld.app/` | `/var/www/Joti/` | `dev` / `main` |
-| **Test (LXC)** | `debian` | `86.92.200.173:2223` | `root` | `https://test.joti.maarleveld.app/` | `/var/www/Joti/` | `autoinstall` / `dev` |
+| **Test (LXC)** | `debian` | `86.92.200.173:2223` | `root` | `https://joti-test.maarleveld.app/` | `/var/www/Joti/` | `autoinstall` / `dev` |
 
 - Password for both: `@VoermanStraat11FAY!`
 - MySQL/MariaDB credentials: User `adminer`, Password `@VoermanStraat11FAY!`, Database `jotihunt`

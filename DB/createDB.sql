@@ -192,6 +192,64 @@ CREATE TABLE IF NOT EXISTS `Gebruikers_Tokens` (
 -- --------------------------------------------------------
 
 --
+-- Tabelstructuur voor tabel `User_Sessions`
+--
+
+CREATE TABLE IF NOT EXISTS `User_Sessions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `php_session_id` varchar(128) DEFAULT NULL,
+  `auth_method` enum('password','remember_me','php_session') NOT NULL DEFAULT 'password',
+  `ip_address` varchar(45) NOT NULL,
+  `forwarded_for` varchar(255) DEFAULT NULL,
+  `user_agent` varchar(512) DEFAULT NULL,
+  `viewport_width` int(11) DEFAULT NULL,
+  `viewport_height` int(11) DEFAULT NULL,
+  `screen_width` int(11) DEFAULT NULL,
+  `screen_height` int(11) DEFAULT NULL,
+  `pixel_ratio` decimal(4,2) DEFAULT NULL,
+  `network_type` varchar(32) DEFAULT NULL COMMENT 'e.g. 4g, wifi, 3g from Network Information API',
+  `network_downlink` decimal(6,2) DEFAULT NULL COMMENT 'Mbps estimate',
+  `network_rtt` int(11) DEFAULT NULL COMMENT 'ms estimate',
+  `platform` varchar(64) DEFAULT NULL,
+  `language` varchar(32) DEFAULT NULL,
+  `touch_points` int(11) DEFAULT NULL,
+  `started_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `last_activity` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  `ended_at` datetime(3) DEFAULT NULL,
+  `status` enum('active','logged_out','expired') NOT NULL DEFAULT 'active',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_sessions_user` (`user_id`),
+  KEY `idx_user_sessions_status_last` (`status`, `last_activity`),
+  CONSTRAINT `fk_user_sessions_user` FOREIGN KEY (`user_id`) REFERENCES `Gebruikers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Tabelstructuur voor tabel `Session_Events`
+--
+
+CREATE TABLE IF NOT EXISTS `Session_Events` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `session_id` int(11) NOT NULL,
+  `event_type` enum('page_view','click','form_submit','tab_switch','modal','visibility','auth') NOT NULL,
+  `page_url` varchar(255) NOT NULL,
+  `referrer` varchar(255) DEFAULT NULL,
+  `target_tag` varchar(32) DEFAULT NULL,
+  `target_id` varchar(128) DEFAULT NULL,
+  `target_label` varchar(255) DEFAULT NULL,
+  `metadata` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`metadata`)),
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  KEY `idx_session_events_session_time` (`session_id`, `created_at`),
+  KEY `idx_session_events_type` (`event_type`),
+  CONSTRAINT `fk_session_events_session` FOREIGN KEY (`session_id`) REFERENCES `User_Sessions` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Tabelstructuur voor tabel `Fotoopdrachten`
 --
 
@@ -541,10 +599,11 @@ CREATE TABLE IF NOT EXISTS `Whiteboard_Categorieen` (
 
 CREATE TABLE IF NOT EXISTS `Audit_Logs` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   `severity` enum('info','warning','error','security') NOT NULL DEFAULT 'info',
   `category` varchar(32) NOT NULL,
   `action` varchar(64) NOT NULL,
+  `session_id` int(11) DEFAULT NULL,
   `actor_user_id` int(11) DEFAULT NULL,
   `actor_username` varchar(64) DEFAULT NULL,
   `subject_user_id` int(11) DEFAULT NULL,
@@ -559,9 +618,11 @@ CREATE TABLE IF NOT EXISTS `Audit_Logs` (
   KEY `idx_audit_created` (`created_at`),
   KEY `idx_audit_category` (`category`),
   KEY `idx_audit_action` (`action`),
+  KEY `idx_audit_session` (`session_id`),
   KEY `idx_audit_actor` (`actor_user_id`),
   KEY `idx_audit_subject` (`subject_user_id`),
-  KEY `idx_audit_target` (`target_type`,`target_id`)
+  KEY `idx_audit_target` (`target_type`,`target_id`),
+  CONSTRAINT `fk_audit_session` FOREIGN KEY (`session_id`) REFERENCES `User_Sessions` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -655,7 +716,9 @@ INSERT IGNORE INTO `Site_Instellingen` (`Instelling`, `Waarde`, `Omschrijving`) 
 ('TELEGRAM_INGEST_SECRET', 'placeholder_secret', 'Shared secret token required to authorize incoming Webhook and MTProto ingest requests.'),
 ('TELEGRAM_REGISTRATION_CODE', 'placeholder_code', 'Latest registration token scraped from the Jotihunt portal used to pair with @Jotihunt_bot.'),
 ('TELEGRAM_BOT_TOKEN', '123456789:ABCdefGHIjklMNOpqrSTUvwxYZ', 'Optional Telegram Bot API token from @BotFather used for sending outbound broadcast notifications.'),
-('RDW_LOOKUP_ENABLED', '1', 'Schakel automatische RDW kenteken validatie en merk/model opvraging in (0 of 1)');
+('RDW_LOOKUP_ENABLED', '1', 'Schakel automatische RDW kenteken validatie en merk/model opvraging in (0 of 1)'),
+('WHITEBOARD_FOX_NAMES', '', 'Komma-gescheiden lijst van vossenteams die op het whiteboard getoond worden (leeg = alle vossen tonen). Wordt ook automatisch bijgewerkt door de Jotihunt.nl portaal scraper.'),
+('EIGEN_DEELGEBIED', '', 'Eigen deelgebied van de scoutinggroep (wordt automatisch bijgewerkt door de Jotihunt.nl portaal scraper).');
 
 --
 -- Standaardgroep voor schone installatie

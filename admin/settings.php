@@ -2,6 +2,7 @@
 // Superadmin interface for viewing, updating, adding, and deleting global site configuration key-value settings.
 define("PAGE_NAME", "sa_settings");
 require_once(__DIR__ . '/../includes/auth.php');
+require_once(__DIR__ . '/../includes/globals.php');
 if ($privilege < 3) {
     header("Location: ../home");
     exit();
@@ -205,6 +206,27 @@ $stmt_groups->close();
                                     <?php endforeach; ?>
                                 </select>
                             <?php endif; ?>
+                        </div>
+                    <?php elseif ($setting['Instelling'] === 'WHITEBOARD_FOX_NAMES'): ?>
+                        <div class="flex-1 min-w-0 space-y-2">
+                            <input id="setting_WHITEBOARD_FOX_NAMES" class="w-full theme-override-bg theme-override-text border rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" type="text" name="<?php echo htmlspecialchars($setting['Instelling']); ?>" value="<?php echo htmlspecialchars($setting['Waarde']); ?>" placeholder="Bijv. Charlie, Delta, Echo, Foxtrot, Golf, Hotel (leeg = alle vossen)">
+                            <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                                <span class="text-xs opacity-60 mr-1 select-none"><i class="fas fa-paw mr-1"></i>Snel selecteren:</span>
+                                <?php 
+                                $curr_active = array_filter(array_map('trim', explode(',', $setting['Waarde'])));
+                                $curr_active_lower = array_map('strtolower', $curr_active);
+                                foreach ($fox_names as $fn): 
+                                    $isActive = in_array(strtolower(trim($fn)), $curr_active_lower, true) || empty($setting['Waarde']);
+                                ?>
+                                    <button type="button" 
+                                            onclick="toggleFoxSetting('<?php echo htmlspecialchars($fn); ?>')" 
+                                            data-fox="<?php echo htmlspecialchars($fn); ?>"
+                                            class="fox-toggle-btn text-xs px-2.5 py-1 rounded-full border transition font-medium <?php echo $isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-black/5 dark:bg-white/5 opacity-50 border-gray-300 dark:border-gray-700'; ?>">
+                                        <?php echo htmlspecialchars($fn); ?>
+                                    </button>
+                                <?php endforeach; ?>
+                                <button type="button" onclick="selectAllFoxes()" class="text-xs underline opacity-70 hover:opacity-100 ml-2">Allemaal</button>
+                            </div>
                         </div>
                     <?php else: ?>
                         <div class="flex-1 min-w-0">

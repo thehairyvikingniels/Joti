@@ -8,6 +8,10 @@ declare(strict_types=1);
  * All functions use prepared statements with strict typing and parameter binding.
  */
 
+if (date_default_timezone_get() !== 'Europe/Amsterdam') {
+    date_default_timezone_set('Europe/Amsterdam');
+}
+
 /**
  * Execute a prepared SQL statement and return the mysqli_result (or bool for non-SELECT queries).
  *
@@ -388,7 +392,7 @@ function recordAuditLog(
         $targetId = isset($options['target_id']) ? (string)$options['target_id'] : null;
         $targetLabel = $options['target_label'] ?? null;
 
-        // 4. Resolve IP & Metadata
+        // 4. Resolve IP & Metadata & Session
         $ip = $options['ip_address'] ?? (function_exists('getClientIP') ? getClientIP() : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'));
         $meta = $options['metadata'] ?? [];
         if (!isset($meta['user_agent']) && !empty($_SERVER['HTTP_USER_AGENT'])) {
@@ -396,20 +400,23 @@ function recordAuditLog(
         }
         $metaJson = !empty($meta) ? json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
 
+        $sessionId = isset($options['session_id']) ? (int)$options['session_id'] : (!empty($_SESSION['tracker_session_id']) ? (int)$_SESSION['tracker_session_id'] : null);
+
         $stmt = $conn->prepare(
             "INSERT INTO Audit_Logs 
-            (severity, category, action, actor_user_id, actor_username, subject_user_id, subject_username, target_type, target_id, target_label, details, metadata, ip_address, created_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())"
+            (severity, category, action, session_id, actor_user_id, actor_username, subject_user_id, subject_username, target_type, target_id, target_label, details, metadata, ip_address, created_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(3))"
         );
         if (!$stmt) {
             return false;
         }
 
         $stmt->bind_param(
-            "sssisssssssss",
+            "sssiisssssssss",
             $severity,
             $category,
             $action,
+            $sessionId,
             $actorId,
             $actorUsername,
             $subjectId,

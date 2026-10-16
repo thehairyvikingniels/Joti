@@ -30,7 +30,33 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("dragend", () => {
         document.querySelectorAll(".wb-zone").forEach((el) => el.classList.remove("drag-over"));
     });
+
+    updateFoxCardEmptyStates();
+    updateUnassignedCount();
 });
+
+function updateFoxCardEmptyStates() {
+    document.querySelectorAll(".fox-card").forEach((card) => {
+        const hasAssigned = card.querySelector(".wb-user, .car-draggable") !== null;
+        if (hasAssigned) {
+            card.classList.remove("is-empty");
+        } else {
+            card.classList.add("is-empty");
+        }
+    });
+}
+
+function updateUnassignedCount() {
+    const zone = document.getElementById("zone_unassigned");
+    const badge = document.getElementById("unassigned-badge");
+    if (!zone || !badge) return;
+    const users = zone.querySelectorAll(".wb-user").length;
+    const cars = zone.querySelectorAll(".compact-car").length;
+    let text = `(${users} jager${users === 1 ? '' : 's'}`;
+    if (cars > 0) text += `, ${cars} auto${cars === 1 ? '' : '\'s'}`;
+    text += ')';
+    badge.textContent = text;
+}
 
 function allowDrop(ev) {
     ev.preventDefault();
@@ -115,6 +141,8 @@ function dropDriver(ev) {
     if (wheel) wheel.remove();
 
     zone.appendChild(draggedElement);
+    updateFoxCardEmptyStates();
+    updateUnassignedCount();
 
     if (wasDriverZone && oldZone !== zone) {
         if (!oldZone.querySelector(".steering-wheel-placeholder")) {
@@ -177,16 +205,10 @@ function drop(ev) {
         const oldZone = draggedElement.parentElement;
         const wasDriverZone = oldZone && oldZone.hasAttribute("data-driver") && oldZone.getAttribute("data-driver") === "1";
 
-        if (zone.id === "zone_unassigned") {
-            const sep = document.getElementById("unassigned-separator");
-            if (sep) {
-                zone.insertBefore(draggedElement, sep);
-            } else {
-                zone.appendChild(draggedElement);
-            }
-        } else {
-            zone.appendChild(draggedElement);
-        }
+        zone.appendChild(draggedElement);
+
+        updateFoxCardEmptyStates();
+        updateUnassignedCount();
 
         if (wasDriverZone && oldZone !== zone) {
             if (!oldZone.querySelector(".steering-wheel-placeholder")) {
@@ -225,6 +247,8 @@ function drop(ev) {
 
         if (["hint", "opdracht", "custom", "hunt", "unassigned"].includes(targetType)) {
             zone.appendChild(draggedElement);
+            updateFoxCardEmptyStates();
+            updateUnassignedCount();
 
             const formData = new FormData();
             formData.append("action", "move_car");
