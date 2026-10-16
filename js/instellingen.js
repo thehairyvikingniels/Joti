@@ -22,29 +22,33 @@ function renameDevice(id, currentName) {
     if (modal) modal.classList.remove("hidden");
 }
 
+function openDeleteDeviceModal(id) {
+    const idField = document.getElementById("delete_sub_id");
+    const modal = document.getElementById("deleteModal");
+    if (idField) idField.value = id;
+    if (modal) modal.classList.remove("hidden");
+}
+
 function unsubscribeDevice(endpoint) {
-    if (confirm("Weet je zeker dat je de meldingen voor dit apparaat wilt uitschakelen?")) {
-        doDeleteEndpoint(endpoint);
-    }
+    openDeleteDeviceModal(endpoint);
 }
 
 function doDeleteEndpoint(endpoint) {
-    fetch("includes/push_subscription.php", {
+    fetch("/api/subscribe.php", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ endpoint: endpoint })
     })
         .then((r) => r.json())
         .then((res) => {
-            if (res.status === "success") {
+            if (res && res.data && res.data.success) {
                 window.location.reload();
             } else {
-                alert(`Fout bij uitschakelen: ${res.message || "Onbekend"}`);
+                console.error("Fout bij uitschakelen:", res);
             }
         })
         .catch((err) => {
-            console.error(err);
-            alert("Er is een fout opgetreden bij het uitschakelen van de meldingen.");
+            console.error("Netwerkfout bij uitschakelen:", err);
         });
 }
 

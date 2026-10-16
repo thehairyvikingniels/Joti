@@ -198,7 +198,19 @@ if (!empty($_POST['username']) && !empty($_POST['firstname']) && !empty($_POST['
         $e = "Database fout: " . $stmt->error;
     }
     $stmt->close();
-    header("Location: instellingen.php?e=" . urlencode($e) . "&t=notificaties");
+    header("Location: instellingen.php?e=" . urlencode($e) . "&t=notificaties#notificaties");
+    die();
+} elseif (isset($_POST['delete_sub_id'])) {
+    $sub_id = (int)$_POST['delete_sub_id'];
+    $stmt = $conn->prepare("DELETE FROM Notification_Subscriptions WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $sub_id, $_SESSION['id']);
+    if ($stmt->execute()) {
+        $e = "Apparaat succesvol ontkoppeld!";
+    } else {
+        $e = "Database fout: " . $stmt->error;
+    }
+    $stmt->close();
+    header("Location: instellingen.php?e=" . urlencode($e) . "&t=notificaties#notificaties");
     die();
 } elseif (isset($_POST['revoke_all_sessions'])) {
     clearAllRememberTokensForUser($conn, (int)$_SESSION['id']);

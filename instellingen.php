@@ -4,11 +4,12 @@ define("PAGE_NAME", "instellingen");
 require_once('includes/auth.php');
 
 // Fetch subscriptions
-$stmt = $conn->prepare("SELECT id, endpoint, device_name FROM Notification_Subscriptions WHERE user_id=?");
+$stmt = $conn->prepare("SELECT id, endpoint, device_name, created_at FROM Notification_Subscriptions WHERE user_id=? ORDER BY created_at DESC");
 $stmt->bind_param("i", $_SESSION['id']);
 $stmt->execute();
-$subscriptions = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$subs = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
+$subscriptions = $subs;
 
 // Fetch preferences
 $stmt = $conn->prepare("SELECT notification_prefs FROM Gebruikers WHERE id=?");
@@ -240,10 +241,10 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
               <p class="text-xs opacity-70 mb-4">Beheer welke apparaten pushnotificaties ontvangen.</p>
               
               <div class="space-y-3 mb-4">
-                <button id="push-toggle-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2">
+                <button id="push-toggle-btn" type="button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-sm flex items-center justify-center gap-2 cursor-pointer">
                   <i class="fas fa-bell"></i> <span>Pushnotificaties inschakelen</span>
                 </button>
-                <div id="push-status-msg" class="text-xs text-center"></div>
+                <div id="push-status-msg" class="text-xs text-center min-h-[1.25rem]"></div>
               </div>
 
               <?php if (empty($subs)): ?>
@@ -254,12 +255,12 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
                     <div class="p-3 flex items-center justify-between hover:bg-black/5 transition">
                       <div>
                         <span class="font-bold block"><?= htmlspecialchars($sub['device_name'] ?: 'Browser Sessie') ?></span>
-                        <span class="opacity-50 text-[10px]">Toegevoegd: <?= date('d-m-Y H:i', strtotime($sub['created_at'])) ?></span>
+                        <span class="opacity-50 text-[10px]">Toegevoegd: <?= !empty($sub['created_at']) ? date('d-m-Y H:i', strtotime($sub['created_at'])) : 'Onbekend' ?></span>
                       </div>
-                      <form method="POST" action="instellingen_helper.php" class="m-0">
-                        <input type="hidden" name="delete_sub_id" value="<?= $sub['id'] ?>">
-                        <button type="submit" class="text-red-500 hover:text-red-700 p-1.5 transition" title="Verwijder apparaat"><i class="fas fa-trash-alt"></i></button>
-                      </form>
+                      <div class="flex items-center gap-1">
+                        <button type="button" onclick="renameDevice(<?= (int)$sub['id'] ?>, '<?= htmlspecialchars(addslashes($sub['device_name'] ?? 'Browser Sessie'), ENT_QUOTES) ?>')" class="text-blue-500 hover:text-blue-700 p-1.5 transition cursor-pointer" title="Hernoem apparaat"><i class="fas fa-edit"></i></button>
+                        <button type="button" onclick="openDeleteDeviceModal(<?= (int)$sub['id'] ?>)" class="text-red-500 hover:text-red-700 p-1.5 transition cursor-pointer" title="Verwijder apparaat"><i class="fas fa-trash-alt"></i></button>
+                      </div>
                     </div>
                   <?php endforeach; ?>
                 </div>
@@ -478,13 +479,16 @@ $notification_prefs = $res_prefs['notification_prefs'] ? json_decode($res_prefs[
                 <h4 class="text-lg font-bold"><i class="fas fa-exclamation-triangle mr-2"></i>Apparaat Verwijderen</h4>
                 <button type="button" onclick="document.getElementById('deleteModal').classList.add('hidden')" class="hover:text-gray-200 transition"><i class="fas fa-times text-xl"></i></button>
             </div>
-            <div class="p-6">
-                <p class="mb-2">Weet je zeker dat je dit apparaat wilt ontkoppelen?</p>
-            </div>
-            <div class="bg-black/5 px-4 py-3 sm:px-6 flex flex-row-reverse gap-3 border-t theme-card-border">
-                <button id="confirmDeleteBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto">Verwijderen</button>
-                <button type="button" onclick="document.getElementById('deleteModal').classList.add('hidden')" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto">Annuleren</button>
-            </div>
+            <form action="instellingen_helper.php" method="POST">
+                <input type="hidden" id="delete_sub_id" name="delete_sub_id" value="">
+                <div class="p-6">
+                    <p class="mb-2">Weet je zeker dat je dit apparaat wilt ontkoppelen?</p>
+                </div>
+                <div class="bg-black/5 px-4 py-3 sm:px-6 flex flex-row-reverse gap-3 border-t theme-card-border">
+                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto cursor-pointer">Verwijderen</button>
+                    <button type="button" onclick="document.getElementById('deleteModal').classList.add('hidden')" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded transition shadow-sm w-full sm:w-auto cursor-pointer">Annuleren</button>
+                </div>
+            </form>
         </div>
     </div>
   </div>
